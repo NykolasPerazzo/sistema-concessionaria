@@ -3,16 +3,21 @@ const express = require("express");
 const router = express.Router();
 
 const {
-    createVehicle
+    getVehicles,
+    getVehicleById,
+    createVehicle,
+    updateVehicle,
+    deleteVehicle
 } = require("../controllers/vehicles.controller");
 
-router.get("/", (req, res) => {
-    res.json({
-        message: "Rota de veículos funcionando!",
-        vehicles: []
-    });
-});
+router.get("/", getVehicles);
+
+router.get("/:id", getVehicleById);
 
 router.post("/", createVehicle);
+
+router.put("/:id", updateVehicle);
+
+router.delete("/:id", deleteVehicle);
 
 module.exports = router;
