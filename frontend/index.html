@@ -43,65 +43,78 @@
            HERO
       ================================== -->
 
-      <section class="hero hero-showcase">
-        <div class="hero-slider-nav" id="heroSliderNav">
-          <!-- Criado pelo JavaScript -->
-        </div>
+      <section class="hero-showcase">
+        <div class="hero-slider-nav" id="heroSliderNav"></div>
 
-        <div class="hero-content hero-dynamic-content">
-          <span class="hero-year" id="heroYear"> ---- </span>
+        <div class="hero-main">
+          <div class="hero-copy">
+            <div class="hero-meta">
+              <span id="heroYear">----</span>
+              <span class="hero-meta-line"></span>
+              <span>VEÍCULO EM DESTAQUE</span>
+            </div>
 
-          <span class="hero-label"> VEÍCULO EM DESTAQUE </span>
+            <span class="hero-brand" id="heroBrand"> CAR DEALER </span>
 
-          <h1 id="heroTitle">Carregando...</h1>
+            <h1 class="hero-model" id="heroModel">Carregando</h1>
 
-          <p id="heroDescription">Buscando veículos disponíveis...</p>
+            <p class="hero-description" id="heroDescription">
+              Buscando veículos disponíveis...
+            </p>
 
-          <div class="hero-actions">
-            <a href="#" id="heroDetailsButton" class="btn btn-primary">
-              Ver detalhes
+            <a href="#" class="hero-details" id="heroDetailsButton">
+              VER VEÍCULO
+              <span>→</span>
             </a>
-
-            <button type="button" class="btn btn-secondary" id="heroAiButton">
-              🤖 Conversar com a IA
-            </button>
           </div>
-        </div>
 
-        <!-- IMAGEM -->
+          <div class="hero-car-area">
+            <div class="hero-car-background" id="heroCarBackground"></div>
 
-        <div class="hero-visual">
-          <div class="hero-image-wrapper">
-            <img id="heroVehicleImage" alt="Veículo em destaque" hidden />
+            <div class="hero-car-glow"></div>
+
+            <img
+              id="heroVehicleImage"
+              class="hero-car-image"
+              alt="Veículo em destaque"
+              hidden
+            />
 
             <div id="heroNoImage" class="hero-no-image">
-              <span> 🚗 </span>
-
-              <p>Veículo sem imagem</p>
+              <span>CAR DEALER IA</span>
+              <strong>Imagem indisponível</strong>
             </div>
           </div>
         </div>
 
-        <!-- DADOS DO VEÍCULO -->
+        <div class="hero-specs">
+          <div class="hero-spec">
+            <span>VELOCIDADE</span>
 
-        <div class="hero-stats">
-          <div class="hero-stat-card">
-            <span class="hero-stat-label"> VELOCIDADE </span>
-
-            <strong id="heroTopSpeed"> Não informado </strong>
+            <strong id="heroTopSpeed"> — </strong>
           </div>
 
-          <div class="hero-stat-card">
-            <span class="hero-stat-label"> ASSENTOS </span>
+          <div class="hero-spec">
+            <span>CAPACIDADE</span>
 
-            <strong id="heroSeats"> Não informado </strong>
+            <strong id="heroSeats"> — </strong>
           </div>
 
-          <div class="hero-stat-card">
-            <span class="hero-stat-label"> PREÇO </span>
+          <div class="hero-spec hero-spec-price">
+            <span>PREÇO</span>
 
-            <strong id="heroPrice"> R$ 0,00 </strong>
+            <strong id="heroPrice"> R$ — </strong>
           </div>
+
+          <button type="button" class="hero-ai" id="heroAiButton">
+            <span>✦</span>
+            ENCONTRAR COM IA
+          </button>
+        </div>
+
+        <div class="hero-scroll-indicator">
+          <span>SCROLL</span>
+          <div></div>
         </div>
       </section>
 

@@ -1,6 +1,25 @@
 let heroVehicles = [];
+
 let currentHeroVehicle = 0;
+
 let heroChanging = false;
+
+/* =========================================
+   UTILIDADES
+========================================= */
+
+function formatPrice(value) {
+  const price = Number(value || 0);
+
+  return price.toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  });
+}
+
+function getVehicleImage(vehicle) {
+  return vehicle.image_url || vehicle.main_image || vehicle.image || "";
+}
 
 /* =========================================
    CARREGAR VEÍCULOS
@@ -20,33 +39,33 @@ async function loadFeaturedVehicles() {
 
     const vehicles = data.vehicles || [];
 
-    /* =================================
-       HERO
-    ================================= */
+    /* HERO */
 
     heroVehicles = vehicles.slice(0, 6);
 
-    if (heroVehicles.length > 0) {
+    if (heroVehicles.length) {
       createHeroNavigation();
 
       updateHeroVehicle(0, false);
     }
 
-    /* =================================
-       VEÍCULOS EM DESTAQUE
-    ================================= */
-
-    const featuredVehicles = vehicles.slice(0, 6);
+    /* ESTOQUE */
 
     if (!container) {
       return;
     }
 
-    if (featuredVehicles.length === 0) {
+    const featuredVehicles = vehicles.slice(0, 6);
+
+    if (!featuredVehicles.length) {
       container.innerHTML = `
+
         <p class="loading">
-          Nenhum veículo disponível no momento.
+
+          Nenhum veículo disponível.
+
         </p>
+
       `;
 
       return;
@@ -54,29 +73,39 @@ async function loadFeaturedVehicles() {
 
     container.innerHTML = featuredVehicles
       .map((vehicle) => {
-        const vehicleImage = vehicle.image_url || "";
-
-        const price = Number(vehicle.price).toLocaleString("pt-BR", {
-          minimumFractionDigits: 2,
-        });
+        const image = getVehicleImage(vehicle);
 
         return `
+
             <article class="vehicle-card">
 
               <div class="vehicle-card-image">
 
                 ${
-                  vehicleImage
+                  image
                     ? `
+
                       <img
-                        src="${vehicleImage}"
+                        src="${image}"
                         alt="${vehicle.brand} ${vehicle.model}"
+                        loading="lazy"
                       >
+
                     `
                     : `
+
                       <div class="vehicle-no-image">
-                        Sem imagem
+
+                        <span>
+                          CAR DEALER IA
+                        </span>
+
+                        <strong>
+                          Sem imagem
+                        </strong>
+
                       </div>
+
                     `
                 }
 
@@ -85,34 +114,50 @@ async function loadFeaturedVehicles() {
 
               <div class="vehicle-info">
 
+                <span class="vehicle-card-brand">
+
+                  ${vehicle.brand || ""}
+
+                </span>
+
+
                 <h3>
-                  ${vehicle.brand}
-                  ${vehicle.model}
+
+                  ${vehicle.model || ""}
+
                 </h3>
 
 
-                <p>
-                  ${vehicle.year}
-                </p>
+                <div class="vehicle-card-meta">
 
+                  <span>
 
-                <div class="vehicle-price">
+                    ${vehicle.year || ""}
 
-                  R$ ${price}
+                  </span>
+
+                  <strong>
+
+                    ${formatPrice(vehicle.price)}
+
+                  </strong>
 
                 </div>
 
 
                 <a
-                  class="vehicle-link"
                   href="./vehicle.html?id=${vehicle.id}"
+                  class="vehicle-link"
                 >
-                  Ver detalhes →
+
+                  VER VEÍCULO →
+
                 </a>
 
               </div>
 
             </article>
+
           `;
       })
       .join("");
@@ -121,16 +166,20 @@ async function loadFeaturedVehicles() {
 
     if (container) {
       container.innerHTML = `
+
         <p class="loading">
+
           Não foi possível carregar os veículos.
+
         </p>
+
       `;
     }
   }
 }
 
 /* =========================================
-   CRIAR NAVEGAÇÃO DO HERO
+   NAVEGAÇÃO HERO
 ========================================= */
 
 function createHeroNavigation() {
@@ -145,21 +194,26 @@ function createHeroNavigation() {
       const number = String(index + 1).padStart(2, "0");
 
       return `
-          <div
-            class="hero-nav-item ${index === 0 ? "active" : ""}"
+
+          <button
+            type="button"
+            class="hero-nav-item
+            ${index === 0 ? "active" : ""}"
             data-index="${index}"
+            aria-label="Mostrar veículo ${number}"
           >
 
             <span>
               ${number}
             </span>
 
-          </div>
+          </button>
+
         `;
     })
     .join("");
 
-  document.querySelectorAll(".hero-nav-item").forEach((item) => {
+  navigation.querySelectorAll(".hero-nav-item").forEach((item) => {
     item.addEventListener("click", () => {
       const index = Number(item.dataset.index);
 
@@ -169,15 +223,16 @@ function createHeroNavigation() {
 }
 
 /* =========================================
-   ALTERAR VEÍCULO DO HERO
+   ALTERAR HERO
 ========================================= */
 
 function updateHeroVehicle(index, animate = true) {
-  if (!heroVehicles.length || index < 0 || index >= heroVehicles.length) {
-    return;
-  }
-
-  if (heroChanging) {
+  if (
+    heroChanging ||
+    !heroVehicles.length ||
+    index < 0 ||
+    index >= heroVehicles.length
+  ) {
     return;
   }
 
@@ -197,111 +252,147 @@ function updateHeroVehicle(index, animate = true) {
 
   setTimeout(
     () => {
-      /* ANO */
-
-      const heroYear = document.getElementById("heroYear");
-
-      if (heroYear) {
-        heroYear.textContent = vehicle.year || "----";
-      }
-
-      /* TÍTULO */
-
-      const heroTitle = document.getElementById("heroTitle");
-
-      if (heroTitle) {
-        heroTitle.textContent = `${vehicle.brand || ""} ${vehicle.model || ""}`;
-      }
-
-      /* DESCRIÇÃO */
-
-      const heroDescription = document.getElementById("heroDescription");
-
-      if (heroDescription) {
-        heroDescription.textContent =
-          vehicle.description ||
-          "Conheça este veículo disponível no nosso estoque.";
-      }
-
-      /* PREÇO */
-
-      const heroPrice = document.getElementById("heroPrice");
-
-      if (heroPrice) {
-        heroPrice.textContent = `R$ ${Number(vehicle.price || 0).toLocaleString(
-          "pt-BR",
-          {
-            minimumFractionDigits: 2,
-          },
-        )}`;
-      }
-
-      /* TOP SPEED */
-
-      const heroTopSpeed = document.getElementById("heroTopSpeed");
-
-      if (heroTopSpeed) {
-        heroTopSpeed.textContent = vehicle.top_speed
-          ? `${vehicle.top_speed} KM/H`
-          : "Não informado";
-      }
-
-      /* ASSENTOS */
-
-      const heroSeats = document.getElementById("heroSeats");
-
-      if (heroSeats) {
-        heroSeats.textContent = vehicle.seats || "Não informado";
-      }
-
-      /* LINK */
-
-      const heroDetailsButton = document.getElementById("heroDetailsButton");
-
-      if (heroDetailsButton) {
-        heroDetailsButton.href = `./vehicle.html?id=${vehicle.id}`;
-      }
-
-      /* IMAGEM */
-
-      const image = document.getElementById("heroVehicleImage");
-
-      if (image) {
-        if (vehicle.image_url) {
-          image.src = vehicle.image_url;
-
-          image.alt = `${vehicle.brand || ""} ${vehicle.model || ""}`;
-
-          image.style.display = "block";
-        } else {
-          image.removeAttribute("src");
-
-          image.alt = "Veículo sem imagem";
-
-          image.style.display = "none";
-        }
-      }
-
-      /* NAVEGAÇÃO */
-
-      document.querySelectorAll(".hero-nav-item").forEach((item, itemIndex) => {
-        item.classList.toggle("active", itemIndex === index);
-      });
+      updateHeroContent(vehicle);
 
       currentHeroVehicle = index;
+
+      updateHeroNavigation(index);
 
       hero.classList.remove("changing");
 
       setTimeout(() => {
         heroChanging = false;
-      }, 450);
+      }, 500);
     },
-    animate ? 350 : 0,
+
+    animate ? 320 : 0,
   );
 }
 
 /* =========================================
-   ROLAGEM DO HERO
+   CONTEÚDO DO HERO
+========================================= */
+
+function updateHeroContent(vehicle) {
+  const year = document.getElementById("heroYear");
+
+  const brand = document.getElementById("heroBrand");
+
+  const model = document.getElementById("heroModel");
+
+  const description = document.getElementById("heroDescription");
+
+  const price = document.getElementById("heroPrice");
+
+  const speed = document.getElementById("heroTopSpeed");
+
+  const seats = document.getElementById("heroSeats");
+
+  const details = document.getElementById("heroDetailsButton");
+
+  const image = document.getElementById("heroVehicleImage");
+
+  const noImage = document.getElementById("heroNoImage");
+
+  const background = document.getElementById("heroCarBackground");
+
+  const vehicleImage = getVehicleImage(vehicle);
+
+  /* ANO */
+
+  if (year) {
+    year.textContent = vehicle.year || "----";
+  }
+
+  /* MARCA */
+
+  if (brand) {
+    brand.textContent = vehicle.brand || "CAR DEALER";
+  }
+
+  /* MODELO */
+
+  if (model) {
+    model.textContent = vehicle.model || "VEÍCULO";
+  }
+
+  /* DESCRIÇÃO */
+
+  if (description) {
+    description.textContent =
+      vehicle.description ||
+      "Descubra todos os detalhes deste veículo disponível em nosso estoque.";
+  }
+
+  /* PREÇO */
+
+  if (price) {
+    price.textContent = formatPrice(vehicle.price);
+  }
+
+  /* VELOCIDADE */
+
+  if (speed) {
+    speed.textContent = vehicle.top_speed ? `${vehicle.top_speed} KM/H` : "—";
+  }
+
+  /* ASSENTOS */
+
+  if (seats) {
+    seats.textContent = vehicle.seats ? `${vehicle.seats} LUGARES` : "—";
+  }
+
+  /* LINK */
+
+  if (details) {
+    details.href = `./vehicle.html?id=${vehicle.id}`;
+  }
+
+  /* IMAGEM */
+
+  if (vehicleImage && image) {
+    image.src = vehicleImage;
+
+    image.alt = `${vehicle.brand || ""} ${vehicle.model || ""}`;
+
+    image.hidden = false;
+
+    if (noImage) {
+      noImage.style.display = "none";
+    }
+
+    if (background) {
+      background.style.backgroundImage = `url("${vehicleImage}")`;
+    }
+  } else {
+    if (image) {
+      image.hidden = true;
+
+      image.removeAttribute("src");
+    }
+
+    if (noImage) {
+      noImage.style.display = "flex";
+    }
+
+    if (background) {
+      background.style.backgroundImage = "none";
+    }
+  }
+}
+
+/* =========================================
+   ATUALIZAR INDICADOR
+========================================= */
+
+function updateHeroNavigation(index) {
+  document.querySelectorAll(".hero-nav-item").forEach((item, itemIndex) => {
+    item.classList.toggle("active", itemIndex === index);
+  });
+}
+
+/* =========================================
+   SCROLL HERO
 ========================================= */
 
 const hero = document.querySelector(".hero-showcase");
@@ -310,29 +401,25 @@ if (hero) {
   hero.addEventListener(
     "wheel",
     (event) => {
-      if (heroChanging) {
+      if (heroChanging || !heroVehicles.length) {
         return;
       }
 
-      if (Math.abs(event.deltaY) < 15) {
+      if (Math.abs(event.deltaY) < 20) {
         return;
       }
+
+      /* DESCENDO */
 
       if (event.deltaY > 0) {
-        /*
-          PRÓXIMO
-        */
-
         if (currentHeroVehicle < heroVehicles.length - 1) {
           event.preventDefault();
 
           updateHeroVehicle(currentHeroVehicle + 1);
         }
       } else {
-        /*
-          ANTERIOR
-        */
 
+      /* SUBINDO */
         if (currentHeroVehicle > 0) {
           event.preventDefault();
 
@@ -340,10 +427,39 @@ if (hero) {
         }
       }
     },
+
     {
       passive: false,
     },
   );
+}
+
+/* =========================================
+   BUSCA DA HOME
+========================================= */
+
+const searchButton = document.getElementById("searchButton");
+
+const searchInput = document.getElementById("searchInput");
+
+if (searchButton && searchInput) {
+  searchButton.addEventListener("click", (event) => {
+    const search = searchInput.value.trim();
+
+    if (!search) {
+      return;
+    }
+
+    event.preventDefault();
+
+    window.location.href = `./vehicles.html?search=${encodeURIComponent(search)}`;
+  });
+
+  searchInput.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+      searchButton.click();
+    }
+  });
 }
 
 /* =========================================
