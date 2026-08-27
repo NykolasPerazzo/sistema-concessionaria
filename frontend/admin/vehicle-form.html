@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>Veículo | Admin | Car Dealer IA</title>
+
+    <link rel="stylesheet" href="./css/admin.css" />
+  </head>
+
+  <body>
+    <aside class="sidebar">
+      <div class="admin-logo">
+        <span>⚡</span>
+        <strong>CAR DEALER IA</strong>
+      </div>
+
+      <nav>
+        <a href="./index.html">Dashboard</a>
+        <a href="./vehicles.html" class="active">Veículos</a>
+        <a href="#">Clientes</a>
+        <a href="#">Propostas</a>
+        <a href="#">Vendas</a>
+        <a href="#">IA</a>
+        <a href="#">Configurações</a>
+      </nav>
+
+      <a href="../index.html" class="public-site"> ← Ver site público </a>
+    </aside>
+
+    <main class="admin-main">
+      <header class="admin-header">
+        <div>
+          <span class="eyebrow">ESTOQUE</span>
+          <h1 id="pageTitle">Novo veículo</h1>
+        </div>
+
+        <a href="./vehicles.html" class="admin-secondary-button"> ← Voltar </a>
+      </header>
+
+      <section class="panel vehicle-form-panel">
+        <form id="vehicleForm">
+          <div class="form-section">
+            <div class="form-section-title">
+              <span class="eyebrow">INFORMAÇÕES PRINCIPAIS</span>
+              <h2>Dados do veículo</h2>
+            </div>
+
+            <div class="form-grid">
+              <div class="form-group">
+                <label for="brand">Marca *</label>
+
+                <input
+                  id="brand"
+                  name="brand"
+                  type="text"
+                  placeholder="Ex.: Toyota"
+                  required
+                />
+              </div>
+
+              <div class="form-group">
+                <label for="model">Modelo *</label>
+
+                <input
+                  id="model"
+                  name="model"
+                  type="text"
+                  placeholder="Ex.: Corolla XEi"
+                  required
+                />
+              </div>
+
+              <div class="form-group">
+                <label for="year">Ano *</label>
+
+                <input
+                  id="year"
+                  name="year"
+                  type="number"
+                  min="1900"
+                  max="2100"
+                  placeholder="2024"
+                  required
+                />
+              </div>
+
+              <div class="form-group">
+                <label for="price">Preço *</label>
+
+                <input
+                  id="price"
+                  name="price"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="189900"
+                  required
+                />
+              </div>
+
+              <div class="form-group">
+                <label for="mileage">Quilometragem</label>
+
+                <input
+                  id="mileage"
+                  name="mileage"
+                  type="number"
+                  min="0"
+                  placeholder="18500"
+                />
+              </div>
+
+              <div class="form-group">
+                <label for="color">Cor</label>
+
+                <input
+                  id="color"
+                  name="color"
+                  type="text"
+                  placeholder="Preto"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div class="form-section">
+            <div class="form-section-title">
+              <span class="eyebrow">ESPECIFICAÇÕES</span>
+              <h2>Características</h2>
+            </div>
+
+            <div class="form-grid">
+              <div class="form-group">
+                <label for="fuel">Combustível</label>
+
+                <select id="fuel" name="fuel">
+                  <option value="">Selecione</option>
+
+                  <option value="Flex">Flex</option>
+
+                  <option value="Gasolina">Gasolina</option>
+
+                  <option value="Etanol">Etanol</option>
+
+                  <option value="Diesel">Diesel</option>
+
+                  <option value="Híbrido">Híbrido</option>
+
+                  <option value="Elétrico">Elétrico</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="transmission">Câmbio</label>
+
+                <select id="transmission" name="transmission">
+                  <option value="">Selecione</option>
+
+                  <option value="Manual">Manual</option>
+
+                  <option value="Automático">Automático</option>
+
+                  <option value="CVT">CVT</option>
+
+                  <option value="Automatizado">Automatizado</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="body_type">Carroceria</label>
+
+                <select id="body_type" name="body_type">
+                  <option value="">Selecione</option>
+
+                  <option value="Sedan">Sedan</option>
+
+                  <option value="Hatch">Hatch</option>
+
+                  <option value="SUV">SUV</option>
+
+                  <option value="Pickup">Pickup</option>
+
+                  <option value="Coupé">Coupé</option>
+
+                  <option value="Conversível">Conversível</option>
+
+                  <option value="Minivan">Minivan</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="status">Status</label>
+
+                <select id="status" name="status">
+                  <option value="available">Disponível</option>
+
+                  <option value="reserved">Reservado</option>
+
+                  <option value="sold">Vendido</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-section">
+            <div class="form-section-title">
+              <span class="eyebrow">ANÚNCIO</span>
+              <h2>Descrição e imagem</h2>
+            </div>
+
+            <div class="form-group">
+              <label for="description"> Descrição </label>
+
+              <textarea
+                id="description"
+                name="description"
+                rows="7"
+                placeholder="Descreva o veículo..."
+              ></textarea>
+            </div>
+
+            <div class="form-group">
+              <label for="coverImage">Imagem principal</label>
+
+              <input
+                id="coverImage"
+                name="coverImage"
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+              />
+
+              <small> Formatos permitidos: JPG, PNG e WEBP. </small>
+            </div>
+
+            <div id="imagePreview" class="image-preview">
+              <span>A prévia da imagem aparecerá aqui</span>
+            </div>
+
+            <div class="gallery-section">
+              <div class="form-section-title">
+                <span class="eyebrow">GALERIA</span>
+                <h2>Fotos do veículo</h2>
+              </div>
+
+              <div class="form-group">
+                <label for="galleryImages">Selecionar fotos</label>
+
+                <input
+                  type="file"
+                  id="galleryImages"
+                  name="galleryImages"
+                  accept="image/jpeg,image/png,image/webp"
+                  multiple
+                />
+              </div>
+
+              <div id="galleryPreview" class="gallery-preview">
+                <p>Nenhuma foto selecionada.</p>
+              </div>
+            </div>
+          </div>
+
+          <div id="formMessage" class="form-message"></div>
+
+          <div class="form-actions">
+            <a href="./vehicles.html" class="admin-secondary-button">
+              Cancelar
+            </a>
+
+            <button
+              type="submit"
+              class="admin-primary-button"
+              id="submitButton"
+            >
+              Salvar veículo
+            </button>
+          </div>
+        </form>
+      </section>
+    </main>
+    <script src="../js/config.js"></script>
+    <script src="./js/auth.js"></script>
+    <script src="./js/vehicle-form.js"></script>
+  </body>
+</html>

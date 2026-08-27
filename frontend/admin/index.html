@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>Dashboard | Car Dealer IA</title>
+
+    <link rel="stylesheet" href="./css/admin.css" />
+  </head>
+
+  <body>
+    <aside class="sidebar">
+      <div class="admin-logo">
+        <span>⚡</span>
+        <strong>CAR DEALER IA</strong>
+      </div>
+
+      <nav>
+        <a href="./index.html" class="active">Dashboard</a>
+        <a href="./vehicles.html">Veículos</a>
+        <a href="#">Clientes</a>
+        <a href="#">Propostas</a>
+        <a href="#">Vendas</a>
+        <a href="#">IA</a>
+        <a href="#">Configurações</a>
+      </nav>
+
+      <a href="../index.html" class="public-site"> ← Ver site público </a>
+    </aside>
+
+    <main class="admin-main">
+      <header class="admin-header">
+        <div>
+          <span class="eyebrow">ADMINISTRAÇÃO</span>
+          <h1>Dashboard</h1>
+        </div>
+
+        <div class="admin-profile">
+          <div class="admin-avatar">A</div>
+
+          <div>
+            <strong>Administrador</strong>
+            <span>Gestor</span>
+          </div>
+        </div>
+      </header>
+
+      <section class="stats-grid">
+        <article class="stat-card">
+          <div>
+            <span>Total de veículos</span>
+            <strong id="totalVehicles">0</strong>
+          </div>
+
+          <span class="stat-icon">🚗</span>
+        </article>
+
+        <article class="stat-card">
+          <div>
+            <span>Disponíveis</span>
+            <strong id="availableVehicles">0</strong>
+          </div>
+
+          <span class="stat-icon">✅</span>
+        </article>
+
+        <article class="stat-card">
+          <div>
+            <span>Reservados</span>
+            <strong id="reservedVehicles">0</strong>
+          </div>
+
+          <span class="stat-icon">⏳</span>
+        </article>
+
+        <article class="stat-card">
+          <div>
+            <span>Vendidos</span>
+            <strong id="soldVehicles">0</strong>
+          </div>
+
+          <span class="stat-icon">💰</span>
+        </article>
+      </section>
+
+      <section class="dashboard-grid">
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <span class="eyebrow">ESTOQUE</span>
+              <h2>Veículos recentes</h2>
+            </div>
+
+            <a href="./vehicles.html"> Ver todos → </a>
+          </div>
+
+          <div id="recentVehicles" class="recent-vehicles">
+            <p class="loading">Carregando...</p>
+          </div>
+        </div>
+
+        <div class="panel quick-actions">
+          <div class="panel-header">
+            <div>
+              <span class="eyebrow">AÇÕES</span>
+              <h2>Acesso rápido</h2>
+            </div>
+          </div>
+
+          <a href="./vehicle-form.html" class="action-button">
+            <span>＋</span>
+            Cadastrar veículo
+          </a>
+
+          <a href="./vehicles.html" class="action-button">
+            <span>🚗</span>
+            Gerenciar veículos
+          </a>
+
+          <button class="action-button">
+            <span>🤖</span>
+            Abrir IA
+          </button>
+        </div>
+      </section>
+    </main>
+
+    <script src="../js/config.js"></script>
+    <script src="./js/auth.js"></script>
+    <script src="./js/dashboard.js"></script>
+  </body>
+</html>

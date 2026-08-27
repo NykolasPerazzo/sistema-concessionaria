@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>Veículos | Admin | Car Dealer IA</title>
+
+    <link rel="stylesheet" href="./css/admin.css" />
+  </head>
+
+  <body>
+    <aside class="sidebar">
+      <div class="admin-logo">
+        <span>⚡</span>
+        <strong>CAR DEALER IA</strong>
+      </div>
+
+      <nav>
+        <a href="./index.html">Dashboard</a>
+        <a href="./vehicles.html" class="active">Veículos</a>
+        <a href="#">Clientes</a>
+        <a href="#">Propostas</a>
+        <a href="#">Vendas</a>
+        <a href="#">IA</a>
+        <a href="#">Configurações</a>
+      </nav>
+
+      <a href="../index.html" class="public-site"> ← Ver site público </a>
+    </aside>
+
+    <main class="admin-main">
+      <header class="admin-header">
+        <div>
+          <span class="eyebrow">ESTOQUE</span>
+          <h1>Veículos</h1>
+        </div>
+
+        <a href="./vehicle-form.html" class="admin-primary-button">
+          + Novo veículo
+        </a>
+      </header>
+
+      <section class="vehicle-toolbar">
+        <input
+          type="text"
+          id="searchInput"
+          placeholder="Buscar por marca ou modelo..."
+        />
+
+        <select id="statusFilter">
+          <option value="">Todos os status</option>
+          <option value="available">Disponível</option>
+          <option value="reserved">Reservado</option>
+          <option value="sold">Vendido</option>
+        </select>
+
+        <select id="brandFilter">
+          <option value="">Todas as marcas</option>
+        </select>
+      </section>
+
+      <section class="panel">
+        <div class="panel-header">
+          <div>
+            <span class="eyebrow">INVENTÁRIO</span>
+            <h2>Veículos cadastrados</h2>
+          </div>
+
+          <span id="vehicleCount"> 0 veículos </span>
+        </div>
+
+        <div class="admin-table-wrapper">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Veículo</th>
+                <th>Ano</th>
+                <th>Preço</th>
+                <th>Quilometragem</th>
+                <th>Status</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+
+            <tbody id="vehiclesTableBody">
+              <tr>
+                <td colspan="6" class="loading">Carregando veículos...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+    <script src="../js/config.js"></script>
+    <script src="./js/auth.js"></script>
+    <script src="./js/vehicles.js"></script>
+  </body>
+</html>

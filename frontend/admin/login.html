@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>Login | Car Dealer IA</title>
+
+    <link rel="stylesheet" href="./css/admin.css" />
+  </head>
+
+  <body class="login-page">
+    <main class="login-container">
+      <div class="login-card">
+        <div class="login-logo">
+          <span>⚡</span>
+          <strong>CAR DEALER IA</strong>
+        </div>
+
+        <div class="login-header">
+          <span class="eyebrow">ÁREA ADMINISTRATIVA</span>
+          <h1>Entrar</h1>
+          <p>Acesse o painel de gerenciamento da sua loja.</p>
+        </div>
+
+        <form id="loginForm">
+          <div class="form-group">
+            <label for="email">E-mail</label>
+
+            <input
+              id="email"
+              type="email"
+              autocomplete="username"
+              placeholder="admin@car-dealer.com"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="password">Senha</label>
+
+            <input
+              id="password"
+              type="password"
+              autocomplete="current-password"
+              placeholder="••••••••"
+              required
+            />
+          </div>
+
+          <div id="loginMessage" class="form-message"></div>
+
+          <button
+            type="submit"
+            class="admin-primary-button login-button"
+            id="loginButton"
+          >
+            Entrar
+          </button>
+        </form>
+
+        <a href="../index.html" class="back-public"> ← Voltar para o site </a>
+      </div>
+    </main>
+    <script src="../js/config.js"></script>
+    <script src="./js/login.js"></script>
+  </body>
+</html>
