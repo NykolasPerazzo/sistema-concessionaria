@@ -24,7 +24,7 @@ async function loadVehicles() {
 
     const data = await response.json();
 
-    vehicles = data.vehicles || [];
+    vehicles = (data.vehicles || []).filter(vehicle => vehicle.status !== "sold");
 
     populateFilters();
 

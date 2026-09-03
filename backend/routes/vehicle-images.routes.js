@@ -3,15 +3,33 @@ const express = require("express");
 const router = express.Router();
 
 const {
-    getVehicleImages,
-    createVehicleImage,
-    deleteVehicleImage
+  authenticate,
+  authorizeRoles,
+} = require("../middleware/auth.middleware");
+
+const {
+  getVehicleImages,
+  createVehicleImage,
+  deleteVehicleImage,
 } = require("../controllers/vehicle-images.controller");
 
+// Público: qualquer visitante pode ver as imagens
 router.get("/:vehicleId", getVehicleImages);
 
-router.post("/:vehicleId", createVehicleImage);
+// Apenas admin pode adicionar imagem
+router.post(
+  "/:vehicleId",
+  authenticate,
+  authorizeRoles("admin"),
+  createVehicleImage,
+);
 
-router.delete("/:imageId", deleteVehicleImage);
+// Apenas admin pode excluir imagem
+router.delete(
+  "/:imageId",
+  authenticate,
+  authorizeRoles("admin"),
+  deleteVehicleImage,
+);
 
 module.exports = router;

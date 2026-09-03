@@ -1,3 +1,4 @@
+let publicSettings = {};
 let heroVehicles = [];
 
 let currentHeroVehicle = 0;
@@ -37,11 +38,13 @@ async function loadFeaturedVehicles() {
 
     const data = await response.json();
 
-    const vehicles = data.vehicles || [];
+    const vehicles = (data.vehicles || []).filter(vehicle => vehicle.status !== "sold");
 
     /* HERO */
 
     heroVehicles = vehicles.slice(0, 6);
+    const heroSection = document.querySelector(".hero-showcase");
+    if (heroSection) heroSection.style.display = heroVehicles.length ? "" : "none";
 
     if (heroVehicles.length) {
       createHeroNavigation();
@@ -418,8 +421,7 @@ if (hero) {
           updateHeroVehicle(currentHeroVehicle + 1);
         }
       } else {
-
-      /* SUBINDO */
+        /* SUBINDO */
         if (currentHeroVehicle > 0) {
           event.preventDefault();
 
@@ -466,4 +468,87 @@ if (searchButton && searchInput) {
    INICIAR
 ========================================= */
 
-loadFeaturedVehicles();
+/* =========================================
+   CONFIGURAÇÕES PÚBLICAS
+========================================= */
+
+async function loadPublicSettings() {
+  try {
+    const response = await fetch(`${API_URL}/settings/public`);
+
+    if (!response.ok) {
+      throw new Error("Não foi possível carregar as configurações.");
+    }
+
+    const data = await response.json();
+
+    publicSettings = data.settings || {};
+
+    applyPublicSettings();
+  } catch (error) {
+    console.error("Erro ao carregar configurações públicas:", error);
+  }
+}
+
+/* =========================================
+   APLICAR CONFIGURAÇÕES
+========================================= */
+
+function applyPublicSettings() {
+  const settings = publicSettings;
+
+  /* NOME DA EMPRESA */
+
+  if (settings.company_name) {
+    document.querySelectorAll(".logo-text").forEach((element) => {
+      element.textContent = settings.company_name.toUpperCase();
+    });
+  }
+
+  /* TÍTULO DA ABA */
+
+  if (settings.company_name) {
+    document.title = `${settings.company_name} | Veículos`;
+  }
+
+  /* COR PRINCIPAL */
+
+  if (settings.primary_color) {
+    document.documentElement.style.setProperty(
+      "--color-accent",
+      settings.primary_color,
+    );
+  }
+
+  /* WHATSAPP */
+
+  if (settings.company_whatsapp) {
+    const whatsapp = settings.company_whatsapp.replace(/\D/g, "");
+
+    document.querySelectorAll("[data-whatsapp]").forEach((element) => {
+      element.href = `https://wa.me/55${whatsapp}`;
+    });
+  }
+
+  /* IA */
+
+  if (settings.ai_enabled === false) {
+    document
+      .querySelectorAll("#heroAiButton, #findVehicleAiButton")
+      .forEach((element) => {
+        element.style.display = "none";
+      });
+  }
+}
+
+/* =========================================
+   INICIAR SITE
+========================================= */
+
+async function initializeSite() {
+  await loadPublicSettings();
+
+  await loadFeaturedVehicles();
+}
+
+initializeSite();

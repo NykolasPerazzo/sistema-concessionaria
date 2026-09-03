@@ -198,82 +198,82 @@ function renderVehicle(vehicle, galleryImages) {
 
         <div class="vehicle-specs">
 
-          <div>
+          <!-- QUILOMETRAGEM -->
 
-            <span>
-              Quilometragem
-            </span>
+            <div class="vehicle-spec-info">
+              <i class="fa-solid fa-gauge-high vehicle-spec-icon"></i>
+              <span>Quilometragem</span>
 
-            <strong>
-              ${mileage}
-            </strong>
-
-          </div>
-
-
-          <div>
-
-            <span>
-              Combustível
-            </span>
-
-            <strong>
-              ${vehicle.fuel || "Não informado"}
-            </strong>
-
-          </div>
+              <strong>
+                ${mileage}
+              </strong>
+            </div>
 
 
-          <div>
 
-            <span>
-              Câmbio
-            </span>
+          <!-- COMBUSTÍVEL -->
 
-            <strong>
-              ${vehicle.transmission || "Não informado"}
-            </strong>
+            <div class="vehicle-spec-info">
+              <i class="fa-solid fa-gas-pump vehicle-spec-icon"></i>
+              <span>Combustível</span>
 
-          </div>
-
-
-          <div>
-
-            <span>
-              Carroceria
-            </span>
-
-            <strong>
-              ${vehicle.body_type || "Não informado"}
-            </strong>
-
-          </div>
+              <strong>
+                ${vehicle.fuel || "Não informado"}
+              </strong>
+            </div>
 
 
-          <div>
+          <!-- CÂMBIO -->
 
-            <span>
-              Cor
-            </span>
+            <div class="vehicle-spec-info">
+              <i class="fa-solid fa-gears vehicle-spec-icon"></i>
+              <span>Câmbio</span>
 
-            <strong>
-              ${vehicle.color || "Não informado"}
-            </strong>
+              <strong>
+                ${vehicle.transmission || "Não informado"}
+              </strong>
+            </div>
 
-          </div>
 
 
-          <div>
+          <!-- CARROCERIA -->
 
-            <span>
-              Status
-            </span>
+            <div class="vehicle-spec-info">
+              <i class="fa-solid fa-car-side vehicle-spec-icon"></i>
+              <span>Carroceria</span>
 
-            <strong>
-              ${formatStatus(vehicle.status)}
-            </strong>
+              <strong>
+                ${vehicle.body_type || "Não informado"}
+              </strong>
+            </div>
 
-          </div>
+
+          <!-- COR -->
+
+            <div class="vehicle-spec-info">
+              <i class="fa-solid fa-palette vehicle-spec-icon"></i>
+              <span>Cor</span>
+
+              <strong>
+                ${vehicle.color || "Não informado"}
+              </strong>
+            </div>
+
+
+
+
+          <!-- STATUS -->
+
+            <div class="vehicle-spec-info">
+              <i class="fa-solid fa-circle-check vehicle-spec-icon"></i>
+              <span>Status</span>
+
+              <strong>
+                ${formatStatus(vehicle.status)}
+              </strong>
+            </div>
+
+ 
 
         </div>
 
@@ -431,6 +431,12 @@ function setupVehicleActions(vehicle) {
   const financeButton = document.getElementById("financeButton");
 
   const aiButton = document.getElementById("aiButton");
+
+  if (vehicle.status === "sold") {
+    if (interestButton) { interestButton.disabled = true; interestButton.textContent = "Veículo vendido"; }
+    if (financeButton) financeButton.hidden = true;
+    return;
+  }
 
   if (interestButton) {
     interestButton.addEventListener("click", () => {

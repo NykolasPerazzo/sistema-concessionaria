@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Clientes | Admin | Car Dealer IA</title>
+    <link rel="stylesheet" href="./css/admin.css" />
+    <link rel="stylesheet" href="./css/sales.css" />
+  </head>
+  <body class="sales-page">
+    <aside class="sidebar">
+      <div class="admin-logo">
+        <span>⚡</span><strong>CAR DEALER IA</strong>
+      </div>
+      <nav aria-label="Administração">
+        <a href="./index.html">Dashboard</a
+        ><a href="./vehicles.html">Veículos</a
+        ><a href="./leads.html">Leads</a>
+        <a href="./customers.html" class="active" aria-current="page"
+          >Clientes</a
+        ><a href="./proposals.html">Propostas</a
+        ><a href="./sales.html">Vendas</a><a href="./ai.html">IA</a
+        ><a href="./settings.html">Configurações</a>
+      </nav>
+      <a href="../index.html" class="public-site">← Ver site público</a>
+      <button id="logoutButton" class="sales-secondary" type="button">
+        Sair
+      </button>
+    </aside>
+    <main class="admin-main">
+      <header class="admin-header">
+        <div>
+          <span class="eyebrow">RELACIONAMENTO</span>
+          <h1>Clientes</h1>
+          <p class="sales-subtitle">
+            Contatos organizados. Histórico sempre à mão.
+          </p>
+        </div>
+        <button id="newCustomer" class="sales-primary" disabled>
+          + Novo cliente
+        </button>
+      </header>
+      <p id="pageMessage" class="sales-message" role="status" hidden></p>
+      <section class="sales-stats" aria-label="Resumo de clientes">
+        <article>
+          <span>Clientes ativos</span><strong id="activeCount">—</strong
+          ><small>Disponíveis para novos negócios</small>
+        </article>
+        <article>
+          <span>Clientes com compras</span><strong id="buyersCount">—</strong
+          ><small>Com pelo menos uma venda ativa</small>
+        </article>
+        <article>
+          <span>Arquivados</span><strong id="archivedCount">—</strong
+          ><small>Histórico preservado</small>
+        </article>
+      </section>
+      <section class="sales-history">
+        <div class="sales-section-heading">
+          <h2>Sua base de clientes</h2>
+          <span id="recordCount"></span>
+        </div>
+        <form id="filters" class="sales-filters">
+          <label
+            >Buscar<input
+              id="search"
+              type="search"
+              placeholder="Nome, telefone, e-mail ou cidade" /></label
+          ><label
+            >Situação<select id="statusFilter">
+              <option value="active">Ativos</option>
+              <option value="archived">Arquivados</option>
+              <option value="all">Todos</option>
+            </select></label
+          ><button class="sales-secondary" type="submit">Atualizar</button>
+        </form>
+        <div class="sales-table-scroll">
+          <table class="sales-table">
+            <thead>
+              <tr>
+                <th>Cliente</th>
+                <th>Contato</th>
+                <th>Propostas</th>
+                <th>Compras</th>
+                <th>Situação</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="customerRows">
+              <tr>
+                <td colspan="6" class="sales-empty">Carregando clientes...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="sales-footnote">
+          O histórico reúne negócios vinculados ao cadastro. Compradores antigos
+          não são associados automaticamente por nome ou telefone.
+        </p>
+      </section>
+    </main>
+    <dialog
+      id="customerDialog"
+      class="sales-dialog"
+      aria-labelledby="customerTitle"
+    >
+      <div class="sales-dialog-heading">
+        <h2 id="customerTitle">Novo cliente</h2>
+        <button
+          type="button"
+          class="sales-close"
+          data-close="customerDialog"
+          aria-label="Fechar"
+        >
+          ×
+        </button>
+      </div>
+      <form id="customerForm">
+        <div class="sales-form-grid">
+          <label class="sales-full"
+            >Nome<input
+              name="name"
+              required
+              maxlength="120"
+              autocomplete="name" /></label
+          ><label
+            >Telefone (opcional)<input
+              name="phone"
+              type="tel"
+              maxlength="30"
+              autocomplete="tel" /></label
+          ><label
+            >E-mail (opcional)<input
+              name="email"
+              type="email"
+              maxlength="160"
+              autocomplete="email" /></label
+          ><label class="sales-full"
+            >Cidade (opcional)<input
+              name="city"
+              maxlength="100"
+              autocomplete="address-level2" /></label
+          ><label class="sales-full"
+            >Observações (opcional)<textarea
+              name="notes"
+              rows="3"
+              maxlength="2000"
+              placeholder="Preferências de veículo ou informações úteis ao atendimento"
+            ></textarea>
+          </label>
+        </div>
+        <p id="formMessage" class="sales-message" role="alert" hidden></p>
+        <div class="sales-dialog-actions">
+          <button
+            class="sales-secondary"
+            type="button"
+            data-close="customerDialog"
+          >
+            Voltar</button
+          ><button id="saveCustomer" class="sales-primary" type="submit">
+            Salvar cliente
+          </button>
+        </div>
+      </form>
+    </dialog>
+    <dialog
+      id="detailDialog"
+      class="sales-dialog"
+      aria-labelledby="detailTitle"
+    >
+      <div class="sales-dialog-heading">
+        <h2 id="detailTitle">Ficha do cliente</h2>
+        <button
+          type="button"
+          class="sales-close"
+          data-close="detailDialog"
+          aria-label="Fechar"
+        >
+          ×
+        </button>
+      </div>
+      <div id="customerDetails"></div>
+      <div
+        id="customerActions"
+        class="sales-dialog-actions"
+        style="flex-wrap: wrap"
+      ></div>
+      <section class="customer-history">
+        <h3>Leads de origem</h3><div id="customerLeads"></div>
+<h3>Propostas</h3>
+        <div id="customerProposals"></div>
+        <h3>Vendas</h3>
+        <div id="customerSales"></div>
+      </section>
+      <p id="detailMessage" class="sales-message" role="alert" hidden></p>
+    </dialog>
+    <script src="../js/config.js"></script>
+    <script src="./js/auth.js"></script>
+    <script src="./js/customers.js"></script>
+  </body>
+</html>

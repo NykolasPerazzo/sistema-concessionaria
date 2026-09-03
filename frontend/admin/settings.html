@@ -1,0 +1,360 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>Configurações | Car Dealer IA</title>
+
+    <link rel="stylesheet" href="./css/admin.css" />
+    <link rel="stylesheet" href="./css/settings.css" />
+  </head>
+
+  <body>
+    <aside class="sidebar">
+      <div class="admin-logo">
+        <span>⚡</span>
+        <strong>CAR DEALER IA</strong>
+      </div>
+
+      <nav>
+        <a href="./index.html">Dashboard</a>
+        <a href="./vehicles.html">Veículos</a>
+        <a href="./leads.html">Leads</a>
+        <a href="./customers.html">Clientes</a>
+        <a href="./proposals.html">Propostas</a>
+        <a href="./sales.html">Vendas</a>
+        <a href="./ai.html">IA</a>
+        <a href="./settings.html" class="active">Configurações</a>
+      </nav>
+
+      <a href="../index.html" class="public-site"> ← Ver site público </a>
+    </aside>
+
+    <main class="admin-main">
+      <header class="admin-header">
+        <div>
+          <span class="eyebrow">ADMINISTRAÇÃO</span>
+          <h1>Configurações</h1>
+        </div>
+
+        <div class="admin-profile">
+          <div class="admin-avatar">A</div>
+
+          <div>
+            <strong>Administrador</strong>
+            <span>Gestor</span>
+          </div>
+        </div>
+      </header>
+
+      <div class="settings-layout">
+        <!-- Menu configurações -->
+        <aside class="settings-menu">
+          <button class="settings-tab active" data-section="company">
+            <span>🏢</span>
+            Empresa
+          </button>
+
+          <button class="settings-tab" data-section="appearance">
+            <span>🎨</span>
+            Aparência
+          </button>
+
+          <button class="settings-tab" data-section="site">
+            <span>🌐</span>
+            Site público
+          </button>
+
+          <button class="settings-tab" data-section="vehicles">
+            <span>🚗</span>
+            Veículos
+          </button>
+
+          <button class="settings-tab" data-section="dashboard">
+            <span>📊</span>
+            Dashboard
+          </button>
+
+          <button class="settings-tab" data-section="ai">
+            <span>🤖</span>
+            Inteligência IA
+          </button>
+
+          <button class="settings-tab" data-section="security">
+            <span>🔒</span>
+            Segurança
+          </button>
+        </aside>
+
+        <div class="settings-content">
+          <form id="settingsForm">
+            <!-- EMPRESA -->
+            <section class="settings-section active" id="company">
+              <div class="settings-section-header">
+                <span class="eyebrow">EMPRESA</span>
+                <h2>Informações da concessionária</h2>
+                <p>
+                  Dados utilizados no painel administrativo e no site público.
+                </p>
+              </div>
+
+              <div class="form-grid">
+                <div class="form-group">
+                  <label for="company_name">Nome da concessionária</label>
+                  <input
+                    type="text"
+                    id="company_name"
+                    placeholder="Ex: Auto Prime Motors"
+                  />
+                </div>
+
+                <div class="form-group">
+                  <label for="company_cnpj">CNPJ</label>
+                  <input
+                    type="text"
+                    id="company_cnpj"
+                    placeholder="00.000.000/0001-00"
+                  />
+                </div>
+
+                <div class="form-group">
+                  <label for="company_phone">Telefone</label>
+                  <input
+                    type="text"
+                    id="company_phone"
+                    placeholder="(53) 3232-0000"
+                  />
+                </div>
+
+                <div class="form-group">
+                  <label for="company_whatsapp">WhatsApp</label>
+                  <input
+                    type="text"
+                    id="company_whatsapp"
+                    placeholder="(53) 99999-9999"
+                  />
+                </div>
+
+                <div class="form-group">
+                  <label for="company_email">E-mail</label>
+                  <input
+                    type="email"
+                    id="company_email"
+                    placeholder="contato@empresa.com.br"
+                  />
+                </div>
+
+                <div class="form-group">
+                  <label for="company_city">Cidade</label>
+                  <input
+                    type="text"
+                    id="company_city"
+                    placeholder="Rio Grande - RS"
+                  />
+                </div>
+              </div>
+            </section>
+
+            <!-- APARÊNCIA -->
+            <section class="settings-section" id="appearance">
+              <div class="settings-section-header">
+                <span class="eyebrow">IDENTIDADE VISUAL</span>
+                <h2>Aparência</h2>
+                <p>Personalize a identidade visual da concessionária.</p>
+              </div>
+
+              <div class="form-grid">
+                <div class="form-group">
+                  <label for="primary_color">Cor principal</label>
+
+                  <div class="color-input">
+                    <input type="color" id="primary_color" value="#ffffff" />
+
+                    <span id="primaryColorValue">#ffffff</span>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label for="secondary_color">Cor secundária</label>
+
+                  <div class="color-input">
+                    <input type="color" id="secondary_color" value="#111111" />
+
+                    <span id="secondaryColorValue">#111111</span>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label for="site_theme">Tema padrão</label>
+
+                  <select id="site_theme">
+                    <option value="dark">Escuro</option>
+                    <option value="light">Claro</option>
+                  </select>
+                </div>
+              </div>
+            </section>
+
+            <!-- SITE -->
+            <section class="settings-section" id="site">
+              <div class="settings-section-header">
+                <span class="eyebrow">SITE</span>
+                <h2>Site público</h2>
+                <p>Configure informações exibidas aos clientes.</p>
+              </div>
+
+              <div class="form-grid">
+                <div class="form-group">
+                  <label for="site_title">Título do site</label>
+                  <input
+                    type="text"
+                    id="site_title"
+                    placeholder="Encontre seu próximo carro"
+                  />
+                </div>
+
+                <div class="form-group">
+                  <label for="instagram_url">Instagram</label>
+                  <input
+                    type="text"
+                    id="instagram_url"
+                    placeholder="@concessionaria"
+                  />
+                </div>
+
+                <div class="form-group full-width">
+                  <label for="site_description"> Descrição </label>
+
+                  <textarea
+                    id="site_description"
+                    rows="5"
+                    placeholder="Descrição da concessionária..."
+                  ></textarea>
+                </div>
+              </div>
+            </section>
+
+            <!-- VEÍCULOS -->
+            <section class="settings-section" id="vehicles">
+              <div class="settings-section-header">
+                <span class="eyebrow">ESTOQUE</span>
+                <h2>Veículos</h2>
+                <p>Defina regras gerais do estoque.</p>
+              </div>
+
+              <div class="form-grid">
+                <div class="form-group">
+                  <label for="stock_alert_days">
+                    Alerta de estoque parado
+                  </label>
+
+                  <input
+                    type="number"
+                    id="stock_alert_days"
+                    value="45"
+                    min="1"
+                  />
+
+                  <small> Dias até um veículo ser considerado parado. </small>
+                </div>
+
+                <div class="form-group">
+                  <label for="featured_limit"> Veículos em destaque </label>
+
+                  <input type="number" id="featured_limit" value="6" min="1" />
+                </div>
+              </div>
+            </section>
+
+            <!-- DASHBOARD -->
+            <section class="settings-section" id="dashboard">
+              <div class="settings-section-header">
+                <span class="eyebrow">PAINEL</span>
+                <h2>Dashboard</h2>
+                <p>Personalize os indicadores administrativos.</p>
+              </div>
+
+              <div class="form-grid">
+                <div class="form-group">
+                  <label for="monthly_goal">Meta mensal de vendas</label>
+
+                  <input
+                    type="number"
+                    id="monthly_goal"
+                    placeholder="Ex: 20"
+                    min="0"
+                  />
+                </div>
+              </div>
+            </section>
+
+            <!-- IA -->
+            <section class="settings-section" id="ai">
+              <div class="settings-section-header">
+                <span class="eyebrow">INTELIGÊNCIA ARTIFICIAL</span>
+                <h2>Assistente IA</h2>
+                <p>Controle o assistente inteligente do Car Dealer.</p>
+              </div>
+
+              <div class="setting-switch-row">
+                <div>
+                  <strong>Assistente IA</strong>
+                  <span> Permitir que clientes utilizem o assistente. </span>
+                </div>
+
+                <label class="switch">
+                  <input type="checkbox" id="ai_enabled" />
+                  <span class="slider"></span>
+                </label>
+              </div>
+
+              <div class="form-group settings-textarea">
+                <label for="ai_welcome_message"> Mensagem inicial </label>
+
+                <textarea
+                  id="ai_welcome_message"
+                  rows="5"
+                  placeholder="Olá! Posso ajudar você a encontrar o veículo ideal."
+                ></textarea>
+              </div>
+            </section>
+
+            <!-- SEGURANÇA -->
+            <section class="settings-section" id="security">
+              <div class="settings-section-header">
+                <span class="eyebrow">SEGURANÇA</span>
+                <h2>Segurança</h2>
+                <p>Configurações de acesso ao painel administrativo.</p>
+              </div>
+
+              <div class="security-card">
+                <div>
+                  <strong>Usuários administrativos</strong>
+                  <span>
+                    O gerenciamento de usuários será implementado aqui.
+                  </span>
+                </div>
+              </div>
+            </section>
+
+            <div class="settings-footer">
+              <span id="settingsMessage"></span>
+
+              <button
+                type="submit"
+                class="admin-primary-button settings-save-button"
+              >
+                Salvar alterações
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </main>
+
+    <script src="../js/config.js"></script>
+    <script src="./js/auth.js"></script>
+    <script src="./js/settings.js"></script>
+  </body>
+</html>

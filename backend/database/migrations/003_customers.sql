@@ -1,0 +1,19 @@
+BEGIN;
+CREATE TABLE IF NOT EXISTS customers (
+ id SERIAL PRIMARY KEY,
+ name VARCHAR(120) NOT NULL CHECK(length(trim(name)) > 0),
+ phone VARCHAR(30),
+ email VARCHAR(160),
+ city VARCHAR(100),
+ notes VARCHAR(2000),
+ is_active BOOLEAN NOT NULL DEFAULT TRUE,
+ version INTEGER NOT NULL DEFAULT 1,
+ created_by INTEGER NOT NULL,
+ created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+ updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+ALTER TABLE proposals ADD COLUMN IF NOT EXISTS customer_id INTEGER REFERENCES customers(id) ON DELETE RESTRICT;
+ALTER TABLE sales ADD COLUMN IF NOT EXISTS customer_id INTEGER REFERENCES customers(id) ON DELETE RESTRICT;
+CREATE INDEX IF NOT EXISTS proposals_customer_idx ON proposals(customer_id);
+CREATE INDEX IF NOT EXISTS sales_customer_idx ON sales(customer_id);
+COMMIT;

@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Propostas | Admin | Car Dealer IA</title>
+    <link rel="stylesheet" href="./css/admin.css" />
+    <link rel="stylesheet" href="./css/sales.css" />
+  </head>
+  <body class="sales-page">
+    <aside class="sidebar">
+      <div class="admin-logo">
+        <span>⚡</span><strong>CAR DEALER IA</strong>
+      </div>
+      <nav aria-label="Administração">
+        <a href="./index.html">Dashboard</a
+        ><a href="./vehicles.html">Veículos</a
+        ><a href="./leads.html">Leads</a>
+        <a href="./customers.html">Clientes</a><a href="./proposals.html" class="active" aria-current="page"
+          >Propostas</a
+        ><a href="./sales.html">Vendas</a><a href="./ai.html">IA</a
+        ><a href="./settings.html">Configurações</a>
+      </nav>
+      <a href="../index.html" class="public-site">← Ver site público</a>
+      <button id="logoutButton" class="sales-secondary" type="button">
+        Sair
+      </button>
+    </aside>
+    <main class="admin-main">
+      <header class="admin-header">
+        <div>
+          <span class="eyebrow">NEGOCIAÇÕES</span>
+          <h1>Propostas</h1>
+          <p class="sales-subtitle">
+            Do primeiro valor negociado ao negócio fechado.
+          </p>
+        </div>
+        <button id="newProposal" class="sales-primary" disabled>
+          + Nova proposta
+        </button>
+      </header>
+      <p id="pageMessage" class="sales-message" role="status" hidden></p>
+      <section class="sales-stats" aria-label="Resumo de todas as propostas">
+        <article>
+          <span>Em negociação</span><strong id="openCount">—</strong
+          ><small>Enviadas e dentro da validade</small>
+        </article>
+        <article>
+          <span>Aceitas</span><strong id="acceptedCount">—</strong
+          ><small>Aguardando conversão em venda</small>
+        </article>
+        <article>
+          <span>Convertidas</span><strong id="convertedCount">—</strong
+          ><small>Com venda ativa vinculada</small>
+        </article>
+      </section>
+      <section class="sales-history">
+        <div class="sales-section-heading">
+          <h2>Suas propostas</h2>
+          <span id="recordCount"></span>
+        </div>
+        <form id="filters" class="sales-filters">
+          <label
+            >Buscar<input
+              id="search"
+              type="search"
+              placeholder="Comprador, veículo ou número" /></label
+          ><label
+            >Situação<select id="statusFilter">
+              <option value="all">Todas</option>
+              <option value="draft">Rascunho</option>
+              <option value="sent">Enviada</option>
+              <option value="accepted">Aceita</option>
+              <option value="converted">Convertida</option>
+              <option value="rejected">Recusada</option>
+              <option value="cancelled">Cancelada</option>
+              <option value="expired">Vencida</option>
+            </select></label
+          ><button type="submit" class="sales-secondary">Atualizar</button>
+        </form>
+        <div class="sales-table-scroll">
+          <table class="sales-table">
+            <thead>
+              <tr>
+                <th>Proposta / comprador</th>
+                <th>Veículo</th>
+                <th>Valor negociado</th>
+                <th>Validade</th>
+                <th>Situação</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="proposalRows">
+              <tr>
+                <td colspan="6" class="sales-empty">Carregando propostas...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="sales-footnote">
+          Propostas não reservam veículos automaticamente. A venda é registrada
+          somente na conversão.
+        </p>
+      </section>
+    </main>
+    <dialog
+      id="proposalDialog"
+      class="sales-dialog"
+      aria-labelledby="proposalTitle"
+    >
+      <div class="sales-dialog-heading">
+        <h2 id="proposalTitle">Nova proposta</h2>
+        <button
+          type="button"
+          class="sales-close"
+          data-close="proposalDialog"
+          aria-label="Fechar"
+        >
+          ×
+        </button>
+      </div>
+      <form id="proposalForm">
+        <div class="sales-form-grid">
+          <label class="sales-full"
+            >Veículo<select
+              id="vehicleSelect"
+              name="vehicle_id"
+              required
+            ></select
+          ></label>
+          <label
+            >Nome do comprador<input
+              name="buyer_name"
+              maxlength="120"
+              required
+              autocomplete="name" /></label
+          ><label
+            >Telefone (opcional)<input
+              name="buyer_phone"
+              maxlength="30"
+              type="tel"
+              autocomplete="tel"
+          /></label>
+          <label
+            >Valor negociado (R$)<input
+              name="proposed_price"
+              id="proposedPrice"
+              type="number"
+              required
+              min="0.01"
+              max="100000000"
+              step="0.01"
+              inputmode="decimal" /></label
+          ><label
+            >Válida até<input
+              name="valid_until"
+              id="validUntil"
+              type="date"
+              required
+          /></label>
+          <label class="sales-full"
+            >Forma de pagamento<select name="payment_method" required>
+              <option value="">Selecione</option>
+              <option value="pix">Pix</option>
+              <option value="transfer">Transferência</option>
+              <option value="cash">Dinheiro</option>
+              <option value="financing">Financiamento</option>
+              <option value="mixed">Misto / com troca</option>
+            </select></label
+          >
+          <label class="sales-full"
+            >Condições e observações (opcional)<textarea
+              name="notes"
+              rows="3"
+              maxlength="2000"
+              placeholder="Entrada, financiamento, veículo na troca, condições negociadas..."
+            ></textarea>
+          </label>
+        </div>
+        <p class="sales-footnote">
+          Salve o rascunho para revisar antes de marcar como enviado.
+        </p>
+        <p id="formMessage" class="sales-message" role="alert" hidden></p>
+        <div class="sales-dialog-actions">
+          <button
+            type="button"
+            class="sales-secondary"
+            data-close="proposalDialog"
+          >
+            Voltar</button
+          ><button type="submit" id="saveProposal" class="sales-primary">
+            Salvar rascunho
+          </button>
+        </div>
+      </form>
+    </dialog>
+    <dialog
+      id="detailDialog"
+      class="sales-dialog"
+      aria-labelledby="detailTitle"
+    >
+      <div class="sales-dialog-heading">
+        <h2 id="detailTitle">Detalhes da proposta</h2>
+        <button
+          type="button"
+          class="sales-close"
+          data-close="detailDialog"
+          aria-label="Fechar"
+        >
+          ×
+        </button>
+      </div>
+      <div id="proposalDetails"></div>
+      <p id="detailHint" class="sales-footnote"></p>
+      <div
+        id="proposalActions"
+        class="sales-dialog-actions"
+        style="flex-wrap: wrap"
+      ></div>
+      <form id="convertForm" hidden>
+        <div id="conversionPreview" class="sales-preview"></div>
+        <label>Data da venda<input type="date" id="saleDate" required /></label>
+        <p class="sales-footnote">
+          Confirme somente quando o negócio estiver fechado. O veículo será
+          marcado como vendido; comprador, valor e condições serão copiados para
+          a venda.
+        </p>
+        <button id="convertButton" type="submit" class="sales-primary">
+          Confirmar conversão em venda
+        </button>
+      </form>
+      <p id="detailMessage" class="sales-message" role="alert" hidden></p>
+    </dialog>
+    <script src="../js/config.js"></script>
+    <script src="./js/auth.js"></script>
+    <script src="./js/customer-picker.js"></script>
+<script src="./js/proposals.js"></script>
+  </body>
+</html>

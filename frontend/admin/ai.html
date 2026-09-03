@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>IA - Car Dealer IA</title>
+
+    <link rel="stylesheet" href="./css/admin.css" />
+  </head>
+
+  <body>
+    <aside class="sidebar">
+      <div class="admin-logo">
+        <span>⚡</span>
+        <strong>CAR DEALER IA</strong>
+      </div>
+
+      <nav class="sidebar-nav">
+        <a href="./index.html"> Dashboard </a>
+
+        <a href="./vehicles.html"> Veículos </a>
+
+        <a href="./leads.html">Leads</a>
+        <a href="./customers.html">Clientes</a>
+
+        <a href="./proposals.html">Propostas</a>
+
+        <a href="./sales.html">Vendas</a>
+
+        <a href="./ai.html" class="active"> IA </a>
+
+        <a href="./settings.html"> Configurações </a>
+      </nav>
+    </aside>
+
+    <main class="admin-main ai-page">
+      <header class="ai-page-header">
+        <div>
+          <span class="page-eyebrow"> INTELIGÊNCIA ARTIFICIAL </span>
+
+          <h1>Assistente Car Dealer</h1>
+
+          <p>Converse com a IA e analise seu estoque em tempo real.</p>
+        </div>
+
+        <div class="ai-status">
+          <span class="ai-status-dot"></span>
+          IA online
+        </div>
+      </header>
+
+      <section class="ai-dashboard-grid">
+        <!-- =====================================
+           CONVERSA
+      ====================================== -->
+
+        <div class="ai-chat-panel">
+          <div class="ai-chat-header">
+            <div class="ai-chat-avatar">✦</div>
+
+            <div>
+              <strong> Car Dealer IA </strong>
+
+              <span> Assistente de gestão </span>
+            </div>
+          </div>
+
+          <div class="ai-chat-messages" id="aiChatMessages">
+            <div class="ai-message assistant">
+              <div class="ai-message-avatar">✦</div>
+
+              <div class="ai-message-content">
+                <strong> Car Dealer IA </strong>
+
+                <p>
+                  Olá! Posso analisar seu estoque, margens, tempo dos veículos
+                  em estoque e ajudar você a encontrar oportunidades.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="ai-chat-suggestions">
+            <button type="button">Qual veículo tem maior margem?</button>
+
+            <button type="button">Quais carros estão há mais tempo?</button>
+
+            <button type="button">Qual o valor total do estoque?</button>
+
+            <button type="button">O que devo priorizar para venda?</button>
+          </div>
+
+          <div class="ai-chat-input">
+            <textarea
+              id="aiPageQuestion"
+              rows="1"
+              placeholder="Pergunte algo sobre sua concessionária..."
+            ></textarea>
+
+            <button type="button" id="aiPageSend" aria-label="Enviar pergunta">
+              ➤
+            </button>
+          </div>
+        </div>
+
+        <!-- =====================================
+           PAINEL DIREITO
+      ====================================== -->
+
+        <aside class="ai-page-sidebar">
+          <section class="ai-info-card">
+            <div class="ai-info-card-header">
+              <span class="ai-info-icon"> ✦ </span>
+
+              <div>
+                <strong> Assistente inteligente </strong>
+
+                <span> Dados em tempo real </span>
+              </div>
+            </div>
+
+            <p>
+              A IA utiliza os dados cadastrados no Car Dealer para responder
+              suas perguntas.
+            </p>
+          </section>
+
+          <section class="ai-page-insights">
+            <h2>Insights rápidos</h2>
+
+            <article class="ai-page-insight-card">
+              <span class="ai-page-insight-icon"> ↗ </span>
+
+              <div>
+                <small> Maior margem </small>
+
+                <strong id="aiPageHighestMargin"> Calculando... </strong>
+
+                <span id="aiPageHighestMarginValue"> - </span>
+              </div>
+            </article>
+
+            <article class="ai-page-insight-card">
+              <span class="ai-page-insight-icon"> ◷ </span>
+
+              <div>
+                <small> Mais tempo em estoque </small>
+
+                <strong id="aiPageOldestVehicle"> Calculando... </strong>
+
+                <span id="aiPageOldestDays"> - </span>
+              </div>
+            </article>
+
+            <article class="ai-page-insight-card">
+              <span class="ai-page-insight-icon"> $ </span>
+
+              <div>
+                <small> Valor do estoque </small>
+
+                <strong id="aiPageStockValue"> Calculando... </strong>
+
+                <span> Veículos disponíveis </span>
+              </div>
+            </article>
+          </section>
+
+          <section class="ai-capabilities">
+            <h2>O que posso analisar</h2>
+
+            <div class="ai-capability">
+              <span>✓</span>
+              Margem dos veículos
+            </div>
+
+            <div class="ai-capability">
+              <span>✓</span>
+              Tempo em estoque
+            </div>
+
+            <div class="ai-capability">
+              <span>✓</span>
+              Valor total do estoque
+            </div>
+
+            <div class="ai-capability">
+              <span>✓</span>
+              Prioridade de venda
+            </div>
+          </section>
+        </aside>
+      </section>
+    </main>
+
+    <script src="../js/config.js"></script>
+    <script src="./js/auth.js"></script>
+    <script src="./js/ai.js"></script>
+  </body>
+</html>

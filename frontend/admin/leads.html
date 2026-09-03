@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Leads | Admin | Car Dealer IA</title>
+    <link rel="stylesheet" href="./css/admin.css" />
+    <link rel="stylesheet" href="./css/sales.css" />
+  </head>
+  <body class="sales-page">
+    <aside class="sidebar">
+      <div class="admin-logo">
+        <span>⚡</span><strong>CAR DEALER IA</strong>
+      </div>
+      <nav aria-label="Administração">
+        <a href="./index.html">Dashboard</a
+        ><a href="./vehicles.html">Veículos</a
+        ><a href="./leads.html" class="active" aria-current="page">Leads</a
+        ><a href="./customers.html">Clientes</a
+        ><a href="./proposals.html">Propostas</a
+        ><a href="./sales.html">Vendas</a><a href="./ai.html">IA</a
+        ><a href="./settings.html">Configurações</a>
+      </nav>
+      <a href="../index.html" class="public-site">← Ver site público</a>
+      <button id="logoutButton" class="sales-secondary" type="button">
+        Sair
+      </button>
+    </aside>
+    <main class="admin-main">
+      <header class="admin-header">
+        <div>
+          <span class="eyebrow">OPORTUNIDADES</span>
+          <h1>Leads</h1>
+          <p class="sales-subtitle">
+            Organize os interessados e acompanhe cada retorno.
+          </p>
+        </div>
+        <button id="newLead" class="sales-primary" disabled>+ Novo lead</button>
+      </header>
+      <p id="pageMessage" class="sales-message" role="status" hidden></p>
+      <section class="sales-stats" aria-label="Resumo de todos os leads">
+        <article>
+          <span>Novos interessados</span><strong id="newCount">—</strong
+          ><small>Aguardando primeiro atendimento</small>
+        </article>
+        <article>
+          <span>Em andamento</span><strong id="activeCount">—</strong
+          ><small>Em atendimento ou qualificados</small>
+        </article>
+        <article>
+          <span>Retornos vencidos</span><strong id="overdueCount">—</strong
+          ><small>Leads abertos com retorno anterior a hoje</small>
+        </article>
+      </section>
+      <section class="lead-integration-card">
+        <div>
+          <span class="eyebrow">META + IA</span>
+          <h2>Captação automática</h2>
+          <p id="metaStatus">Verificando configuração...</p>
+        </div>
+        <small
+          >Lead Ads importa o contato. A IA analisa e sugere; nenhuma mensagem é
+          enviada automaticamente.</small
+        >
+      </section>
+      <section class="sales-history">
+        <div class="sales-section-heading">
+          <h2>Seu atendimento</h2>
+          <span id="recordCount"></span>
+        </div>
+        <form id="filters" class="sales-filters">
+          <label
+            >Buscar<input
+              id="search"
+              type="search"
+              placeholder="Nome, contato ou veículo" /></label
+          ><label
+            >Etapa<select id="statusFilter">
+              <option value="all">Todas</option>
+              <option value="new">Novo</option>
+              <option value="contacting">Em atendimento</option>
+              <option value="qualified">Qualificado</option>
+              <option value="lost">Perdido</option>
+              <option value="converted">Convertido</option>
+            </select></label
+          ><label
+            >Origem<select id="sourceFilter">
+              <option value="all">Todas</option>
+              <option value="website">Site</option>
+              <option value="whatsapp">WhatsApp</option>
+              <option value="instagram">Instagram</option>
+              <option value="facebook">Facebook</option>
+              <option value="referral">Indicação</option>
+              <option value="walkin">Visita à loja</option>
+              <option value="other">Outra</option>
+            </select></label
+          ><label
+            >Retorno<select id="returnFilter">
+              <option value="all">Todos</option>
+              <option value="overdue">Vencidos</option>
+            </select></label
+          ><button class="sales-secondary" type="submit">Atualizar</button>
+        </form>
+        <div class="sales-table-scroll">
+          <table class="sales-table">
+            <thead>
+              <tr>
+                <th>Interessado</th>
+                <th>Interesse / origem</th>
+                <th>Etapa</th>
+                <th>Próximo retorno</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="leadRows">
+              <tr>
+                <td colspan="5" class="sales-empty">Carregando leads...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="sales-footnote">
+          As origens são informadas no cadastro. Esta versão não importa
+          contatos nem envia mensagens automaticamente.
+        </p>
+      </section>
+    </main>
+    <dialog id="leadDialog" class="sales-dialog" aria-labelledby="leadTitle">
+      <div class="sales-dialog-heading">
+        <h2 id="leadTitle">Novo lead</h2>
+        <button
+          type="button"
+          class="sales-close"
+          data-close="leadDialog"
+          aria-label="Fechar"
+        >
+          ×
+        </button>
+      </div>
+      <form id="leadForm">
+        <div class="sales-form-grid">
+          <label class="sales-full"
+            >Nome<input
+              name="name"
+              required
+              maxlength="120"
+              autocomplete="name" /></label
+          ><label
+            >Telefone<input
+              name="phone"
+              type="tel"
+              maxlength="30"
+              autocomplete="tel" /></label
+          ><label
+            >E-mail<input
+              name="email"
+              type="email"
+              maxlength="160"
+              autocomplete="email" /></label
+          ><label>Cidade (opcional)<input name="city" maxlength="100" /></label
+          ><label
+            >Origem<select name="source" required>
+              <option value="">Selecione</option>
+              <option value="website">Site</option>
+              <option value="whatsapp">WhatsApp</option>
+              <option value="instagram">Instagram</option>
+              <option value="facebook">Facebook</option>
+              <option value="referral">Indicação</option>
+              <option value="walkin">Visita à loja</option>
+              <option value="other">Outra</option>
+            </select></label
+          ><label class="sales-full"
+            >Veículo de interesse (opcional)<select
+              name="vehicle_id"
+              id="vehicleSelect"
+            >
+              <option value="">Ainda não definido</option>
+            </select></label
+          ><label
+            >Orçamento (R$, opcional)<input
+              name="budget"
+              type="number"
+              min="0.01"
+              max="100000000"
+              step="0.01"
+              inputmode="decimal" /></label
+          ><label
+            >Próximo retorno (opcional)<input
+              name="next_contact_date"
+              type="date" /></label
+          ><label class="sales-full"
+            >Observações iniciais<textarea
+              name="notes"
+              rows="3"
+              maxlength="2000"
+              placeholder="O que a pessoa procura? Como prefere ser atendida?"
+            ></textarea>
+          </label>
+        </div>
+        <p class="sales-footnote">
+          Preencha pelo menos um contato: telefone ou e-mail. O retorno aparece
+          no painel; não cria notificações.
+        </p>
+        <p id="formMessage" class="sales-message" role="alert" hidden></p>
+        <div class="sales-dialog-actions">
+          <button class="sales-secondary" type="button" data-close="leadDialog">
+            Voltar</button
+          ><button id="saveLead" class="sales-primary" type="submit">
+            Salvar lead
+          </button>
+        </div>
+      </form>
+    </dialog>
+    <dialog
+      id="detailDialog"
+      class="sales-dialog"
+      aria-labelledby="detailTitle"
+    >
+      <div class="sales-dialog-heading">
+        <h2 id="detailTitle">Ficha do lead</h2>
+        <button
+          type="button"
+          class="sales-close"
+          data-close="detailDialog"
+          aria-label="Fechar"
+        >
+          ×
+        </button>
+      </div>
+      <div id="leadDetails"></div>
+      <section class="lead-ai-panel">
+        <h3>Assistente IA</h3>
+        <div id="leadAiContent">Este lead ainda não foi analisado.</div>
+      </section>
+      <div
+        id="leadActions"
+        class="sales-dialog-actions"
+        style="flex-wrap: wrap"
+      ></div>
+      <form id="lossForm" hidden class="lead-subform">
+        <label
+          >Motivo da perda<textarea
+            id="lossReason"
+            required
+            maxlength="500"
+            rows="2"
+          ></textarea></label
+        ><button type="submit" class="sales-secondary">Confirmar perda</button>
+      </form>
+      <form id="convertForm" hidden class="lead-subform">
+        <label
+          >Cadastro de destino<select id="customerSelect">
+            <option value="">Criar novo cliente com os dados do lead</option>
+          </select></label
+        >
+        <p class="sales-footnote">
+          Confira se a pessoa selecionada é a mesma. Vincular a um cliente
+          existente não altera os dados dele. A conversão não registra uma venda
+          nem reserva veículo.
+        </p>
+        <button type="submit" class="sales-primary">
+          Confirmar conversão em cliente
+        </button>
+      </form>
+      <p id="detailMessage" class="sales-message" role="alert" hidden></p>
+      <section class="customer-history">
+        <h3>Histórico de atendimento</h3>
+        <form id="noteForm">
+          <label
+            >Nova anotação<textarea
+              id="noteContent"
+              required
+              maxlength="2000"
+              rows="2"
+              placeholder="Registre o que foi conversado e o próximo passo."
+            ></textarea></label
+          ><button id="saveNote" type="submit" class="sales-secondary">
+            Registrar atendimento
+          </button>
+        </form>
+        <div id="eventList"></div>
+      </section>
+    </dialog>
+    <script src="../js/config.js"></script>
+    <script src="./js/auth.js"></script>
+    <script src="./js/leads.js"></script>
+  </body>
+</html>
