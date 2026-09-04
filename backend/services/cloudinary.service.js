@@ -63,6 +63,10 @@ function uploadBuffer(buffer, { folder, publicId } = {}) {
   });
 }
 
+function describeError(error) {
+  return error?.message || error?.error?.message || String(error);
+}
+
 async function deleteAsset(publicId) {
   if (!publicId || !ensureConfigured()) {
     return false;
@@ -73,7 +77,7 @@ async function deleteAsset(publicId) {
 
     return true;
   } catch (error) {
-    console.error("Erro ao remover imagem no Cloudinary:", error.message);
+    console.error("Erro ao remover imagem no Cloudinary:", describeError(error));
 
     return false;
   }
@@ -86,18 +90,30 @@ async function deleteFolder(folderPrefix) {
 
   try {
     await cloudinary.api.delete_resources_by_prefix(folderPrefix);
-
-    await cloudinary.api.delete_folder(folderPrefix);
-
-    return true;
   } catch (error) {
     console.error(
-      "Erro ao remover pasta de imagens no Cloudinary:",
-      error.message,
+      "Erro ao remover imagens da pasta no Cloudinary:",
+      describeError(error),
     );
 
     return false;
   }
+
+  /*
+    Remover a pasta em si é cosmético (o Cloudinary não
+    exige pastas vazias) — não deixamos isso mascarar o
+    sucesso da limpeza das imagens acima.
+  */
+  try {
+    await cloudinary.api.delete_folder(folderPrefix);
+  } catch (error) {
+    console.error(
+      "Aviso: não foi possível remover a pasta vazia no Cloudinary:",
+      describeError(error),
+    );
+  }
+
+  return true;
 }
 
 module.exports = {

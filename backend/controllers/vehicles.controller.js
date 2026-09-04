@@ -951,7 +951,12 @@ const deleteVehicle = async (req, res) => {
       vehicle: result.rows[0],
     });
   } catch (error) {
-    if (error.code === "23503") {
+    /*
+      23503 = violação de chave estrangeira (INSERT/UPDATE).
+      23001 = violação de RESTRICT em DELETE (o caso real aqui,
+      ex.: veículo com venda vinculada).
+    */
+    if (error.code === "23503" || error.code === "23001") {
       return res.status(409).json({ error: "Este veículo possui registros vinculados e não pode ser excluído. O histórico de vendas deve ser preservado." });
     }
     console.error("Erro ao excluir veículo:", error);

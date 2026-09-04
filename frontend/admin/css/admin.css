@@ -2899,3 +2899,147 @@ body.light-theme {
     grid-column: 2;
   }
 }
+
+/* =========================================
+   MODAL DE CONFIRMAÇÃO
+========================================= */
+
+.confirm-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 20px;
+}
+
+.confirm-modal[hidden] {
+  display: none;
+}
+
+.confirm-modal-backdrop {
+  position: absolute;
+  inset: 0;
+
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(2px);
+
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.confirm-modal-card {
+  position: relative;
+
+  width: 100%;
+  max-width: 380px;
+
+  padding: 28px 26px 24px;
+
+  border: 1px solid var(--border-color);
+  border-radius: 18px;
+
+  background: var(--card-bg);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.4);
+
+  text-align: center;
+
+  opacity: 0;
+  transform: translateY(10px) scale(0.97);
+
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease;
+}
+
+.confirm-modal.is-visible .confirm-modal-backdrop {
+  opacity: 1;
+}
+
+.confirm-modal.is-visible .confirm-modal-card {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.confirm-modal-icon {
+  width: 48px;
+  height: 48px;
+  margin: 0 auto 18px;
+
+  display: grid;
+  place-items: center;
+
+  border-radius: 50%;
+
+  background: rgba(230, 60, 60, 0.14);
+  color: #e63c3c;
+
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.confirm-modal-card h3 {
+  margin-bottom: 10px;
+
+  color: var(--text-color);
+  font-size: 18px;
+}
+
+.confirm-modal-card p {
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.confirm-modal-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 24px;
+}
+
+.confirm-modal-actions button {
+  flex: 1;
+  padding: 12px 16px;
+
+  border-radius: 10px;
+  border: 1px solid transparent;
+
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    transform 0.15s ease;
+}
+
+.confirm-modal-cancel {
+  background: transparent;
+  border-color: var(--border-color);
+  color: var(--text-color);
+}
+
+.confirm-modal-cancel:hover {
+  background: var(--card-bg-secondary);
+}
+
+.confirm-modal-confirm {
+  background: #e63c3c;
+  color: #ffffff;
+}
+
+.confirm-modal-confirm:hover {
+  background: #cf2e2e;
+  transform: translateY(-1px);
+}
+
+.confirm-modal-confirm:disabled,
+.confirm-modal-cancel:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}

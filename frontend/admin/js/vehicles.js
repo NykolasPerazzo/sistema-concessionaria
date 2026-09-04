@@ -315,6 +315,110 @@ function updateVehicleAIInsights() {
   }
 }
 
+/* ==========================================
+   MODAL DE CONFIRMAÇÃO
+========================================== */
+
+const confirmModal = document.getElementById("confirmModal");
+const confirmModalTitle = document.getElementById("confirmModalTitle");
+const confirmModalMessage = document.getElementById("confirmModalMessage");
+const confirmModalCancel = document.getElementById("confirmModalCancel");
+const confirmModalConfirm = document.getElementById("confirmModalConfirm");
+const confirmModalBackdrop = document.getElementById("confirmModalBackdrop");
+
+function closeConfirmModal() {
+  confirmModal.classList.remove("is-visible");
+
+  setTimeout(() => {
+    confirmModal.hidden = true;
+    confirmModalCancel.hidden = false;
+  }, 200);
+}
+
+function openConfirmModal({ title, message, confirmText = "Confirmar" }) {
+  return new Promise((resolve) => {
+    confirmModalTitle.textContent = title;
+    confirmModalMessage.textContent = message;
+    confirmModalConfirm.textContent = confirmText;
+    confirmModalCancel.hidden = false;
+
+    confirmModal.hidden = false;
+
+    requestAnimationFrame(() => {
+      confirmModal.classList.add("is-visible");
+    });
+
+    function finish(result) {
+      closeConfirmModal();
+
+      confirmModalConfirm.removeEventListener("click", onConfirm);
+      confirmModalCancel.removeEventListener("click", onCancel);
+      confirmModalBackdrop.removeEventListener("click", onCancel);
+      document.removeEventListener("keydown", onKeydown);
+
+      resolve(result);
+    }
+
+    function onConfirm() {
+      finish(true);
+    }
+
+    function onCancel() {
+      finish(false);
+    }
+
+    function onKeydown(event) {
+      if (event.key === "Escape") {
+        onCancel();
+      }
+    }
+
+    confirmModalConfirm.addEventListener("click", onConfirm);
+    confirmModalCancel.addEventListener("click", onCancel);
+    confirmModalBackdrop.addEventListener("click", onCancel);
+    document.addEventListener("keydown", onKeydown);
+  });
+}
+
+function showModalMessage({ title, message }) {
+  return new Promise((resolve) => {
+    confirmModalTitle.textContent = title;
+    confirmModalMessage.textContent = message;
+    confirmModalConfirm.textContent = "Entendi";
+    confirmModalCancel.hidden = true;
+
+    confirmModal.hidden = false;
+
+    requestAnimationFrame(() => {
+      confirmModal.classList.add("is-visible");
+    });
+
+    function finish() {
+      closeConfirmModal();
+
+      confirmModalConfirm.removeEventListener("click", onOk);
+      confirmModalBackdrop.removeEventListener("click", onOk);
+      document.removeEventListener("keydown", onKeydown);
+
+      resolve();
+    }
+
+    function onOk() {
+      finish();
+    }
+
+    function onKeydown(event) {
+      if (event.key === "Escape") {
+        onOk();
+      }
+    }
+
+    confirmModalConfirm.addEventListener("click", onOk);
+    confirmModalBackdrop.addEventListener("click", onOk);
+    document.addEventListener("keydown", onKeydown);
+  });
+}
+
 async function deleteVehicle(id) {
   const vehicle = vehicles.find((vehicle) => vehicle.id === id);
 
@@ -322,9 +426,11 @@ async function deleteVehicle(id) {
     return;
   }
 
-  const confirmed = confirm(
-    `Deseja realmente excluir ${vehicle.brand} ${vehicle.model}?`,
-  );
+  const confirmed = await openConfirmModal({
+    title: "Excluir veículo?",
+    message: `Tem certeza que deseja excluir o ${vehicle.brand} ${vehicle.model}? Essa ação não pode ser desfeita.`,
+    confirmText: "Excluir",
+  });
 
   if (!confirmed) {
     return;
@@ -346,7 +452,10 @@ async function deleteVehicle(id) {
   } catch (error) {
     console.error(error);
 
-    alert(error.message);
+    await showModalMessage({
+      title: "Não foi possível excluir",
+      message: error.message,
+    });
   }
 }
 
