@@ -46,6 +46,11 @@ async function loadFeaturedVehicles() {
     const heroSection = document.querySelector(".hero-showcase");
     if (heroSection) heroSection.style.display = heroVehicles.length ? "" : "none";
 
+    const stockCountElement = document.getElementById("aiFinderStockCount");
+    if (stockCountElement) {
+      stockCountElement.textContent = vehicles.length;
+    }
+
     if (heroVehicles.length) {
       createHeroNavigation();
 
@@ -263,13 +268,53 @@ function updateHeroVehicle(index, animate = true) {
 
       hero.classList.remove("changing");
 
+      /*
+        "Entra por baixo": posiciona o novo carro
+        abaixo/reduzido sem transição, espera dois
+        frames (garante que o navegador registrou
+        essa posição) e só então remove a classe —
+        assim ele anima subindo até o lugar.
+      */
+
+      if (animate) {
+        hero.classList.add("entering");
+
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            hero.classList.remove("entering");
+          });
+        });
+      }
+
       setTimeout(() => {
         heroChanging = false;
       }, 500);
+
+      scheduleHeroAutoplay();
     },
 
     animate ? 320 : 0,
   );
+}
+
+/* =========================================
+   TROCA AUTOMÁTICA
+========================================= */
+
+let heroAutoplayTimer = null;
+
+function scheduleHeroAutoplay() {
+  clearTimeout(heroAutoplayTimer);
+
+  if (heroVehicles.length < 2) {
+    return;
+  }
+
+  heroAutoplayTimer = setTimeout(() => {
+    const nextIndex = (currentHeroVehicle + 1) % heroVehicles.length;
+
+    updateHeroVehicle(nextIndex);
+  }, 6000);
 }
 
 /* =========================================
@@ -401,6 +446,17 @@ function updateHeroNavigation(index) {
 const hero = document.querySelector(".hero-showcase");
 
 if (hero) {
+  /*
+    Enquanto ainda há carro pra trocar naquela
+    direção, intercepta o scroll do mouse (mesmo
+    delta pequeno, pra não vazar um pouco de scroll
+    da página a cada tentativa). Ao chegar no
+    primeiro/último carro, libera o scroll normal
+    da página nessa direção.
+  */
+
+  const WHEEL_THRESHOLD = 4;
+
   hero.addEventListener(
     "wheel",
     (event) => {
@@ -408,25 +464,25 @@ if (hero) {
         return;
       }
 
-      if (Math.abs(event.deltaY) < 20) {
+      const goingDown = event.deltaY > 0;
+
+      const hasNext = currentHeroVehicle < heroVehicles.length - 1;
+      const hasPrev = currentHeroVehicle > 0;
+
+      if ((goingDown && !hasNext) || (!goingDown && !hasPrev)) {
         return;
       }
 
-      /* DESCENDO */
+      event.preventDefault();
 
-      if (event.deltaY > 0) {
-        if (currentHeroVehicle < heroVehicles.length - 1) {
-          event.preventDefault();
+      if (Math.abs(event.deltaY) < WHEEL_THRESHOLD) {
+        return;
+      }
 
-          updateHeroVehicle(currentHeroVehicle + 1);
-        }
+      if (goingDown) {
+        updateHeroVehicle(currentHeroVehicle + 1);
       } else {
-        /* SUBINDO */
-        if (currentHeroVehicle > 0) {
-          event.preventDefault();
-
-          updateHeroVehicle(currentHeroVehicle - 1);
-        }
+        updateHeroVehicle(currentHeroVehicle - 1);
       }
     },
 
@@ -434,6 +490,132 @@ if (hero) {
       passive: false,
     },
   );
+
+  /*
+    No celular não existe "wheel" — troca o
+    veículo em destaque com um swipe horizontal.
+  */
+
+  let touchStartX = 0;
+  let touchStartY = 0;
+
+  hero.addEventListener(
+    "touchstart",
+    (event) => {
+      const touch = event.touches[0];
+
+      touchStartX = touch.clientX;
+      touchStartY = touch.clientY;
+    },
+    {
+      passive: true,
+    },
+  );
+
+  hero.addEventListener(
+    "touchend",
+    (event) => {
+      if (heroChanging || !heroVehicles.length) {
+        return;
+      }
+
+      const touch = event.changedTouches[0];
+
+      const deltaX = touch.clientX - touchStartX;
+      const deltaY = touch.clientY - touchStartY;
+
+      /* Ignora se o gesto foi mais vertical que horizontal */
+
+      if (Math.abs(deltaX) < 40 || Math.abs(deltaX) < Math.abs(deltaY)) {
+        return;
+      }
+
+      if (deltaX < 0) {
+        if (currentHeroVehicle < heroVehicles.length - 1) {
+          updateHeroVehicle(currentHeroVehicle + 1);
+        }
+      } else if (currentHeroVehicle > 0) {
+        updateHeroVehicle(currentHeroVehicle - 1);
+      }
+    },
+    {
+      passive: true,
+    },
+  );
+}
+
+/* =========================================
+   ASSISTENTE DE IA (ENCONTRAR MEU CARRO)
+========================================= */
+
+const aiFinderForm = document.getElementById("aiFinderForm");
+const aiFinderResult = document.getElementById("aiFinderResult");
+
+function showAiFinderResult(text, type) {
+  if (!aiFinderResult) {
+    return;
+  }
+
+  aiFinderResult.hidden = false;
+  aiFinderResult.textContent = text;
+  aiFinderResult.className = `ai-finder-result ${type}`;
+}
+
+if (aiFinderForm) {
+  aiFinderForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    const budget = document.getElementById("aiFinderBudget").value.trim();
+    const usage = document.getElementById("aiFinderUsage").value.trim();
+    const priority = document.getElementById("aiFinderPriority").value.trim();
+
+    if (!budget && !usage) {
+      showAiFinderResult(
+        "Conte pelo menos o orçamento ou o uso principal do carro.",
+        "error",
+      );
+
+      return;
+    }
+
+    const submitButton = aiFinderForm.querySelector(".ai-finder-submit");
+
+    const originalText = submitButton.textContent;
+
+    submitButton.disabled = true;
+    submitButton.textContent = "Buscando...";
+
+    showAiFinderResult("Consultando o estoque...", "loading");
+
+    try {
+      const response = await fetch(`${API_URL}/ai/recommend`, {
+        method: "POST",
+
+        headers: {
+          "Content-Type": "application/json",
+        },
+
+        body: JSON.stringify({ budget, usage, priority }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.error || "Não foi possível buscar uma recomendação.",
+        );
+      }
+
+      showAiFinderResult(data.answer, "success");
+    } catch (error) {
+      console.error("Erro ao buscar recomendação:", error);
+
+      showAiFinderResult(error.message, "error");
+    } finally {
+      submitButton.disabled = false;
+      submitButton.textContent = originalText;
+    }
+  });
 }
 
 /* =========================================
@@ -533,11 +715,17 @@ function applyPublicSettings() {
   /* IA */
 
   if (settings.ai_enabled === false) {
-    document
-      .querySelectorAll("#heroAiButton, #findVehicleAiButton")
-      .forEach((element) => {
-        element.style.display = "none";
-      });
+    const heroAiButton = document.getElementById("heroAiButton");
+
+    if (heroAiButton) {
+      heroAiButton.style.display = "none";
+    }
+
+    const aiFinderSection = document.getElementById("aiFinderSection");
+
+    if (aiFinderSection) {
+      aiFinderSection.style.display = "none";
+    }
   }
 }
 

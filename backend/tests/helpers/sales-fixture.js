@@ -41,6 +41,12 @@ async function fixture() {
   );
   await db.exec(metaAiMigration);
   await db.exec(metaAiMigration);
+  const cloudinaryMigration = fs.readFileSync(
+    path.join(__dirname, "../../database/migrations/006_cloudinary_images.sql"),
+    "utf8",
+  );
+  await db.exec(cloudinaryMigration);
+  await db.exec(cloudinaryMigration);
   // PGlite possui uma conexão. A fila impede intercalar transações HTTP no teste.
   let queue = Promise.resolve();
   async function acquire() {

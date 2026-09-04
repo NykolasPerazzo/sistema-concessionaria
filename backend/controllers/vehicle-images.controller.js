@@ -1,4 +1,5 @@
 const pool = require("../database/connection");
+const cloudinaryService = require("../services/cloudinary.service");
 
 const getVehicleImages = async (req, res) => {
     try {
@@ -90,9 +91,23 @@ const deleteVehicleImage = async (req, res) => {
             });
         }
 
+        const deletedImage = result.rows[0];
+
+        /*
+          Remove o arquivo no Cloudinary (best-effort —
+          falha aqui não desfaz a exclusão já
+          confirmada no banco). Imagens antigas locais
+          não têm public_id, então são ignoradas aqui.
+        */
+        if (deletedImage.public_id) {
+            cloudinaryService
+                .deleteAsset(deletedImage.public_id)
+                .catch(() => {});
+        }
+
         res.json({
             message: "Imagem excluída com sucesso!",
-            image: result.rows[0]
+            image: deletedImage
         });
 
     } catch (error) {

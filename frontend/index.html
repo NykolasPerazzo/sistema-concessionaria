@@ -175,24 +175,68 @@
            IA
       ================================== -->
 
-      <section class="ai-section">
-        <div class="ai-content">
-          <span class="section-label"> CAR DEALER IA </span>
+      <section class="ai-finder-section" id="aiFinderSection">
+        <div class="ai-finder-content">
+          <span class="section-label ai-finder-label">
+            Assistente inteligente
+          </span>
 
-          <h2>Não sabe qual carro escolher?</h2>
+          <h2>Diga como você vive. Ele escolhe o carro.</h2>
 
           <p>
-            Converse com nossa inteligência artificial. Conte quanto pretende
-            gastar, seu estilo de vida e o que procura em um veículo.
+            Sem cadastro, sem vendedor. A IA lê a ficha dos
+            <strong id="aiFinderStockCount">—</strong>
+            veículos que estão no pátio hoje e explica por que cada
+            indicação combina com a sua rotina.
           </p>
 
-          <button
-            type="button"
-            class="btn btn-primary"
-            id="findVehicleAiButton"
-          >
-            🤖 Encontrar meu carro
-          </button>
+          <form id="aiFinderForm" class="ai-finder-form">
+            <div class="ai-finder-fields">
+              <div class="ai-finder-field">
+                <label for="aiFinderBudget">Orçamento</label>
+
+                <input
+                  type="text"
+                  id="aiFinderBudget"
+                  placeholder="ex. R$ 80 a 100 mil"
+                />
+              </div>
+
+              <div class="ai-finder-field">
+                <label for="aiFinderUsage">Uso principal</label>
+
+                <input
+                  type="text"
+                  id="aiFinderUsage"
+                  placeholder="ex. Cidade, trajetos curtos"
+                />
+              </div>
+
+              <div class="ai-finder-field">
+                <label for="aiFinderPriority">O que mais importa</label>
+
+                <input
+                  type="text"
+                  id="aiFinderPriority"
+                  placeholder="ex. porta-malas grande, econômico"
+                />
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              class="ai-finder-submit"
+              id="findVehicleAiButton"
+            >
+              Encontrar meu carro
+            </button>
+
+            <span class="ai-finder-hint">
+              Resposta em poucos segundos, sem cadastro.
+            </span>
+          </form>
+
+          <div id="aiFinderResult" class="ai-finder-result" hidden></div>
         </div>
       </section>
     </main>

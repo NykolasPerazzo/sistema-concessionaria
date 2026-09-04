@@ -79,6 +79,11 @@ app.use(
     crossOriginResourcePolicy: {
       policy: "cross-origin",
     },
+    contentSecurityPolicy: {
+      directives: {
+        imgSrc: ["'self'", "data:", "blob:", "https://res.cloudinary.com"],
+      },
+    },
   }),
 );
 app.use(cookieParser());

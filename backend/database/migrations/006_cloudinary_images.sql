@@ -1,0 +1,4 @@
+BEGIN;
+ALTER TABLE vehicles ADD COLUMN IF NOT EXISTS image_public_id TEXT;
+ALTER TABLE vehicle_images ADD COLUMN IF NOT EXISTS public_id TEXT;
+COMMIT;

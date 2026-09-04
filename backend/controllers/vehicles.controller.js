@@ -1,5 +1,5 @@
-const fs = require("fs");
 const pool = require("../database/connection");
+const cloudinaryService = require("../services/cloudinary.service");
 
 /* ==========================================
    CONFIGURAÇÕES
@@ -13,14 +13,6 @@ const MAX_MILEAGE = 10000000;
 /* ==========================================
    AUXILIARES
 ========================================== */
-
-function buildImageUrl(req, filename) {
-  if (!filename) {
-    return null;
-  }
-
-  return `${req.protocol}://${req.get("host")}/uploads/vehicles/${filename}`;
-}
 
 function nullable(value) {
   return value === undefined || value === null || value === "" ? null : value;
@@ -111,36 +103,18 @@ function validDate(value) {
 }
 
 /* ==========================================
-   LIMPAR ARQUIVOS DE UPLOAD EM CASO
-   DE ERRO OU VALIDAÇÃO INVÁLIDA
+   LIMPAR IMAGENS JÁ ENVIADAS AO CLOUDINARY
+   EM CASO DE ERRO NA REQUISIÇÃO
 ========================================== */
 
-function removeUploadedFiles(req) {
-  if (!req.files) {
-    return;
+async function removeUploadedImages(publicIds) {
+  for (const publicId of publicIds) {
+    await cloudinaryService.deleteAsset(publicId);
   }
+}
 
-  const files = [];
-
-  if (Array.isArray(req.files.coverImage)) {
-    files.push(...req.files.coverImage);
-  }
-
-  if (Array.isArray(req.files.galleryImages)) {
-    files.push(...req.files.galleryImages);
-  }
-
-  for (const file of files) {
-    if (!file?.path) {
-      continue;
-    }
-
-    fs.unlink(file.path, (error) => {
-      if (error && error.code !== "ENOENT") {
-        console.error("Erro ao remover arquivo:", error);
-      }
-    });
-  }
+function hasUploadedFiles(req) {
+  return Boolean(req.files?.coverImage?.[0] || req.files?.galleryImages?.length);
 }
 
 /* ==========================================
@@ -453,6 +427,8 @@ const createVehicle = async (req, res) => {
 
   let transactionCompleted = false;
 
+  const uploadedPublicIds = [];
+
   try {
     const body = req.body || {};
 
@@ -463,10 +439,19 @@ const createVehicle = async (req, res) => {
     const validation = validateVehicleData(body);
 
     if (!validation.valid) {
-      removeUploadedFiles(req);
-
       return res.status(400).json({
         error: validation.error,
+      });
+    }
+
+    /* ======================================
+       CLOUDINARY CONFIGURADO?
+    ====================================== */
+
+    if (hasUploadedFiles(req) && !cloudinaryService.configured()) {
+      return res.status(503).json({
+        error:
+          "Upload de imagens indisponível: integração com Cloudinary não configurada.",
       });
     }
 
@@ -485,15 +470,7 @@ const createVehicle = async (req, res) => {
     transactionStarted = true;
 
     /* ======================================
-       IMAGEM PRINCIPAL
-    ====================================== */
-
-    const coverFile = req.files?.coverImage?.[0];
-
-    const imageUrl = coverFile ? buildImageUrl(req, coverFile.filename) : null;
-
-    /* ======================================
-       CRIAR VEÍCULO
+       CRIAR VEÍCULO (SEM IMAGEM AINDA)
     ====================================== */
 
     const result = await client.query(
@@ -531,7 +508,7 @@ const createVehicle = async (req, res) => {
           $12,
           $13,
           $14,
-          $15
+          NULL
         )
 
         RETURNING *
@@ -556,12 +533,37 @@ const createVehicle = async (req, res) => {
         vehicleData.description,
 
         vehicleData.status,
-
-        imageUrl,
       ],
     );
 
     const vehicle = result.rows[0];
+
+    /* ======================================
+       IMAGEM PRINCIPAL
+    ====================================== */
+
+    const coverFile = req.files?.coverImage?.[0];
+
+    if (coverFile) {
+      const uploaded = await cloudinaryService.uploadBuffer(coverFile.buffer, {
+        folder: `car-dealer/vehicles/${vehicle.id}`,
+        publicId: "cover",
+      });
+
+      uploadedPublicIds.push(uploaded.public_id);
+
+      await client.query(
+        `
+          UPDATE vehicles
+          SET image_url = $1, image_public_id = $2
+          WHERE id = $3
+        `,
+        [uploaded.secure_url, uploaded.public_id, vehicle.id],
+      );
+
+      vehicle.image_url = uploaded.secure_url;
+      vehicle.image_public_id = uploaded.public_id;
+    }
 
     /* ======================================
        GALERIA
@@ -570,23 +572,29 @@ const createVehicle = async (req, res) => {
     const galleryFiles = req.files?.galleryImages || [];
 
     for (const file of galleryFiles) {
-      const galleryImageUrl = buildImageUrl(req, file.filename);
+      const uploaded = await cloudinaryService.uploadBuffer(file.buffer, {
+        folder: `car-dealer/vehicles/${vehicle.id}`,
+      });
+
+      uploadedPublicIds.push(uploaded.public_id);
 
       await client.query(
         `
         INSERT INTO vehicle_images (
           vehicle_id,
           image_url,
+          public_id,
           is_cover
         )
 
         VALUES (
           $1,
           $2,
-          $3
+          $3,
+          $4
         )
         `,
-        [vehicle.id, galleryImageUrl, false],
+        [vehicle.id, uploaded.secure_url, uploaded.public_id, false],
       );
     }
 
@@ -613,12 +621,12 @@ const createVehicle = async (req, res) => {
     }
 
     /*
-      Como ocorreu erro no banco,
-      removemos os arquivos recém-enviados
-      para evitar arquivos órfãos.
+      Como o cadastro falhou, removemos do
+      Cloudinary as imagens já enviadas nesta
+      requisição, para não ficarem órfãs.
     */
 
-    removeUploadedFiles(req);
+    await removeUploadedImages(uploadedPublicIds);
 
     console.error("Erro ao cadastrar veículo:", error);
 
@@ -641,14 +649,14 @@ const updateVehicle = async (req, res) => {
 
   let transactionCompleted = false;
 
+  const uploadedPublicIds = [];
+
   try {
     /* ======================================
        VALIDAR ID
     ====================================== */
 
     if (!validId(req.params.id)) {
-      removeUploadedFiles(req);
-
       return res.status(400).json({
         error: "ID do veículo inválido.",
       });
@@ -665,10 +673,19 @@ const updateVehicle = async (req, res) => {
     const validation = validateVehicleData(body);
 
     if (!validation.valid) {
-      removeUploadedFiles(req);
-
       return res.status(400).json({
         error: validation.error,
+      });
+    }
+
+    /* ======================================
+       CLOUDINARY CONFIGURADO?
+    ====================================== */
+
+    if (hasUploadedFiles(req) && !cloudinaryService.configured()) {
+      return res.status(503).json({
+        error:
+          "Upload de imagens indisponível: integração com Cloudinary não configurada.",
       });
     }
 
@@ -704,8 +721,6 @@ const updateVehicle = async (req, res) => {
 
       transactionCompleted = true;
 
-      removeUploadedFiles(req);
-
       return res.status(404).json({
         error: "Veículo não encontrado.",
       });
@@ -722,7 +737,6 @@ const updateVehicle = async (req, res) => {
     )) {
       await client.query("ROLLBACK");
       transactionCompleted = true;
-      removeUploadedFiles(req);
       return res.status(409).json({ error: "Este veículo tem venda registrada. Cancele a venda na área de Vendas antes de alterar status ou valores financeiros." });
     }
 
@@ -733,16 +747,27 @@ const updateVehicle = async (req, res) => {
     const coverFile = req.files?.coverImage?.[0];
 
     /*
-      Se uma imagem nova for enviada,
-      substitui a URL anterior.
-
-      Se não houver nova imagem,
-      mantém a imagem atual.
+      Se uma imagem nova for enviada, sobe pro
+      Cloudinary (mesmo public_id "cover",
+      substituindo a versão anterior no próprio
+      Cloudinary). Sem imagem nova, mantém a atual
+      (inclusive imagens antigas em /uploads).
     */
 
-    const imageUrl = coverFile
-      ? buildImageUrl(req, coverFile.filename)
-      : currentVehicle.image_url;
+    let imageUrl = currentVehicle.image_url;
+    let imagePublicId = currentVehicle.image_public_id;
+
+    if (coverFile) {
+      const uploaded = await cloudinaryService.uploadBuffer(coverFile.buffer, {
+        folder: `car-dealer/vehicles/${id}`,
+        publicId: "cover",
+      });
+
+      uploadedPublicIds.push(uploaded.public_id);
+
+      imageUrl = uploaded.secure_url;
+      imagePublicId = uploaded.public_id;
+    }
 
     /* ======================================
        ATUALIZAR VEÍCULO
@@ -767,9 +792,10 @@ const updateVehicle = async (req, res) => {
           color = $12,
           description = $13,
           status = $14,
-          image_url = $15
+          image_url = $15,
+          image_public_id = $16
 
-        WHERE id = $16
+        WHERE id = $17
 
         RETURNING *
         `,
@@ -795,6 +821,7 @@ const updateVehicle = async (req, res) => {
         vehicleData.status,
 
         imageUrl,
+        imagePublicId,
 
         id,
       ],
@@ -808,23 +835,29 @@ const updateVehicle = async (req, res) => {
     const galleryFiles = req.files?.galleryImages || [];
 
     for (const file of galleryFiles) {
-      const galleryImageUrl = buildImageUrl(req, file.filename);
+      const uploaded = await cloudinaryService.uploadBuffer(file.buffer, {
+        folder: `car-dealer/vehicles/${id}`,
+      });
+
+      uploadedPublicIds.push(uploaded.public_id);
 
       await client.query(
         `
         INSERT INTO vehicle_images (
           vehicle_id,
           image_url,
+          public_id,
           is_cover
         )
 
         VALUES (
           $1,
           $2,
-          $3
+          $3,
+          $4
         )
         `,
-        [id, galleryImageUrl, false],
+        [id, uploaded.secure_url, uploaded.public_id, false],
       );
     }
 
@@ -851,12 +884,11 @@ const updateVehicle = async (req, res) => {
     }
 
     /*
-      Se o update falhar,
-      remove somente os arquivos
-      que acabaram de ser enviados.
+      Se o update falhar, remove do Cloudinary
+      somente as imagens enviadas nesta requisição.
     */
 
-    removeUploadedFiles(req);
+    await removeUploadedImages(uploadedPublicIds);
 
     console.error("Erro ao atualizar veículo:", error);
 
@@ -900,6 +932,18 @@ const deleteVehicle = async (req, res) => {
         error: "Veículo não encontrado.",
       });
     }
+
+    /*
+      Remove as imagens do veículo no Cloudinary
+      (best-effort — falha aqui não desfaz a
+      exclusão já confirmada no banco).
+    */
+
+    cloudinaryService
+      .deleteFolder(`car-dealer/vehicles/${id}`)
+      .catch((error) =>
+        console.error("Erro ao limpar pasta do Cloudinary:", error.message),
+      );
 
     return res.status(200).json({
       message: "Veículo excluído com sucesso!",

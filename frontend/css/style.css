@@ -389,19 +389,151 @@ a {
   color: var(--color-text-dim);
 }
 
-.ai-section {
+.ai-finder-section {
   padding: 100px 6%;
-  background: var(--color-surface);
+  background: #0a0a0a;
+
+  display: flex;
+  justify-content: center;
 }
 
-.ai-content {
-  max-width: 700px;
+.ai-finder-content {
+  max-width: 720px;
+  width: 100%;
+
+  text-align: center;
 }
 
-.ai-content p {
-  margin: 25px 0;
-  color: var(--color-text-muted);
+.ai-finder-label {
+  display: block;
+  color: #9a9a9a;
+}
+
+.ai-finder-content h2 {
+  margin-top: 14px;
+  font-size: clamp(28px, 4vw, 40px);
+  line-height: 1.25;
+  color: #ffffff;
+}
+
+.ai-finder-content > p {
+  margin: 22px auto 0;
+  max-width: 560px;
+
+  color: #a3a3a3;
+  font-size: 15px;
   line-height: 1.7;
+}
+
+.ai-finder-content > p strong {
+  color: #ffffff;
+}
+
+.ai-finder-form {
+  margin-top: 40px;
+}
+
+.ai-finder-fields {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+
+  text-align: left;
+}
+
+.ai-finder-field label {
+  display: block;
+  margin-bottom: 8px;
+
+  color: #8f8f8f;
+  font-size: 12px;
+}
+
+.ai-finder-field input {
+  width: 100%;
+  padding: 14px 16px;
+
+  background: #161616;
+  border: 1px solid #2a2a2a;
+  border-radius: 10px;
+
+  color: #ffffff;
+  font-size: 14px;
+}
+
+.ai-finder-field input::placeholder {
+  color: #6b6b6b;
+}
+
+.ai-finder-field input:focus {
+  outline: none;
+  border-color: #3b82f6;
+}
+
+.ai-finder-submit {
+  display: block;
+  margin: 28px auto 0;
+  padding: 15px 34px;
+
+  background: #2f6fed;
+  border: none;
+  border-radius: 999px;
+
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition:
+    background 0.2s ease,
+    transform 0.2s ease;
+}
+
+.ai-finder-submit:hover {
+  background: #245bc7;
+  transform: translateY(-1px);
+}
+
+.ai-finder-submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.ai-finder-hint {
+  display: block;
+  margin-top: 14px;
+
+  color: #7c7c7c;
+  font-size: 13px;
+}
+
+.ai-finder-result {
+  margin: 28px auto 0;
+  max-width: 600px;
+  padding: 18px 22px;
+
+  background: #141414;
+  border: 1px solid #262626;
+  border-radius: 12px;
+
+  color: #e5e5e5;
+  font-size: 14px;
+  line-height: 1.7;
+  text-align: left;
+
+  white-space: pre-line;
+}
+
+.ai-finder-result.loading {
+  color: #9a9a9a;
+  font-style: italic;
+}
+
+.ai-finder-result.error {
+  border-color: #7a2b2b;
+  color: #ff9b9b;
 }
 
 .footer {
@@ -1237,7 +1369,15 @@ a {
 .hero-showcase.changing .hero-car-image {
   opacity: 0;
 
-  transform: translateX(45px) scale(0.97);
+  /* o carro atual recua e encolhe um pouco */
+  transform: translateY(-40px) scale(0.92);
+}
+
+.hero-showcase.entering .hero-car-image {
+  opacity: 0;
+
+  /* o próximo carro começa por baixo, reduzido */
+  transform: translateY(80px) scale(0.96);
 }
 
 /* =========================================
@@ -1753,25 +1893,24 @@ a {
   .vehicle-link {
     color: var(--color-accent);
   }
-  .ai-section {
+  .ai-finder-section {
     margin: 0 20px 40px;
-    padding: 24px 20px;
-    border: 1px solid var(--color-border-faint);
+    padding: 32px 20px;
+    border: 1px solid #222222;
     border-radius: 16px;
-    background: var(--color-surface);
   }
-  .ai-section h2 {
-    font-size: 23px;
+  .ai-finder-content h2 {
+    font-size: 24px;
   }
-  .ai-content p {
-    margin: 14px 0 20px;
+  .ai-finder-content > p {
+    margin: 14px auto 0;
     font-size: 14px;
   }
-  .ai-content .btn-primary {
+  .ai-finder-fields {
+    grid-template-columns: 1fr;
+  }
+  .ai-finder-submit {
     width: 100%;
-    min-height: 50px;
-    background: var(--color-accent);
-    color: var(--color-on-light);
   }
   .footer {
     padding: 35px 20px;

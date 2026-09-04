@@ -175,6 +175,158 @@ ${question}
   }
 };
 
+/* ==========================================
+   IA - RECOMENDAÇÃO PÚBLICA (SITE)
+========================================== */
+
+const recommendVehicle = async (req, res) => {
+  try {
+    const { budget, usage, priority } = req.body || {};
+
+    const budgetText = typeof budget === "string" ? budget.trim() : "";
+    const usageText = typeof usage === "string" ? usage.trim() : "";
+    const priorityText = typeof priority === "string" ? priority.trim() : "";
+
+    if (!budgetText && !usageText) {
+      return res.status(400).json({
+        error: "Conte pelo menos o orçamento ou o uso principal do carro.",
+      });
+    }
+
+    /* ======================================
+           BUSCAR ESTOQUE DISPONÍVEL
+           (sem dados internos de custo/margem)
+        ====================================== */
+
+    const result = await pool.query(`
+            SELECT
+                id,
+                brand,
+                model,
+                year,
+                price,
+                mileage,
+                fuel,
+                transmission,
+                body_type,
+                color
+            FROM vehicles
+            WHERE status = 'available'
+            ORDER BY id DESC
+        `);
+
+    const vehicles = result.rows;
+
+    if (vehicles.length === 0) {
+      return res.json({
+        answer:
+          "No momento não há veículos disponíveis no estoque para recomendar.",
+      });
+    }
+
+    const stockData = vehicles.map((vehicle) => ({
+      id: vehicle.id,
+      vehicle: `${vehicle.brand} ${vehicle.model}`,
+      year: vehicle.year,
+      price: Number(vehicle.price),
+      mileage: vehicle.mileage ? Number(vehicle.mileage) : null,
+      fuel: vehicle.fuel,
+      transmission: vehicle.transmission,
+      bodyType: vehicle.body_type,
+      color: vehicle.color,
+    }));
+
+    /* ======================================
+           PROMPT
+        ====================================== */
+
+    const prompt = `
+Você é o assistente de vendas do site de uma revenda de veículos.
+
+Sua função é recomendar, para um visitante do site, os veículos do
+estoque abaixo que melhor combinam com o que ele descreveu.
+
+REGRAS:
+
+- Responda somente com base nos dados fornecidos.
+- Não invente veículos, valores ou características.
+- Responda em português do Brasil, em tom amigável e direto.
+- Recomende no máximo 3 veículos, citando marca, modelo e ano.
+- Explique em poucas palavras por que cada um combina com o que a pessoa descreveu.
+- Se nenhum veículo combinar bem, diga isso com sinceridade e sugira o mais próximo.
+- Não peça para o visitante se cadastrar ou falar com um vendedor.
+- Use no máximo 3 parágrafos curtos.
+- Não utilize Markdown.
+
+ESTOQUE DISPONÍVEL:
+
+${JSON.stringify(stockData, null, 2)}
+
+O QUE O VISITANTE DESCREVEU:
+
+Orçamento: ${budgetText || "não informado"}
+Uso principal: ${usageText || "não informado"}
+O que mais importa: ${priorityText || "não informado"}
+        `;
+
+    /* ======================================
+           GEMINI
+        ====================================== */
+
+    const geminiResponse = await fetch(
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent",
+      {
+        method: "POST",
+
+        headers: {
+          "Content-Type": "application/json",
+          "x-goog-api-key": process.env.GEMINI_API_KEY,
+        },
+
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [
+                {
+                  text: prompt,
+                },
+              ],
+            },
+          ],
+        }),
+      },
+    );
+
+    const geminiData = await geminiResponse.json();
+
+    if (!geminiResponse.ok) {
+      console.error("Erro Gemini (recomendação):", geminiData);
+
+      return res.status(500).json({
+        error: "Não foi possível consultar a IA.",
+      });
+    }
+
+    const answer = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text;
+
+    if (!answer) {
+      return res.status(500).json({
+        error: "A IA não retornou uma resposta.",
+      });
+    }
+
+    res.json({
+      answer: answer.trim(),
+    });
+  } catch (error) {
+    console.error("Erro na recomendação pública:", error);
+
+    res.status(500).json({
+      error: "Erro interno do servidor.",
+    });
+  }
+};
+
 const generateVehicleDescription = async (req, res) => {
   try {
     const { brand, model, year, mileage, fuel, transmission, color, price } =
@@ -278,5 +430,6 @@ const generateVehicleDescription = async (req, res) => {
 
 module.exports = {
   askVehicleAI,
+  recommendVehicle,
   generateVehicleDescription,
 };
