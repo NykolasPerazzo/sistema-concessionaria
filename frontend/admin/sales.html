@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Vendas | Admin | Car Dealer IA</title>
+    <link rel="stylesheet" href="./css/admin.css" />
+    <link rel="stylesheet" href="./css/sales.css" />
+  </head>
+  <body class="sales-page">
+    <aside class="sidebar">
+      <div class="admin-logo">
+        <span>⚡</span><strong>CAR DEALER IA</strong>
+      </div>
+      <nav aria-label="Administração">
+        <a href="./index.html">Dashboard</a
+        ><a href="./vehicles.html">Veículos</a><a href="./leads.html">Leads</a>
+        <a href="./customers.html">Clientes</a>
+        <a href="./proposals.html">Propostas</a>
+        <a href="./sales.html" class="active" aria-current="page">Vendas</a>
+        <a href="./ai.html">IA</a><a href="./settings.html">Configurações</a>
+      </nav>
+      <a href="../index.html" class="public-site">← Ver site público</a>
+      <button id="logoutButton" class="sales-secondary" type="button">
+        Sair
+      </button>
+    </aside>
+    <main class="admin-main">
+      <header class="admin-header">
+        <div>
+          <span class="eyebrow">COMERCIAL</span>
+          <h1>Vendas</h1>
+          <p class="sales-subtitle">Cada negócio, do estoque ao resultado.</p>
+        </div>
+        <button class="sales-primary" id="newSaleButton" disabled>
+          + Registrar venda
+        </button>
+      </header>
+      <p id="pageMessage" class="sales-message" role="status" hidden></p>
+      <section
+        class="sales-stats"
+        aria-label="Resumo das vendas ativas no filtro"
+      >
+        <article>
+          <span>Vendas realizadas</span><strong id="salesCount">—</strong
+          ><small>No período selecionado</small>
+        </article>
+        <article>
+          <span>Total vendido</span><strong id="salesRevenue">—</strong
+          ><small>Valor dos negócios registrados</small>
+        </article>
+        <article class="sales-result-card">
+          <span>Resultado das vendas</span><strong id="salesProfit">—</strong
+          ><small>Venda − compra − despesas registradas</small>
+        </article>
+      </section>
+      <section class="sales-history">
+        <div class="sales-section-heading">
+          <h2>Histórico de vendas</h2>
+          <span id="historyCount"></span>
+        </div>
+        <form id="filters" class="sales-filters">
+          <label>De<input id="startDate" type="date" /></label>
+          <label>Até<input id="endDate" type="date" /></label>
+          <label
+            >Situação<select id="saleStatus">
+              <option value="active">Concluídas</option>
+              <option value="cancelled">Canceladas</option>
+              <option value="all">Todas</option>
+            </select></label
+          >
+          <button class="sales-secondary" type="submit">Filtrar</button>
+          <button class="sales-link" id="clearFilters" type="button">
+            Limpar
+          </button>
+        </form>
+        <div class="sales-table-scroll">
+          <table class="sales-table">
+            <thead>
+              <tr>
+                <th>Veículo / comprador</th>
+                <th>Data</th>
+                <th>Valor da venda</th>
+                <th>Resultado</th>
+                <th>Situação</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="salesRows">
+              <tr>
+                <td colspan="6" class="sales-empty">Carregando vendas...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="sales-footnote">
+          Resultado calculado com os custos registrados na confirmação. Não
+          inclui impostos, comissões ou outros custos não cadastrados.
+          Cancelamentos não entram no resumo.
+        </p>
+      </section>
+    </main>
+    <dialog id="saleDialog" class="sales-dialog" aria-labelledby="saleTitle">
+      <div class="sales-dialog-heading">
+        <div>
+          <span class="eyebrow">NOVO NEGÓCIO</span>
+          <h2 id="saleTitle">Registrar venda</h2>
+        </div>
+        <button
+          type="button"
+          class="sales-close"
+          data-close="saleDialog"
+          aria-label="Fechar"
+        >
+          ×
+        </button>
+      </div>
+      <form id="saleForm">
+        <div class="sales-form-grid">
+          <label class="sales-full"
+            >Veículo<select id="vehicleSelect" name="vehicle_id" required>
+              <option value="">Selecione um veículo</option>
+            </select></label
+          >
+          <label
+            >Nome do comprador<input
+              name="buyer_name"
+              required
+              maxlength="120"
+              autocomplete="name"
+          /></label>
+          <label
+            >Telefone (opcional)<input
+              name="buyer_phone"
+              type="tel"
+              maxlength="30"
+              autocomplete="tel"
+          /></label>
+          <label
+            >Valor final da venda (R$)<input
+              id="salePrice"
+              name="sale_price"
+              type="number"
+              step="0.01"
+              min="0.01"
+              max="100000000"
+              required
+              inputmode="decimal"
+          /></label>
+          <label
+            >Data da venda<input
+              id="saleDate"
+              name="sale_date"
+              type="date"
+              required
+          /></label>
+          <label class="sales-full"
+            >Forma de pagamento<select name="payment_method" required>
+              <option value="">Selecione</option>
+              <option value="pix">Pix</option>
+              <option value="transfer">Transferência</option>
+              <option value="cash">Dinheiro</option>
+              <option value="financing">Financiamento</option>
+              <option value="mixed">Misto / com troca</option>
+            </select></label
+          >
+          <label class="sales-full"
+            >Observações (opcional)<textarea
+              name="notes"
+              rows="3"
+              maxlength="2000"
+              placeholder="Condições de pagamento, entrada, veículo na troca..."
+            ></textarea>
+          </label>
+        </div>
+        <div id="salePreview" class="sales-preview" aria-live="polite">
+          Selecione um veículo para conferir os custos.
+        </div>
+        <p class="sales-footnote">
+          A confirmação marca o veículo como vendido. A forma de pagamento é
+          informativa; não registra recebimentos ou parcelas.
+        </p>
+        <p id="formMessage" class="sales-message" role="alert" hidden></p>
+        <div class="sales-dialog-actions">
+          <button class="sales-secondary" type="button" data-close="saleDialog">
+            Voltar</button
+          ><button id="confirmSale" class="sales-primary" type="submit">
+            Confirmar venda
+          </button>
+        </div>
+      </form>
+    </dialog>
+    <dialog
+      id="detailDialog"
+      class="sales-dialog"
+      aria-labelledby="detailTitle"
+    >
+      <div class="sales-dialog-heading">
+        <h2 id="detailTitle">Detalhes da venda</h2>
+        <button
+          type="button"
+          class="sales-close"
+          data-close="detailDialog"
+          aria-label="Fechar"
+        >
+          ×
+        </button>
+      </div>
+      <div id="saleDetails"></div>
+      <form id="cancelForm" class="sales-cancel-form">
+        <label
+          >Motivo do cancelamento<textarea
+            id="cancelReason"
+            required
+            maxlength="500"
+            rows="2"
+            placeholder="Descreva o motivo para manter o histórico."
+          ></textarea>
+        </label>
+        <p class="sales-footnote">
+          O veículo voltará ao status anterior. O registro continuará no
+          histórico.
+        </p>
+        <button
+          class="sales-secondary sales-danger"
+          type="submit"
+          id="cancelSaleButton"
+        >
+          Cancelar esta venda
+        </button>
+      </form>
+      <p id="detailMessage" class="sales-message" role="alert" hidden></p>
+    </dialog>
+    <script src="../js/config.js"></script>
+    <script src="./js/auth.js"></script>
+    <script src="./js/customer-picker.js"></script>
+<script src="./js/sales.js"></script>
+  </body>
+</html>

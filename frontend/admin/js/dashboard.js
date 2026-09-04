@@ -1,141 +1,649 @@
 requireAuth().then((user) => {
-    if (!user) {
-        return;
-    }
+  if (!user) {
+    return;
+  }
 
-    loadDashboard();
+  loadDashboard();
+
+  listenForNewLeads();
 });
 
+/* =========================================
+   CARREGAR DASHBOARD
+========================================= */
+
 async function loadDashboard() {
-    try {
-        const response = await fetch(`${API_URL}/vehicles`, {
-            method: "GET",
-            credentials: "include"
-        });
+  try {
+    const [summaryResponse, vehiclesResponse] = await Promise.all([
+      fetch(`${API_URL}/dashboard/summary`, {
+        credentials: "include",
+      }),
 
-        if (!response.ok) {
-            throw new Error(
-                `Não foi possível carregar os veículos. Status: ${response.status}`
-            );
-        }
+      fetch(`${API_URL}/vehicles`, {
+        credentials: "include",
+      }),
+    ]);
 
-        const data = await response.json();
-
-        console.log("Veículos recebidos:", data);
-
-        const vehicles = data.vehicles;
-
-        updateStats(vehicles);
-        renderRecentVehicles(vehicles);
-
-    } catch (error) {
-        console.error(error);
-
-        document.getElementById("recentVehicles").innerHTML = `
-            <p class="error">
-                Não foi possível carregar os dados.
-            </p>
-        `;
+    if (!summaryResponse.ok) {
+      throw new Error("Não foi possível carregar o resumo do dashboard.");
     }
+
+    if (!vehiclesResponse.ok) {
+      throw new Error("Não foi possível carregar os veículos.");
+    }
+
+    const summary = await summaryResponse.json();
+
+    const vehiclesData = await vehiclesResponse.json();
+
+    const vehicles = vehiclesData.vehicles || [];
+
+    updateDashboardSummary(summary);
+
+    renderRecentVehicles(vehicles);
+  } catch (error) {
+    console.error("Erro ao carregar dashboard:", error);
+
+    const recentVehicles = document.getElementById("recentVehicles");
+
+    if (recentVehicles) {
+      recentVehicles.innerHTML = `
+        <p class="error">
+          Não foi possível carregar os dados.
+        </p>
+      `;
+    }
+  }
 }
 
-function updateStats(vehicles) {
-    const available = vehicles.filter(
-        vehicle => vehicle.status === "available"
-    ).length;
+/* =========================================
+   RESUMO DO DASHBOARD
+========================================= */
 
-    const reserved = vehicles.filter(
-        vehicle => vehicle.status === "reserved"
-    ).length;
+function updateDashboardSummary(summary) {
+  setText("totalVehicles", summary.totalVehicles || 0);
 
-    const sold = vehicles.filter(
-        vehicle => vehicle.status === "sold"
-    ).length;
+  setText("availableVehicles", summary.availableVehicles || 0);
 
-    document.getElementById("totalVehicles").textContent =
-        vehicles.length;
+  setText("reservedVehicles", summary.reservedVehicles || 0);
 
-    document.getElementById("availableVehicles").textContent =
-        available;
+  setText("soldVehicles", summary.soldVehicles || 0);
 
-    document.getElementById("reservedVehicles").textContent =
-        reserved;
+  setText("investedStock", formatCurrency(summary.investedStock));
 
-    document.getElementById("soldVehicles").textContent =
-        sold;
+  setText("stockExpenses", formatCurrency(summary.stockExpenses));
+
+  setText("totalStockCost", formatCurrency(summary.totalCost));
+
+  setText("advertisedStock", formatCurrency(summary.advertisedStock));
+
+  setText("potentialProfit", formatCurrency(summary.potentialProfit));
+
+  setText(
+    "potentialMargin",
+    `${Number(summary.potentialMargin || 0).toFixed(2)}%`,
+  );
+
+  updateOldestStock(summary.oldestEntryDate);
+
+  renderStockAlerts(summary);
+
+  renderOldVehicles(summary.oldVehicles || []);
 }
+
+/* =========================================
+   VEÍCULO MAIS ANTIGO
+========================================= */
+
+function updateOldestStock(entryDate) {
+  const daysElement = document.getElementById("oldestStockDays");
+
+  const dateElement = document.getElementById("oldestStockDate");
+
+  if (!entryDate) {
+    if (daysElement) {
+      daysElement.textContent = "0 dias";
+    }
+
+    if (dateElement) {
+      dateElement.textContent = "Nenhum veículo em estoque";
+    }
+
+    return;
+  }
+
+  const entry = new Date(entryDate);
+
+  const today = new Date();
+
+  entry.setHours(0, 0, 0, 0);
+
+  today.setHours(0, 0, 0, 0);
+
+  const difference = today - entry;
+
+  const days = Math.max(0, Math.floor(difference / (1000 * 60 * 60 * 24)));
+
+  if (daysElement) {
+    daysElement.textContent = `${days} ${days === 1 ? "dia" : "dias"}`;
+  }
+
+  if (dateElement) {
+    dateElement.textContent = `Entrada: ${entry.toLocaleDateString("pt-BR")}`;
+  }
+}
+
+/* =========================================
+   ALERTAS DO ESTOQUE
+========================================= */
+
+function renderStockAlerts(summary) {
+  const container = document.getElementById("stockAlerts");
+
+  if (!container) {
+    return;
+  }
+
+  const alerts = [];
+
+  /* =====================================
+     VEÍCULO MAIS ANTIGO
+  ====================================== */
+
+  if (summary.oldestEntryDate) {
+    const entry = new Date(summary.oldestEntryDate);
+
+    const today = new Date();
+
+    entry.setHours(0, 0, 0, 0);
+
+    today.setHours(0, 0, 0, 0);
+
+    const days = Math.floor((today - entry) / (1000 * 60 * 60 * 24));
+
+    if (days >= 90) {
+      alerts.push({
+        type: "danger",
+
+        title: "Estoque crítico",
+
+        message: `Existe veículo no estoque há ${days} dias.`,
+      });
+    } else if (days >= 60) {
+      alerts.push({
+        type: "warning",
+
+        title: "Veículo parado há muito tempo",
+
+        message: `Existe veículo no estoque há ${days} dias.`,
+      });
+    }
+  }
+
+  /* =====================================
+     LUCRO POTENCIAL NEGATIVO
+  ====================================== */
+
+  if (Number(summary.potentialProfit || 0) < 0) {
+    alerts.push({
+      type: "danger",
+
+      title: "Lucro potencial negativo",
+
+      message: "O custo total do estoque está acima do valor anunciado.",
+    });
+  }
+
+  /* =====================================
+     MARGEM BAIXA
+  ====================================== */
+
+  const margin = Number(summary.potentialMargin || 0);
+
+  if (margin > 0 && margin < 10) {
+    alerts.push({
+      type: "warning",
+
+      title: "Margem potencial baixa",
+
+      message: `A margem atual do estoque está em ${margin.toFixed(2)}%.`,
+    });
+  }
+
+  /* =====================================
+     SEM ALERTAS
+  ====================================== */
+
+  if (alerts.length === 0) {
+    container.innerHTML = `
+      <div class="stock-alert success">
+
+        <strong>
+          Estoque saudável
+        </strong>
+
+        <span>
+          Nenhum alerta importante no momento.
+        </span>
+
+      </div>
+    `;
+
+    return;
+  }
+
+  /* =====================================
+     MOSTRAR ALERTAS
+  ====================================== */
+
+  container.innerHTML = alerts
+    .map((alert) => {
+      return `
+          <div class="stock-alert ${alert.type}">
+
+            <strong>
+              ${alert.title}
+            </strong>
+
+            <span>
+              ${alert.message}
+            </span>
+
+          </div>
+        `;
+    })
+    .join("");
+}
+
+/* =========================================
+   VEÍCULOS MAIS ANTIGOS
+========================================= */
+
+function renderOldVehicles(vehicles) {
+  const container = document.getElementById("oldVehicles");
+
+  if (!container) return;
+
+  if (!vehicles || vehicles.length === 0) {
+    container.innerHTML = `
+      <div class="empty-state">
+        Nenhum veículo encontrado no estoque.
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = vehicles
+    .map((vehicle) => {
+      const days = Number(vehicle.daysInStock || 0);
+      const purchasePrice = Number(vehicle.purchasePrice || 0);
+      const advertisedPrice = Number(vehicle.price || 0);
+
+      let stockClass = "normal";
+      let stockLabel = "Recente";
+
+      if (days >= 90) {
+        stockClass = "danger";
+        stockLabel = "Crítico";
+      } else if (days >= 60) {
+        stockClass = "warning";
+        stockLabel = "Atenção";
+      } else if (days >= 30) {
+        stockClass = "attention";
+        stockLabel = "Acompanhar";
+      }
+
+      const image =
+        vehicle.image_url || vehicle.imageUrl || vehicle.image || "";
+
+      return `
+        <a
+          href="./vehicle-form.html?id=${vehicle.id}"
+          class="stock-showcase-card"
+        >
+
+          <div class="stock-showcase-top">
+
+            <span class="stock-showcase-brand">
+              ${vehicle.brand || "VEÍCULO"}
+            </span>
+
+            <span class="stock-badge ${stockClass}">
+              ${stockLabel}
+            </span>
+
+          </div>
+
+          <h3 class="stock-showcase-name">
+            ${vehicle.brand || ""}
+            ${vehicle.model || ""}
+          </h3>
+
+          <div class="stock-showcase-days">
+            <strong>${days}</strong>
+
+            <span>
+              ${days === 1 ? "dia" : "dias"} no estoque
+            </span>
+          </div>
+
+          <div class="stock-showcase-image">
+
+            ${
+              image
+                ? `
+                  <img
+                    src="${image}"
+                    alt="${vehicle.brand || ""} ${vehicle.model || ""}"
+                  >
+                `
+                : `
+                  <div class="stock-no-image">
+                    Sem imagem
+                  </div>
+                `
+            }
+
+          </div>
+
+          <div class="stock-showcase-prices">
+
+            <div>
+              <span>Compra</span>
+
+              <strong>
+                ${formatCurrency(purchasePrice)}
+              </strong>
+            </div>
+
+            <div>
+              <span>Anunciado</span>
+
+              <strong>
+                ${formatCurrency(advertisedPrice)}
+              </strong>
+            </div>
+
+          </div>
+
+        </a>
+      `;
+    })
+    .join("");
+}
+
+/* =========================================
+   VEÍCULOS RECENTES
+========================================= */
 
 function renderRecentVehicles(vehicles) {
-    const container = document.getElementById("recentVehicles");
+  const container = document.getElementById("recentVehicles");
 
-    if (vehicles.length === 0) {
-        container.innerHTML = `
-            <p class="loading">
-                Nenhum veículo cadastrado.
-            </p>
-        `;
-        return;
-    }
+  if (!container) {
+    return;
+  }
 
-    const recentVehicles = [...vehicles]
-        .sort((a, b) => b.id - a.id)
-        .slice(0, 6);
+  if (vehicles.length === 0) {
+    container.innerHTML = `
+      <p class="loading">
+        Nenhum veículo cadastrado.
+      </p>
+    `;
 
-    container.innerHTML = recentVehicles.map(vehicle => {
+    return;
+  }
 
-        const price = Number(vehicle.price).toLocaleString(
-            "pt-BR",
-            {
-                style: "currency",
-                currency: "BRL"
-            }
-        );
+  const recentVehicles = [...vehicles]
+    .sort((a, b) => Number(b.id) - Number(a.id))
+    .slice(0, 6);
 
-        const status = formatStatus(vehicle.status);
+  container.innerHTML = recentVehicles
+    .map((vehicle) => {
+      const price = formatCurrency(vehicle.price);
 
-        return `
-            <div class="vehicle-row">
+      const mileage = vehicle.mileage
+        ? `${Number(vehicle.mileage).toLocaleString("pt-BR")} km`
+        : "Quilometragem não informada";
 
-                <div class="vehicle-main">
+      const status = formatStatus(vehicle.status);
 
-                    <strong>
-                        ${vehicle.brand} ${vehicle.model}
-                    </strong>
+      return `
+          <div class="vehicle-row">
 
-                    <span>
-                        ${vehicle.year} • ${vehicle.mileage
-                            ? Number(vehicle.mileage).toLocaleString("pt-BR") + " km"
-                            : "Quilometragem não informada"
-                        }
-                    </span>
+            <div class="vehicle-main">
 
-                </div>
+              <strong>
+                ${vehicle.brand || ""}
+                ${vehicle.model || ""}
+              </strong>
 
-                <div>
 
-                    <div class="vehicle-price">
-                        ${price}
-                    </div>
-
-                    <div class="vehicle-status">
-                        ${status}
-                    </div>
-
-                </div>
+              <span>
+                ${vehicle.year || "Ano não informado"}
+                •
+                ${mileage}
+              </span>
 
             </div>
-        `;
 
-    }).join("");
+
+            <div>
+
+              <div class="vehicle-price">
+                ${price}
+              </div>
+
+
+              <div class="vehicle-status">
+                ${status}
+              </div>
+
+            </div>
+
+          </div>
+        `;
+    })
+    .join("");
 }
+
+/* =========================================
+   STATUS
+========================================= */
 
 function formatStatus(status) {
-    const statuses = {
-        available: "Disponível",
-        reserved: "Reservado",
-        sold: "Vendido"
-    };
+  const statuses = {
+    available: "Disponível",
 
-    return statuses[status] || "Sem status";
+    reserved: "Reservado",
+
+    sold: "Vendido",
+  };
+
+  return statuses[status] || "Sem status";
 }
 
+/* =========================================
+   FORMATAR MOEDA
+========================================= */
+
+function formatCurrency(value) {
+  return Number(value || 0).toLocaleString("pt-BR", {
+    style: "currency",
+
+    currency: "BRL",
+  });
+}
+
+/* =========================================
+   UTILITÁRIO
+========================================= */
+
+function setText(id, value) {
+  const element = document.getElementById(id);
+
+  if (element) {
+    element.textContent = value;
+  }
+}
+
+/* =========================================
+   NOTIFICAÇÃO DE NOVO LEAD
+========================================= */
+
+let leadNotificationTimeout = null;
+let leadStreamReconnectTimeout = null;
+
+function listenForNewLeads() {
+  const notification = document.getElementById("leadNotification");
+
+  if (!notification) {
+    return;
+  }
+
+  const closeButton = document.getElementById("closeLeadNotification");
+
+  if (closeButton) {
+    closeButton.addEventListener("click", hideLeadNotification);
+  }
+
+  connectLeadStream();
+}
+
+function connectLeadStream() {
+  const source = new EventSource(`${API_URL}/leads/stream`, {
+    withCredentials: true,
+  });
+
+  source.addEventListener("new_lead", (event) => {
+    try {
+      const { lead } = JSON.parse(event.data);
+
+      showLeadNotification(lead);
+    } catch (error) {
+      console.error("Erro ao processar notificação de lead:", error);
+    }
+  });
+
+  source.onerror = () => {
+    /*
+     * Uma conexão fechada (ex.: reinício do
+     * servidor) não é retomada automaticamente
+     * pelo navegador, então reconectamos.
+     */
+    if (source.readyState === EventSource.CLOSED) {
+      source.close();
+
+      clearTimeout(leadStreamReconnectTimeout);
+
+      leadStreamReconnectTimeout = setTimeout(connectLeadStream, 5000);
+    }
+  };
+}
+
+function showLeadNotification(lead) {
+  const notification = document.getElementById("leadNotification");
+
+  if (!notification || !lead) {
+    return;
+  }
+
+  const nameElement = document.getElementById("leadNotificationName");
+
+  const detailElement = document.getElementById("leadNotificationDetail");
+
+  const actionElement = notification.querySelector(".lead-notification-action");
+
+  if (nameElement) {
+    nameElement.textContent = lead.name || "Novo interessado";
+  }
+
+  if (detailElement) {
+    detailElement.textContent =
+      lead.vehicle_label || sourceLabel(lead.source);
+  }
+
+  if (actionElement && lead.id) {
+    actionElement.href = `./leads.html?lead=${lead.id}`;
+  }
+
+  notification.hidden = false;
+
+  requestAnimationFrame(() => {
+    notification.classList.add("is-visible");
+  });
+
+  clearTimeout(leadNotificationTimeout);
+
+  leadNotificationTimeout = setTimeout(hideLeadNotification, 10000);
+}
+
+function hideLeadNotification() {
+  const notification = document.getElementById("leadNotification");
+
+  if (!notification) {
+    return;
+  }
+
+  clearTimeout(leadNotificationTimeout);
+
+  notification.classList.remove("is-visible");
+
+  setTimeout(() => {
+    notification.hidden = true;
+  }, 250);
+}
+
+function sourceLabel(source) {
+  const sources = {
+    website: "Site",
+    whatsapp: "WhatsApp",
+    instagram: "Instagram",
+    facebook: "Facebook",
+    referral: "Indicação",
+    walkin: "Visita presencial",
+    other: "Outro",
+  };
+
+  return sources[source] || "Aguardando informações...";
+}
+
+/* =========================================
+   TEMA CLARO / ESCURO
+========================================= */
+
+const themeToggle = document.getElementById("themeToggle");
+const themeIcon = document.getElementById("themeIcon");
+
+function setTheme(theme) {
+  const isLight = theme === "light";
+
+  document.body.classList.toggle("light-theme", isLight);
+
+  if (themeIcon) {
+    themeIcon.className = isLight ? "fa-solid fa-sun" : "fa-solid fa-moon";
+  }
+}
+
+/* =========================================
+   RECUPERAR TEMA SALVO
+========================================= */
+
+const savedTheme = localStorage.getItem("carDealerAdminTheme") || "dark";
+
+setTheme(savedTheme);
+
+/* =========================================
+   ALTERAR TEMA
+========================================= */
+
+if (themeToggle) {
+  themeToggle.addEventListener("click", () => {
+    const isLight = document.body.classList.contains("light-theme");
+
+    const newTheme = isLight ? "dark" : "light";
+
+    localStorage.setItem("carDealerAdminTheme", newTheme);
+
+    setTheme(newTheme);
+  });
+}

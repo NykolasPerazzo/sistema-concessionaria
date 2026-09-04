@@ -4,7 +4,18 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node backend/server.js",
+    "test": "node --test backend/tests/*.test.js",
+    "test:sales": "node --test backend/tests/sales.test.js",
+    "migrate:sales": "node backend/scripts/migrate-sales.js",
+    "migrate:proposals": "npm run migrate:sales && node backend/scripts/migrate-proposals.js",
+    "test:proposals": "node --test backend/tests/proposals.test.js",
+    "migrate:customers": "npm run migrate:proposals && node backend/scripts/migrate-customers.js",
+    "test:customers": "node --test backend/tests/customers.test.js",
+    "migrate:leads": "npm run migrate:customers && node backend/scripts/migrate-leads.js",
+    "test:leads": "node --test backend/tests/leads.test.js",
+    "migrate:meta-ai": "npm run migrate:leads && node backend/scripts/migrate-meta-ai.js",
+    "test:meta-ai": "node --test backend/tests/meta-ai.test.js"
   },
   "repository": {
     "type": "git",
@@ -24,9 +35,14 @@
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
+    "express-rate-limit": "^8.7.0",
+    "helmet": "^8.3.0",
     "jsonwebtoken": "^9.0.3",
     "multer": "^2.2.0",
     "openai": "^7.5.0",
     "pg": "^8.23.0"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.5.8"
   }
 }

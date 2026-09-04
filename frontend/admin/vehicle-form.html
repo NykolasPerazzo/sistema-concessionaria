@@ -1,7 +1,9 @@
 <!doctype html>
+
 <html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <title>Veículo | Admin | Car Dealer IA</title>
@@ -10,58 +12,90 @@
   </head>
 
   <body>
+    <!-- ================================
+       SIDEBAR
+  ================================= -->
+
     <aside class="sidebar">
       <div class="admin-logo">
         <span>⚡</span>
-        <strong>CAR DEALER IA</strong>
+
+        <strong> CAR DEALER IA </strong>
       </div>
 
       <nav>
-        <a href="./index.html">Dashboard</a>
-        <a href="./vehicles.html" class="active">Veículos</a>
-        <a href="#">Clientes</a>
-        <a href="#">Propostas</a>
-        <a href="#">Vendas</a>
-        <a href="#">IA</a>
-        <a href="#">Configurações</a>
+        <a href="./index.html"> Dashboard </a>
+
+        <a href="./vehicles.html" class="active"> Veículos </a>
+
+        <a href="./leads.html">Leads</a>
+        <a href="./customers.html">Clientes</a>
+
+        <a href="./proposals.html">Propostas</a>
+
+        <a href="./sales.html">Vendas</a>
+
+        <a href="#"> IA </a>
+
+        <a href="#"> Configurações </a>
       </nav>
 
       <a href="../index.html" class="public-site"> ← Ver site público </a>
     </aside>
 
+    <!-- ================================
+       CONTEÚDO
+  ================================= -->
+
     <main class="admin-main">
+      <!-- HEADER -->
+
       <header class="admin-header">
         <div>
-          <span class="eyebrow">ESTOQUE</span>
+          <span class="eyebrow"> ESTOQUE </span>
+
           <h1 id="pageTitle">Novo veículo</h1>
         </div>
 
         <a href="./vehicles.html" class="admin-secondary-button"> ← Voltar </a>
       </header>
 
+      <!-- ================================
+         FORMULÁRIO DO VEÍCULO
+    ================================= -->
+
       <section class="panel vehicle-form-panel">
         <form id="vehicleForm">
+          <!-- ================================
+             DADOS PRINCIPAIS
+        ================================= -->
+
           <div class="form-section">
             <div class="form-section-title">
-              <span class="eyebrow">INFORMAÇÕES PRINCIPAIS</span>
+              <span class="eyebrow"> INFORMAÇÕES PRINCIPAIS </span>
+
               <h2>Dados do veículo</h2>
             </div>
 
             <div class="form-grid">
+              <!-- MARCA -->
+
               <div class="form-group">
-                <label for="brand">Marca *</label>
+                <label for="brand"> Marca * </label>
 
                 <input
                   id="brand"
                   name="brand"
                   type="text"
-                  placeholder="Ex.: Toyota"
+                  placeholder="Ex: Chevrolet"
                   required
                 />
               </div>
 
+              <!-- MODELO -->
+
               <div class="form-group">
-                <label for="model">Modelo *</label>
+                <label for="model"> Modelo * </label>
 
                 <input
                   id="model"
@@ -72,8 +106,10 @@
                 />
               </div>
 
+              <!-- ANO -->
+
               <div class="form-group">
-                <label for="year">Ano *</label>
+                <label for="year"> Ano * </label>
 
                 <input
                   id="year"
@@ -86,8 +122,10 @@
                 />
               </div>
 
+              <!-- PREÇO ANUNCIADO -->
+
               <div class="form-group">
-                <label for="price">Preço *</label>
+                <label for="price"> Preço anunciado * </label>
 
                 <input
                   id="price"
@@ -100,8 +138,48 @@
                 />
               </div>
 
+              <!-- PREÇO DE COMPRA -->
+
               <div class="form-group">
-                <label for="mileage">Quilometragem</label>
+                <label for="purchase_price"> Preço de compra </label>
+
+                <input
+                  id="purchase_price"
+                  name="purchase_price"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="150000"
+                />
+              </div>
+
+              <!-- ENTRADA NO ESTOQUE -->
+
+              <div class="form-group">
+                <label for="entry_date"> Entrada no estoque </label>
+
+                <input id="entry_date" name="entry_date" type="date" />
+              </div>
+
+              <!-- VALOR DA VENDA -->
+
+              <div class="form-group" id="salePriceGroup">
+                <label for="sale_price"> Valor da venda </label>
+
+                <input
+                  id="sale_price"
+                  name="sale_price"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="Somente se vendido"
+                />
+              </div>
+
+              <!-- KM -->
+
+              <div class="form-group">
+                <label for="mileage"> Quilometragem </label>
 
                 <input
                   id="mileage"
@@ -112,8 +190,10 @@
                 />
               </div>
 
+              <!-- COR -->
+
               <div class="form-group">
-                <label for="color">Cor</label>
+                <label for="color"> Cor </label>
 
                 <input
                   id="color"
@@ -125,15 +205,22 @@
             </div>
           </div>
 
+          <!-- ================================
+             ESPECIFICAÇÕES
+        ================================= -->
+
           <div class="form-section">
             <div class="form-section-title">
-              <span class="eyebrow">ESPECIFICAÇÕES</span>
+              <span class="eyebrow"> ESPECIFICAÇÕES </span>
+
               <h2>Características</h2>
             </div>
 
             <div class="form-grid">
+              <!-- COMBUSTÍVEL -->
+
               <div class="form-group">
-                <label for="fuel">Combustível</label>
+                <label for="fuel"> Combustível </label>
 
                 <select id="fuel" name="fuel">
                   <option value="">Selecione</option>
@@ -152,8 +239,10 @@
                 </select>
               </div>
 
+              <!-- CÂMBIO -->
+
               <div class="form-group">
-                <label for="transmission">Câmbio</label>
+                <label for="transmission"> Câmbio </label>
 
                 <select id="transmission" name="transmission">
                   <option value="">Selecione</option>
@@ -168,8 +257,10 @@
                 </select>
               </div>
 
+              <!-- CARROCERIA -->
+
               <div class="form-group">
-                <label for="body_type">Carroceria</label>
+                <label for="body_type"> Carroceria </label>
 
                 <select id="body_type" name="body_type">
                   <option value="">Selecione</option>
@@ -190,8 +281,11 @@
                 </select>
               </div>
 
+              <!-- STATUS -->
+
               <div class="form-group">
-                <label for="status">Status</label>
+                <label for="status"> Status </label>
+                <small>Para registrar comprador, data e resultado, use <a href="./sales.html" id="vehicleSaleLink">Registrar venda</a>.</small>
 
                 <select id="status" name="status">
                   <option value="available">Disponível</option>
@@ -204,25 +298,50 @@
             </div>
           </div>
 
+          <!-- ================================
+             ANÚNCIO
+        ================================= -->
+
           <div class="form-section">
             <div class="form-section-title">
-              <span class="eyebrow">ANÚNCIO</span>
-              <h2>Descrição e imagem</h2>
+              <span class="eyebrow"> ANÚNCIO </span>
+
+              <h2>Descrição e imagens</h2>
             </div>
 
+            <!-- DESCRIÇÃO -->
+
             <div class="form-group">
-              <label for="description"> Descrição </label>
+              <div class="description-ai-header">
+                <label for="description"> Descrição </label>
+
+                <button
+                  type="button"
+                  id="generateDescriptionAI"
+                  class="generate-description-ai"
+                >
+                  <span>✦</span>
+                  Gerar com IA
+                </button>
+              </div>
 
               <textarea
                 id="description"
                 name="description"
-                rows="7"
-                placeholder="Descreva o veículo..."
+                rows="6"
+                placeholder="Digite uma descrição ou gere automaticamente com IA..."
               ></textarea>
+
+              <p id="descriptionAIStatus" class="description-ai-status"></p>
             </div>
 
+            <!-- IMAGEM PRINCIPAL -->
+
             <div class="form-group">
-              <label for="coverImage">Imagem principal</label>
+              <label for="coverImage"> Imagem principal </label>
+              <span style="font-size: 14px; color: #666"
+                >Tamanho recomendado 1080x1350</span
+              >
 
               <input
                 id="coverImage"
@@ -235,17 +354,20 @@
             </div>
 
             <div id="imagePreview" class="image-preview">
-              <span>A prévia da imagem aparecerá aqui</span>
+              <span> A prévia da imagem aparecerá aqui </span>
             </div>
+
+            <!-- GALERIA -->
 
             <div class="gallery-section">
               <div class="form-section-title">
-                <span class="eyebrow">GALERIA</span>
+                <span class="eyebrow"> GALERIA </span>
+
                 <h2>Fotos do veículo</h2>
               </div>
 
               <div class="form-group">
-                <label for="galleryImages">Selecionar fotos</label>
+                <label for="galleryImages"> Selecionar fotos </label>
 
                 <input
                   type="file"
@@ -262,7 +384,15 @@
             </div>
           </div>
 
+          <!-- ================================
+             MENSAGEM
+        ================================= -->
+
           <div id="formMessage" class="form-message"></div>
+
+          <!-- ================================
+             AÇÕES DO VEÍCULO
+        ================================= -->
 
           <div class="form-actions">
             <a href="./vehicles.html" class="admin-secondary-button">
@@ -279,9 +409,167 @@
           </div>
         </form>
       </section>
+
+      <!-- ====================================
+         FINANCEIRO DO VEÍCULO
+         Somente aparece durante edição
+    ===================================== -->
+
+      <section
+        class="panel vehicle-finance-panel"
+        id="vehicleFinanceSection"
+        hidden
+      >
+        <!-- RESUMO FINANCEIRO -->
+
+        <div class="form-section">
+          <div class="form-section-title">
+            <span class="eyebrow"> FINANCEIRO </span>
+
+            <h2>Custos e resultado</h2>
+          </div>
+
+          <div class="finance-summary-grid">
+            <article class="finance-card">
+              <span> Preço de compra </span>
+
+              <strong id="financePurchasePrice"> R$ 0,00 </strong>
+            </article>
+
+            <article class="finance-card">
+              <span> Despesas </span>
+
+              <strong id="financeExpenses"> R$ 0,00 </strong>
+            </article>
+
+            <article class="finance-card">
+              <span> Custo total </span>
+
+              <strong id="financeTotalCost"> R$ 0,00 </strong>
+            </article>
+
+            <article class="finance-card">
+              <span> Preço anunciado </span>
+
+              <strong id="financeAdvertisedPrice"> R$ 0,00 </strong>
+            </article>
+
+            <article class="finance-card">
+              <span> Lucro potencial </span>
+
+              <strong id="financePotentialProfit"> R$ 0,00 </strong>
+            </article>
+
+            <article class="finance-card">
+              <span> Margem </span>
+
+              <strong id="financeMargin"> 0,00% </strong>
+            </article>
+          </div>
+        </div>
+
+        <!-- ====================================
+           DESPESAS
+      ===================================== -->
+
+        <div class="form-section expenses-panel">
+          <div class="form-section-title">
+            <span class="eyebrow"> DESPESAS </span>
+
+            <h2>Histórico de gastos</h2>
+          </div>
+
+          <!-- FORM DE DESPESA -->
+
+          <form id="expenseForm" class="expense-form">
+            <div class="form-grid">
+              <!-- CATEGORIA -->
+
+              <div class="form-group">
+                <label for="expenseCategory"> Categoria * </label>
+
+                <select id="expenseCategory" required>
+                  <option value="">Selecione</option>
+
+                  <option value="manutencao">Manutenção</option>
+
+                  <option value="documentacao">Documentação</option>
+
+                  <option value="estetica">Estética</option>
+
+                  <option value="anuncio">Anúncio</option>
+
+                  <option value="transporte">Transporte</option>
+
+                  <option value="impostos">Impostos</option>
+
+                  <option value="outros">Outros</option>
+                </select>
+              </div>
+
+              <!-- VALOR -->
+
+              <div class="form-group">
+                <label for="expenseAmount"> Valor * </label>
+
+                <input
+                  id="expenseAmount"
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  placeholder="Ex.: 850"
+                  required
+                />
+              </div>
+
+              <!-- DATA -->
+
+              <div class="form-group">
+                <label for="expenseDate"> Data </label>
+
+                <input id="expenseDate" type="date" />
+              </div>
+
+              <!-- DESCRIÇÃO -->
+
+              <div class="form-group">
+                <label for="expenseDescription"> Descrição </label>
+
+                <input
+                  id="expenseDescription"
+                  type="text"
+                  maxlength="255"
+                  placeholder="Ex.: Troca de pneus"
+                />
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              class="admin-primary-button"
+              id="expenseSubmitButton"
+            >
+              + Adicionar despesa
+            </button>
+          </form>
+
+          <!-- LISTAGEM -->
+
+          <div id="expensesList" class="expenses-list">
+            <p class="loading">Carregando despesas...</p>
+          </div>
+        </div>
+      </section>
     </main>
+
+    <!-- ================================
+       JAVASCRIPT
+  ================================= -->
+
     <script src="../js/config.js"></script>
+
     <script src="./js/auth.js"></script>
+
     <script src="./js/vehicle-form.js"></script>
   </body>
 </html>

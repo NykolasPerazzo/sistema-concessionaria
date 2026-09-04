@@ -19,11 +19,12 @@
       <nav>
         <a href="./index.html">Dashboard</a>
         <a href="./vehicles.html" class="active">Veículos</a>
-        <a href="#">Clientes</a>
-        <a href="#">Propostas</a>
-        <a href="#">Vendas</a>
-        <a href="#">IA</a>
-        <a href="#">Configurações</a>
+        <a href="./leads.html">Leads</a>
+        <a href="./customers.html">Clientes</a>
+        <a href="./proposals.html">Propostas</a>
+        <a href="./sales.html">Vendas</a>
+        <a href="./ai.html">IA</a>
+        <a href="./settings.html">Configurações</a>
       </nav>
 
       <a href="../index.html" class="public-site"> ← Ver site público </a>
@@ -91,6 +92,124 @@
           </table>
         </div>
       </section>
+
+      <!-- =========================================
+     IA ASSISTENTE - LATERAL
+========================================= -->
+
+      <aside class="vehicles-ai-sidebar">
+        <div class="vehicles-ai-header">
+          <div class="vehicles-ai-title">
+            <span class="vehicles-ai-spark">✦</span>
+
+            <div>
+              <strong>IA Assistente</strong>
+              <span class="vehicles-ai-beta">Beta</span>
+            </div>
+          </div>
+
+          <p>Análises inteligentes do seu estoque</p>
+        </div>
+
+        <!-- RESUMO -->
+
+        <section class="ai-summary-section">
+          <h3>
+            <span>◈</span>
+            Resumo inteligente
+          </h3>
+
+          <div class="ai-summary-card">
+            <p id="aiSummaryText">Analisando os dados do seu estoque...</p>
+
+            <button
+              type="button"
+              class="ai-analysis-button"
+              id="aiAnalysisButton"
+            >
+              Ver análise completa
+            </button>
+          </div>
+        </section>
+
+        <!-- INSIGHTS -->
+
+        <section class="ai-insights-section">
+          <h3>Insights rápidos</h3>
+
+          <div class="ai-insight-card">
+            <div class="ai-insight-icon green">↗</div>
+
+            <div>
+              <span class="ai-insight-label green-text"> Maior margem </span>
+
+              <strong id="aiHighestMarginVehicle"> Calculando... </strong>
+
+              <small id="aiHighestMarginValue"> - </small>
+            </div>
+          </div>
+
+          <div class="ai-insight-card">
+            <div class="ai-insight-icon orange">◷</div>
+
+            <div>
+              <span class="ai-insight-label orange-text"> Mais parado </span>
+
+              <strong id="aiOldestVehicle"> Calculando... </strong>
+
+              <small id="aiOldestVehicleDays"> - </small>
+            </div>
+          </div>
+
+          <div class="ai-insight-card">
+            <div class="ai-insight-icon blue">◴</div>
+
+            <div>
+              <span class="ai-insight-label blue-text"> Giro mais rápido </span>
+
+              <strong id="aiFastestVehicle"> Calculando... </strong>
+
+              <small id="aiFastestVehicleDays"> - </small>
+            </div>
+          </div>
+        </section>
+
+        <!-- PERGUNTAR PARA IA -->
+
+        <section class="ai-question-section">
+          <h3>Pergunte à IA</h3>
+
+          <p>Faça perguntas sobre seu estoque</p>
+
+          <div class="ai-question-box">
+            <textarea
+              id="aiQuestion"
+              rows="2"
+              placeholder="Ex: Quais carros estão há mais tempo?"
+            ></textarea>
+
+            <button
+              type="button"
+              id="aiSendQuestion"
+              aria-label="Enviar pergunta"
+            >
+              ➤
+            </button>
+          </div>
+
+          <div class="ai-suggestions">
+            <button type="button">Quais carros estão há mais tempo?</button>
+
+            <button type="button">Qual veículo tem maior margem?</button>
+
+            <button type="button">Qual o valor total do estoque?</button>
+
+            <button type="button">
+              Quais carros devo priorizar para venda?
+            </button>
+          </div>
+        </section>
+      </aside>
     </main>
     <script src="../js/config.js"></script>
     <script src="./js/auth.js"></script>

@@ -1,2 +1,7 @@
 node_modules/
 .env
+backend.zip
+
+# Fotos enviadas via admin (em produção ficam num disco
+# persistente do Render, não fazem sentido no histórico do git)
+backend/uploads/
