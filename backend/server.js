@@ -43,21 +43,26 @@ const allowedOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(",").map((origin) => origin.trim())
   : defaultLocalOrigins;
 
+/*
+ * Recebe req (não só a Origin) para poder liberar
+ * automaticamente a própria origem do servidor —
+ * assim o front e a API funcionam juntos em qualquer
+ * domínio, sem precisar configurar ALLOWED_ORIGINS
+ * toda vez que o domínio de produção mudar.
+ */
 app.use(
-  cors({
-    origin: function (origin, callback) {
-      // Permite requisições sem Origin, como algumas ferramentas locais
-      if (!origin) {
-        return callback(null, true);
-      }
+  cors(function (req, callback) {
+    const origin = req.header("Origin");
 
-      if (allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      }
+    const ownOrigin = `${req.protocol}://${req.get("host")}`;
 
-      return callback(new Error("Origem não permitida pelo CORS."));
-    },
-    credentials: true,
+    const allowed =
+      !origin || origin === ownOrigin || allowedOrigins.includes(origin);
+
+    callback(
+      allowed ? null : new Error("Origem não permitida pelo CORS."),
+      { origin: allowed, credentials: true },
+    );
   }),
 );
 
