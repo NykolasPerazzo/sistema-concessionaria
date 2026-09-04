@@ -27,11 +27,18 @@ form.addEventListener("submit", async (event) => {
             })
         });
 
-        const data = await response.json();
+        let data = {};
+
+        try {
+            data = await response.json();
+        } catch (parseError) {
+            // Resposta sem corpo (ex.: instância acordando no Render)
+        }
 
         if (!response.ok) {
             throw new Error(
-                data.error || "Não foi possível realizar o login."
+                data.error ||
+                    "Não foi possível realizar o login. Tente novamente em instantes."
             );
         }
 
