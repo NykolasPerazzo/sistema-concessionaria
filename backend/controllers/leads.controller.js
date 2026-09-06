@@ -550,6 +550,79 @@ async function convertLead(req, res) {
   }
 }
 
+/*
+ * Cadastro público de lead, feito pelo próprio
+ * site (assistente de IA), sem autenticação.
+ */
+async function createPublicLead(req, res) {
+  try {
+    const body = req.body || {};
+
+    const phone = textValue(body.phone, 30, true);
+
+    if (
+      !/^[+()\d\s.-]+$/.test(phone) ||
+      phone.replace(/\D/g, "").length < 8 ||
+      phone.replace(/\D/g, "").length > 15
+    ) {
+      throw fail(400, "Informe um telefone com 8 a 15 dígitos.");
+    }
+
+    const name = textValue(body.name, 120) || "Visitante do site";
+
+    const budget = textValue(body.budget, 60);
+    const usage = textValue(body.usage, 200);
+    const priority = textValue(body.priority, 200);
+    const aiAnswer = textValue(body.aiAnswer, 1500);
+
+    const noteParts = [];
+
+    if (budget) noteParts.push(`Orçamento: ${budget}`);
+    if (usage) noteParts.push(`Uso principal: ${usage}`);
+    if (priority) noteParts.push(`Prioridade: ${priority}`);
+    if (aiAnswer) noteParts.push(`Recomendação da IA: ${aiAnswer}`);
+
+    const notes = textValue(
+      [
+        "Lead gerado pelo assistente de IA do site.",
+        ...noteParts,
+      ].join("\n"),
+      2000,
+    );
+
+    const lead = await transaction(async (client) => {
+      const result = await client.query(
+        `
+          INSERT INTO leads(name, phone, source, notes, created_by)
+          VALUES($1, $2, 'website', $3, 0)
+          RETURNING *
+        `,
+        [name, phone, notes],
+      );
+
+      const savedLead = result.rows[0];
+
+      await event(
+        client,
+        savedLead.id,
+        "created",
+        "Lead cadastrado pelo assistente de IA do site.",
+        0,
+      );
+
+      return savedLead;
+    });
+
+    notifyNewLead(lead);
+
+    res.status(201).json({
+      message: "Recebemos seu contato. Em breve alguém vai te chamar.",
+    });
+  } catch (error) {
+    errorResponse(res, error);
+  }
+}
+
 async function analyzeLeadNow(req, res) {
   try {
     if (!validId(req.params.id)) {
@@ -629,4 +702,5 @@ module.exports = {
   convertLead,
   analyzeLeadNow,
   leadEvents,
+  createPublicLead,
 };

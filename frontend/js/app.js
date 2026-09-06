@@ -550,6 +550,10 @@ if (hero) {
 
 const aiFinderForm = document.getElementById("aiFinderForm");
 const aiFinderResult = document.getElementById("aiFinderResult");
+const aiFinderLead = document.getElementById("aiFinderLead");
+const aiFinderLeadForm = document.getElementById("aiFinderLeadForm");
+
+let lastAiFinderQuery = null;
 
 function showAiFinderResult(text, type) {
   if (!aiFinderResult) {
@@ -559,6 +563,23 @@ function showAiFinderResult(text, type) {
   aiFinderResult.hidden = false;
   aiFinderResult.textContent = text;
   aiFinderResult.className = `ai-finder-result ${type}`;
+}
+
+function showAiFinderLead(message, type) {
+  if (!aiFinderLead) {
+    return;
+  }
+
+  aiFinderLead.hidden = false;
+  aiFinderLead.className = `ai-finder-lead ${type || ""}`.trim();
+
+  if (message) {
+    const text = aiFinderLead.querySelector("p");
+
+    if (text) {
+      text.textContent = message;
+    }
+  }
 }
 
 if (aiFinderForm) {
@@ -587,6 +608,10 @@ if (aiFinderForm) {
 
     showAiFinderResult("Consultando o estoque...", "loading");
 
+    if (aiFinderLead) {
+      aiFinderLead.hidden = true;
+    }
+
     try {
       const response = await fetch(`${API_URL}/ai/recommend`, {
         method: "POST",
@@ -607,6 +632,29 @@ if (aiFinderForm) {
       }
 
       showAiFinderResult(data.answer, "success");
+
+      lastAiFinderQuery = { budget, usage, priority, aiAnswer: data.answer };
+
+      if (aiFinderLeadForm) {
+        aiFinderLeadForm.hidden = false;
+        aiFinderLeadForm.reset();
+
+        const leadSubmitButton = aiFinderLeadForm.querySelector("button");
+
+        if (leadSubmitButton) {
+          leadSubmitButton.disabled = false;
+          leadSubmitButton.textContent = "Quero ser avisado";
+        }
+      }
+
+      showAiFinderLead(
+        "Quer que a gente te chame no WhatsApp sobre esses carros?",
+        "",
+      );
+
+      if (typeof fbq === "function") {
+        fbq("trackCustom", "AiFinderUsed");
+      }
     } catch (error) {
       console.error("Erro ao buscar recomendação:", error);
 
@@ -614,6 +662,65 @@ if (aiFinderForm) {
     } finally {
       submitButton.disabled = false;
       submitButton.textContent = originalText;
+    }
+  });
+}
+
+if (aiFinderLeadForm) {
+  aiFinderLeadForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    const phoneInput = document.getElementById("aiFinderLeadPhone");
+    const phone = phoneInput.value.trim();
+
+    if (!phone) {
+      return;
+    }
+
+    const submitButton = aiFinderLeadForm.querySelector("button");
+    const originalText = submitButton.textContent;
+
+    submitButton.disabled = true;
+    submitButton.textContent = "Enviando...";
+
+    try {
+      const response = await fetch(`${API_URL}/ai/interested`, {
+        method: "POST",
+
+        headers: {
+          "Content-Type": "application/json",
+        },
+
+        body: JSON.stringify({
+          phone,
+          ...lastAiFinderQuery,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Não foi possível enviar seu contato.");
+      }
+
+      aiFinderLeadForm.hidden = true;
+
+      showAiFinderLead(
+        "Contato recebido! Em breve alguém vai te chamar no WhatsApp.",
+        "success",
+      );
+
+      if (typeof fbq === "function") {
+        fbq("track", "Lead");
+      }
+    } catch (error) {
+      console.error("Erro ao enviar contato:", error);
+
+      submitButton.disabled = false;
+      submitButton.textContent = originalText;
+
+      showAiFinderLead(error.message, "error");
+      aiFinderLeadForm.hidden = false;
     }
   });
 }
