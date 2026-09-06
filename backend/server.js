@@ -35,8 +35,8 @@ const PORT = process.env.PORT || 3000;
  */
 const defaultLocalOrigins = [
   "http://localhost:5500",
-  "http://127.0.0.1:5500",
-  "http://192.168.2.102:5500",
+  "https://sistema-concessionaria-mocha.vercel.app/",
+  "https://car-dealer-z468.onrender.com/",
 ];
 
 const allowedOrigins = process.env.ALLOWED_ORIGINS
@@ -59,10 +59,10 @@ app.use(
     const allowed =
       !origin || origin === ownOrigin || allowedOrigins.includes(origin);
 
-    callback(
-      allowed ? null : new Error("Origem não permitida pelo CORS."),
-      { origin: allowed, credentials: true },
-    );
+    callback(allowed ? null : new Error("Origem não permitida pelo CORS."), {
+      origin: allowed,
+      credentials: true,
+    });
   }),
 );
 
