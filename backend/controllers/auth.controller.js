@@ -12,7 +12,10 @@ const getCookieOptions = () => {
   return {
     httpOnly: true,
     secure: isProduction,
-    sameSite: "lax",
+    // "none" é necessário quando frontend e backend ficam em domínios
+    // diferentes (ex.: Vercel + Render); exige secure=true, por isso só
+    // em produção. Em desenvolvimento local (sem HTTPS) mantém "lax".
+    sameSite: isProduction ? "none" : "lax",
     path: "/",
     maxAge: 8 * 60 * 60 * 1000,
   };
