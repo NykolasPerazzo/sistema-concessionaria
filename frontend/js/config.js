@@ -1,14 +1,5 @@
-/*
- * Detecta o ambiente pelo endereço usado para
- * acessar o site, em vez de fixar um IP.
- *
- * - Rede local (localhost/127.0.0.1/192.168.x.x/10.x.x.x):
- *   aponta para o backend na porta 3000 do mesmo host.
- * - Qualquer outro domínio (produção): assume que o
- *   backend responde em /api no mesmo domínio.
- */
 const API_URL = (() => {
-  const { hostname, protocol } = window.location;
+  const { hostname } = window.location;
 
   const isLocalNetwork =
     hostname === "localhost" ||
@@ -20,5 +11,5 @@ const API_URL = (() => {
     return `http://${hostname}:3000/api`;
   }
 
-  return `${protocol}//${hostname}/api`;
+  return "https://car-dealer-z468.onrender.com/api";
 })();
