@@ -1,0 +1,1 @@
+{ "rewrites": [{ "source": "/api/(.*)", "destination": "https://car-dealer-z468.onrender.com/api/$1" }] }
