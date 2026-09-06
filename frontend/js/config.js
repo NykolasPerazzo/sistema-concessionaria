@@ -1,3 +1,7 @@
+/*
+ * Configuração da API
+ */
+
 const API_URL = (() => {
   const { hostname } = window.location;
 
