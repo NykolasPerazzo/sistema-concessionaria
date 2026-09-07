@@ -7,9 +7,17 @@ const {
   askVehicleAI,
   recommendVehicle,
   generateVehicleDescription,
+  generateVehicleCover,
 } = require("../controllers/ai.controller");
 
 const { createPublicLead } = require("../controllers/leads.controller");
+
+const upload = require("../middleware/upload.middleware");
+
+const {
+  authenticate,
+  authorizeRoles,
+} = require("../middleware/auth.middleware");
 
 // Rota pública (site) que chama uma API paga: limita abuso
 const recommendLimiter = rateLimit({
@@ -33,11 +41,31 @@ const interestedLimiter = rateLimit({
   },
 });
 
+// Gera a capa profissional do veículo com IA: uso autenticado e caro (IA de imagem), limita abuso
+const coverLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    error: "Muitas tentativas. Tente novamente em alguns minutos.",
+  },
+});
+
 router.post("/vehicles", askVehicleAI);
 
 router.post("/recommend", recommendLimiter, recommendVehicle);
 
 router.post("/vehicle-description", generateVehicleDescription);
+
+router.post(
+  "/vehicle-cover",
+  authenticate,
+  authorizeRoles("admin"),
+  coverLimiter,
+  upload.single("photo"),
+  generateVehicleCover,
+);
 
 router.post("/interested", interestedLimiter, createPublicLead);
 

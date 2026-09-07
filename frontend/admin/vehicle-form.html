@@ -357,6 +357,75 @@
               <span> A prévia da imagem aparecerá aqui </span>
             </div>
 
+            <!-- CAPA PROFISSIONAL COM IA -->
+
+            <div class="ai-cover-section">
+              <div class="form-section-title">
+                <span class="eyebrow"> CAPA COM IA </span>
+
+                <h2>Gerar capa profissional com IA</h2>
+              </div>
+
+              <p class="ai-cover-hint">
+                Selecione a foto real do veículo acima e escolha um estilo de
+                fundo. A IA preserva o veículo e troca apenas fundo,
+                iluminação e enquadramento.
+              </p>
+
+              <div class="ai-cover-styles" role="radiogroup" aria-label="Estilo da capa">
+                <label class="ai-cover-style-option">
+                  <input type="radio" name="aiCoverStyle" value="white" checked />
+                  Fundo branco premium
+                </label>
+
+                <label class="ai-cover-style-option">
+                  <input type="radio" name="aiCoverStyle" value="gray" />
+                  Fundo cinza de estúdio
+                </label>
+
+                <label class="ai-cover-style-option">
+                  <input type="radio" name="aiCoverStyle" value="dark" />
+                  Fundo escuro esportivo
+                </label>
+              </div>
+
+              <button
+                type="button"
+                id="generateCoverAI"
+                class="generate-description-ai"
+              >
+                <span>✦</span>
+                Gerar capa profissional com IA
+              </button>
+
+              <p id="coverAIStatus" class="description-ai-status"></p>
+
+              <div id="coverAIChoice" class="cover-ai-choice" hidden>
+                <div class="cover-ai-choice-option">
+                  <img id="coverAIOriginalPreview" alt="Imagem original" />
+
+                  <label>
+                    <input
+                      type="radio"
+                      name="coverChoice"
+                      value="original"
+                      checked
+                    />
+                    Manter imagem original
+                  </label>
+                </div>
+
+                <div class="cover-ai-choice-option">
+                  <img id="coverAIGeneratedPreview" alt="Imagem gerada por IA" />
+
+                  <label>
+                    <input type="radio" name="coverChoice" value="ai" />
+                    Usar imagem gerada por IA
+                  </label>
+                </div>
+              </div>
+            </div>
+
             <!-- GALERIA -->
 
             <div class="gallery-section">

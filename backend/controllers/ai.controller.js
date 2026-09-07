@@ -1,4 +1,8 @@
+const crypto = require("crypto");
+
 const pool = require("../database/connection");
+const cloudinaryService = require("../services/cloudinary.service");
+const lumaService = require("../services/luma.service");
 
 /* ==========================================
    IA - PERGUNTAS SOBRE O ESTOQUE
@@ -428,8 +432,141 @@ const generateVehicleDescription = async (req, res) => {
   }
 };
 
+/* ==========================================
+   IA - CAPA PROFISSIONAL DO VEÍCULO
+========================================== */
+
+const COVER_PENDING_FOLDER = "car-dealer/ai-covers/pending";
+
+async function cleanupPending(publicIds) {
+  await Promise.all(publicIds.map((id) => cloudinaryService.deleteAsset(id)));
+}
+
+const generateVehicleCover = async (req, res) => {
+  const pendingPublicIds = [];
+
+  try {
+    const style = req.body?.style;
+
+    if (!lumaService.STYLES.includes(style)) {
+      return res.status(400).json({
+        error: "Estilo inválido. Escolha branco, cinza ou escuro.",
+      });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({
+        error: "Envie uma foto real do veículo.",
+      });
+    }
+
+    if (!cloudinaryService.configured()) {
+      return res.status(503).json({
+        error:
+          "Geração de capa indisponível: integração com Cloudinary não configurada.",
+      });
+    }
+
+    if (!lumaService.configured()) {
+      return res.status(503).json({
+        error:
+          "Geração de capa indisponível: integração com a IA de imagem (Luma) não configurada. Defina LUMA_API_KEY no ambiente do servidor.",
+      });
+    }
+
+    const token = crypto.randomBytes(8).toString("hex");
+
+    const sourceUpload = await cloudinaryService.uploadBuffer(
+      req.file.buffer,
+      {
+        folder: COVER_PENDING_FOLDER,
+        publicId: `${token}-source`,
+      },
+    );
+
+    pendingPublicIds.push(sourceUpload.public_id);
+
+    let generated;
+
+    try {
+      generated = await lumaService.generateCoverImage({
+        sourceImageUrl: sourceUpload.secure_url,
+        style,
+      });
+    } catch (error) {
+      await cleanupPending(pendingPublicIds);
+
+      console.error("Erro ao gerar capa com IA:", error.message);
+
+      if (error.message === "LUMA_TIMEOUT") {
+        return res.status(504).json({
+          error: "A geração da imagem demorou demais. Tente novamente.",
+        });
+      }
+
+      if (error.message === "LUMA_OUT_OF_CREDITS") {
+        return res.status(503).json({
+          error:
+            "Sem créditos suficientes na conta da IA de imagem (Luma). Verifique o saldo em lumalabs.ai.",
+        });
+      }
+
+      if (error.message === "LUMA_GENERATION_FAILED") {
+        return res.status(502).json({
+          error: "A IA não conseguiu gerar a imagem. Tente outra foto.",
+        });
+      }
+
+      return res.status(502).json({
+        error: "Falha ao gerar a capa com IA. Tente novamente em instantes.",
+      });
+    }
+
+    /*
+      A imagem gerada fica hospedada temporariamente pela
+      Luma — baixamos e subimos no Cloudinary para termos
+      uma URL permanente antes de responder ao frontend.
+    */
+    const resultResponse = await fetch(generated.imageUrl);
+
+    if (!resultResponse.ok) {
+      await cleanupPending(pendingPublicIds);
+
+      return res.status(502).json({
+        error: "Não foi possível obter a imagem gerada pela IA.",
+      });
+    }
+
+    const resultBuffer = Buffer.from(await resultResponse.arrayBuffer());
+
+    const finalUpload = await cloudinaryService.uploadBuffer(resultBuffer, {
+      folder: COVER_PENDING_FOLDER,
+      publicId: `${token}-${style}`,
+    });
+
+    // A foto original só servia de referência para a IA.
+    await cloudinaryService.deleteAsset(sourceUpload.public_id);
+
+    return res.status(200).json({
+      success: true,
+      style,
+      image_url: finalUpload.secure_url,
+      public_id: finalUpload.public_id,
+    });
+  } catch (error) {
+    await cleanupPending(pendingPublicIds);
+
+    console.error("Erro ao gerar capa profissional com IA:", error);
+
+    return res.status(500).json({
+      error: "Erro interno do servidor.",
+    });
+  }
+};
+
 module.exports = {
   askVehicleAI,
   recommendVehicle,
   generateVehicleDescription,
+  generateVehicleCover,
 };

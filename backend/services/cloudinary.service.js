@@ -63,6 +63,22 @@ function uploadBuffer(buffer, { folder, publicId } = {}) {
   });
 }
 
+async function renameAsset(fromPublicId, toPublicId) {
+  if (!ensureConfigured()) {
+    throw new Error("Cloudinary não configurado.");
+  }
+
+  const result = await cloudinary.uploader.rename(fromPublicId, toPublicId, {
+    overwrite: true,
+    invalidate: true,
+  });
+
+  return {
+    secure_url: result.secure_url,
+    public_id: result.public_id,
+  };
+}
+
 function describeError(error) {
   return error?.message || error?.error?.message || String(error);
 }
@@ -119,6 +135,7 @@ async function deleteFolder(folderPrefix) {
 module.exports = {
   configured,
   uploadBuffer,
+  renameAsset,
   deleteAsset,
   deleteFolder,
 };

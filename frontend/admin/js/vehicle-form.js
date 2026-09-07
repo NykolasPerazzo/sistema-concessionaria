@@ -15,6 +15,20 @@ let vehicleExpenses = [];
 const coverImageInput = document.getElementById("coverImage");
 const imagePreview = document.getElementById("imagePreview");
 
+const generateCoverAIButton = document.getElementById("generateCoverAI");
+const coverAIStatus = document.getElementById("coverAIStatus");
+const coverAIChoice = document.getElementById("coverAIChoice");
+const coverAIOriginalPreview = document.getElementById(
+  "coverAIOriginalPreview",
+);
+const coverAIGeneratedPreview = document.getElementById(
+  "coverAIGeneratedPreview",
+);
+
+// Capa gerada pela IA nesta sessão de edição (null enquanto não gerada)
+let aiGeneratedCover = null;
+let isGeneratingCover = false;
+
 const galleryImagesInput = document.getElementById("galleryImages");
 const galleryPreview = document.getElementById("galleryPreview");
 
@@ -165,6 +179,9 @@ function fillForm(vehicle) {
 coverImageInput.addEventListener("change", () => {
   const file = coverImageInput.files[0];
 
+  // Uma nova foto invalida a capa gerada pela IA para a foto anterior.
+  resetAiCoverState();
+
   if (!file) {
     imagePreview.innerHTML = `
                 <span>
@@ -192,6 +209,137 @@ coverImageInput.addEventListener("change", () => {
             >
         `;
 });
+
+/* ==========================================
+   GERAR CAPA PROFISSIONAL COM IA
+========================================== */
+
+function resetAiCoverState() {
+  aiGeneratedCover = null;
+
+  if (coverAIChoice) {
+    coverAIChoice.hidden = true;
+  }
+
+  if (coverAIStatus) {
+    coverAIStatus.textContent = "";
+    coverAIStatus.className = "description-ai-status";
+  }
+}
+
+generateCoverAIButton?.addEventListener("click", generateVehicleCoverAI);
+
+async function generateVehicleCoverAI() {
+  if (isGeneratingCover) {
+    return;
+  }
+
+  const file = coverImageInput.files[0];
+
+  if (!file) {
+    coverAIStatus.textContent =
+      "Selecione a foto real do veículo antes de gerar a capa.";
+    coverAIStatus.className = "description-ai-status error";
+
+    return;
+  }
+
+  if (!isValidImage(file)) {
+    coverAIStatus.textContent = "Selecione uma imagem JPG, PNG ou WEBP.";
+    coverAIStatus.className = "description-ai-status error";
+
+    return;
+  }
+
+  const MAX_SIZE = 5 * 1024 * 1024;
+
+  if (file.size > MAX_SIZE) {
+    coverAIStatus.textContent = "A imagem deve ter no máximo 5MB.";
+    coverAIStatus.className = "description-ai-status error";
+
+    return;
+  }
+
+  const style =
+    document.querySelector('input[name="aiCoverStyle"]:checked')?.value ||
+    "white";
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 60000);
+
+  try {
+    isGeneratingCover = true;
+
+    generateCoverAIButton.disabled = true;
+    generateCoverAIButton.innerHTML = "<span>✦</span> Gerando capa...";
+
+    coverAIStatus.textContent =
+      "A IA está gerando a capa profissional... isso pode levar até 1 minuto.";
+    coverAIStatus.className = "description-ai-status";
+
+    if (coverAIChoice) {
+      coverAIChoice.hidden = true;
+    }
+
+    const coverFormData = new FormData();
+    coverFormData.append("photo", file);
+    coverFormData.append("style", style);
+
+    const response = await fetch(`${API_URL}/ai/vehicle-cover`, {
+      method: "POST",
+      credentials: "include",
+      body: coverFormData,
+      signal: controller.signal,
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || "Não foi possível gerar a capa com IA.");
+    }
+
+    aiGeneratedCover = {
+      url: data.image_url,
+      publicId: data.public_id,
+      style: data.style,
+    };
+
+    coverAIOriginalPreview.src = URL.createObjectURL(file);
+    coverAIGeneratedPreview.src = data.image_url;
+
+    const aiChoiceRadio = document.querySelector(
+      'input[name="coverChoice"][value="ai"]',
+    );
+
+    if (aiChoiceRadio) {
+      aiChoiceRadio.checked = true;
+    }
+
+    if (coverAIChoice) {
+      coverAIChoice.hidden = false;
+    }
+
+    coverAIStatus.textContent =
+      "Capa gerada com sucesso. Escolha qual imagem deseja usar abaixo.";
+    coverAIStatus.className = "description-ai-status success";
+  } catch (error) {
+    console.error("Erro ao gerar capa com IA:", error);
+
+    coverAIStatus.textContent =
+      error.name === "AbortError"
+        ? "Tempo esgotado ao gerar a imagem. Tente novamente."
+        : error.message;
+    coverAIStatus.className = "description-ai-status error";
+  } finally {
+    clearTimeout(timeoutId);
+
+    isGeneratingCover = false;
+
+    generateCoverAIButton.disabled = false;
+    generateCoverAIButton.innerHTML =
+      "<span>✦</span> Gerar capa profissional com IA";
+  }
+}
 
 /* =========================
    GALERIA
@@ -411,7 +559,14 @@ form.addEventListener("submit", async (event) => {
 
   const coverImage = coverImageInput.files[0];
 
-  if (coverImage) {
+  const coverChoice = document.querySelector(
+    'input[name="coverChoice"]:checked',
+  )?.value;
+
+  if (aiGeneratedCover && coverChoice === "ai") {
+    formData.append("ai_cover_public_id", aiGeneratedCover.publicId);
+    formData.append("ai_cover_url", aiGeneratedCover.url);
+  } else if (coverImage) {
     formData.append("coverImage", coverImage);
   }
 

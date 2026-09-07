@@ -114,7 +114,11 @@ async function removeUploadedImages(publicIds) {
 }
 
 function hasUploadedFiles(req) {
-  return Boolean(req.files?.coverImage?.[0] || req.files?.galleryImages?.length);
+  return Boolean(
+    req.files?.coverImage?.[0] ||
+      req.files?.galleryImages?.length ||
+      nullable(req.body?.ai_cover_public_id),
+  );
 }
 
 /* ==========================================
@@ -543,6 +547,7 @@ const createVehicle = async (req, res) => {
     ====================================== */
 
     const coverFile = req.files?.coverImage?.[0];
+    const aiCoverPublicId = nullable(body.ai_cover_public_id);
 
     if (coverFile) {
       const uploaded = await cloudinaryService.uploadBuffer(coverFile.buffer, {
@@ -563,6 +568,30 @@ const createVehicle = async (req, res) => {
 
       vehicle.image_url = uploaded.secure_url;
       vehicle.image_public_id = uploaded.public_id;
+    } else if (aiCoverPublicId) {
+      /*
+        Capa gerada pela IA (endpoint /api/ai/vehicle-cover) já está
+        no Cloudinary numa pasta temporária — só movemos para a pasta
+        definitiva do veículo agora que sabemos o id.
+      */
+      const moved = await cloudinaryService.renameAsset(
+        aiCoverPublicId,
+        `car-dealer/vehicles/${vehicle.id}/cover`,
+      );
+
+      uploadedPublicIds.push(moved.public_id);
+
+      await client.query(
+        `
+          UPDATE vehicles
+          SET image_url = $1, image_public_id = $2
+          WHERE id = $3
+        `,
+        [moved.secure_url, moved.public_id, vehicle.id],
+      );
+
+      vehicle.image_url = moved.secure_url;
+      vehicle.image_public_id = moved.public_id;
     }
 
     /* ======================================
@@ -745,6 +774,7 @@ const updateVehicle = async (req, res) => {
     ====================================== */
 
     const coverFile = req.files?.coverImage?.[0];
+    const aiCoverPublicId = nullable(body.ai_cover_public_id);
 
     /*
       Se uma imagem nova for enviada, sobe pro
@@ -767,6 +797,21 @@ const updateVehicle = async (req, res) => {
 
       imageUrl = uploaded.secure_url;
       imagePublicId = uploaded.public_id;
+    } else if (aiCoverPublicId) {
+      /*
+        Capa gerada pela IA (endpoint /api/ai/vehicle-cover) já está
+        no Cloudinary numa pasta temporária — só movemos para a pasta
+        definitiva do veículo, substituindo a capa "cover" atual.
+      */
+      const moved = await cloudinaryService.renameAsset(
+        aiCoverPublicId,
+        `car-dealer/vehicles/${id}/cover`,
+      );
+
+      uploadedPublicIds.push(moved.public_id);
+
+      imageUrl = moved.secure_url;
+      imagePublicId = moved.public_id;
     }
 
     /* ======================================
