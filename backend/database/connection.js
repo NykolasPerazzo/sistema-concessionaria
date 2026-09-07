@@ -1,21 +1,23 @@
 const { Pool } = require("pg");
 
-/*
- * O Render (e a maioria dos provedores gerenciados)
- * fornece uma única DATABASE_URL, exigindo SSL.
- * Localmente seguimos usando as variáveis separadas.
- */
 const pool = process.env.DATABASE_URL
-    ? new Pool({
-        connectionString: process.env.DATABASE_URL,
-        ssl: { rejectUnauthorized: false }
+  ? new Pool({
+      connectionString: process.env.DATABASE_URL,
+      ssl: {
+        rejectUnauthorized: false,
+      },
+      connectionTimeoutMillis: 15000,
     })
-    : new Pool({
-        host: process.env.DB_HOST,
-        port: process.env.DB_PORT,
-        database: process.env.DB_NAME,
-        user: process.env.DB_USER,
-        password: process.env.DB_PASSWORD
+  : new Pool({
+      host: process.env.DB_HOST,
+      port: Number(process.env.DB_PORT || 5432),
+      database: process.env.DB_NAME,
+      user: process.env.DB_USER,
+      password: process.env.DB_PASSWORD,
     });
+
+pool.on("error", (error) => {
+  console.error("Erro no PostgreSQL:", error.message);
+});
 
 module.exports = pool;
