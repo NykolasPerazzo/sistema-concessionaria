@@ -1,3 +1,5 @@
+const API_URL = "https://car-dealer-z468.onrender.com/api";
+
 let publicSettings = {};
 let heroVehicles = [];
 
