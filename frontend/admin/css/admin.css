@@ -61,6 +61,10 @@ button {
 }
 
 .sidebar nav a {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
   padding: 13px 14px;
   border-radius: 8px;
   color: var(--text-secondary);
@@ -70,6 +74,21 @@ button {
 .sidebar nav a:hover,
 .sidebar nav a.active {
   color: var(--text-color);
+}
+
+.nav-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: #e5484d;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
 }
 
 .public-site {

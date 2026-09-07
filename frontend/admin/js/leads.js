@@ -63,7 +63,11 @@
       body: JSON.stringify(body),
     });
   function render() {
-    $("newCount").textContent = leads.filter((l) => l.status === "new").length;
+    const newLeadsCount = leads.filter((l) => l.status === "new").length;
+    $("newCount").textContent = newLeadsCount;
+    document.dispatchEvent(
+      new CustomEvent("leads:new-count", { detail: newLeadsCount }),
+    );
     $("activeCount").textContent = leads.filter((l) =>
       ["contacting", "qualified"].includes(l.status),
     ).length;
