@@ -33,23 +33,24 @@ const PORT = process.env.PORT || 3000;
  * variável, assume-se ambiente de desenvolvimento
  * local.
  */
-const allowedOrigins = process.env.ALLOWED_ORIGINS
-  ? process.env.ALLOWED_ORIGINS.split(",").map((origin) => origin.trim())
-  : defaultLocalOrigins;
+const allowedOrigins = [
+  "http://localhost:5500",
+  "http://127.0.0.1:5500",
+  "https://sistema-concessionaria-mocha.vercel.app",
+  "https://car-dealer-z468.onrender.com",
+];
 
 app.use(
-  cors(function (req, callback) {
-    const origin = req.header("Origin");
-
-    const ownOrigin = `${req.protocol}://${req.get("host")}`;
-
-    const allowed =
-      !origin || origin === ownOrigin || allowedOrigins.includes(origin);
-
-    callback(allowed ? null : new Error("Origem não permitida pelo CORS."), {
-      origin: allowed,
-      credentials: true,
-    });
+  cors({
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        console.log("Origem bloqueada pelo CORS:", origin);
+        callback(new Error("Origem não permitida pelo CORS"));
+      }
+    },
+    credentials: true,
   }),
 );
 
