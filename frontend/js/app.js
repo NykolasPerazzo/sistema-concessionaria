@@ -38,13 +38,18 @@ async function loadFeaturedVehicles() {
 
     const data = await response.json();
 
-    const vehicles = (data.vehicles || []).filter(vehicle => vehicle.status !== "sold");
+    const vehicleList = Array.isArray(data)
+      ? data
+      : data.vehicles || data.data || [];
+
+    const vehicles = vehicleList.filter((vehicle) => vehicle.status !== "sold");
 
     /* HERO */
 
     heroVehicles = vehicles.slice(0, 6);
     const heroSection = document.querySelector(".hero-showcase");
-    if (heroSection) heroSection.style.display = heroVehicles.length ? "" : "none";
+    if (heroSection)
+      heroSection.style.display = heroVehicles.length ? "" : "none";
 
     const stockCountElement = document.getElementById("aiFinderStockCount");
     if (stockCountElement) {
