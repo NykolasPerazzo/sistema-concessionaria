@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Processo | Despachante | Car Dealer IA</title>
+    <link rel="stylesheet" href="./css/admin.css" />
+    <link rel="stylesheet" href="./css/sales.css" />
+    <link rel="stylesheet" href="./css/despachante.css" />
+  </head>
+  <body class="sales-page">
+    <aside class="sidebar">
+      <div class="admin-logo">
+        <span>⚡</span><strong>CAR DEALER IA</strong>
+      </div>
+      <nav aria-label="Administração">
+        <a href="./index.html">Dashboard</a
+        ><a href="./vehicles.html">Veículos</a><a href="./leads.html">Leads<span class="nav-badge" id="leadsNavBadge" hidden>0</span></a>
+        <a href="./customers.html">Clientes</a>
+        <a href="./proposals.html">Propostas</a>
+        <a href="./sales.html">Vendas</a>
+        <a href="./despachante.html" class="active" aria-current="page">Despachante</a>
+        <a href="./ai.html">IA</a><a href="./settings.html">Configurações</a>
+      </nav>
+      <a href="../index.html" class="public-site">← Ver site público</a>
+      <button id="logoutButton" class="sales-secondary" type="button">
+        Sair
+      </button>
+    </aside>
+    <main class="admin-main">
+      <header class="admin-header">
+        <div>
+          <span class="eyebrow">PROCESSO</span>
+          <h1 id="pageTitle">Processo #—</h1>
+          <p class="sales-subtitle" id="pageSubtitle"></p>
+        </div>
+        <a href="./despachante.html" class="admin-secondary-button">← Voltar</a>
+      </header>
+      <p id="pageMessage" class="sales-message" role="status" hidden></p>
+
+      <section class="sales-history" id="summarySection">
+        <div class="sales-section-heading">
+          <h2>Resumo do processo</h2>
+          <div id="summaryActions" style="display: flex; gap: 10px; flex-wrap: wrap"></div>
+        </div>
+        <div style="padding: 0 24px 24px">
+          <dl class="sales-details" id="summaryDetails"></dl>
+        </div>
+      </section>
+
+      <section class="dispatcher-summary-grid" style="margin-top: 24px">
+        <div class="sales-history">
+          <div class="sales-section-heading"><h2>Cliente</h2></div>
+          <div style="padding: 0 24px 24px" id="customerDetails"></div>
+        </div>
+        <div class="sales-history">
+          <div class="sales-section-heading"><h2>Veículo</h2></div>
+          <div style="padding: 0 24px 24px" id="vehicleDetails"></div>
+        </div>
+        <div class="sales-history">
+          <div class="sales-section-heading"><h2>Venda relacionada</h2></div>
+          <div style="padding: 0 24px 24px" id="saleDetails"></div>
+        </div>
+      </section>
+
+      <section class="sales-history" style="margin-top: 24px">
+        <div class="sales-section-heading">
+          <h2>Checklist de documentos</h2>
+          <span id="checklistCount"></span>
+        </div>
+        <div style="padding: 0 24px 12px">
+          <div id="checklistList"></div>
+          <form id="addDocumentForm" class="lead-inline-form">
+            <label style="flex: 2"
+              >Novo item do checklist<input
+                name="name"
+                maxlength="160"
+                placeholder="Ex.: Extrato bancário"
+                required
+            /></label>
+            <label style="flex-direction: row; align-items: center; gap: 8px; flex: 0"
+              ><input name="is_required" type="checkbox" checked style="width: auto" />
+              Obrigatório</label
+            >
+            <button class="sales-secondary" type="submit">+ Adicionar</button>
+          </form>
+        </div>
+      </section>
+
+      <section class="sales-history" style="margin-top: 24px">
+        <div class="sales-section-heading"><h2>Observações internas</h2></div>
+        <div style="padding: 0 24px 24px">
+          <p id="notesText" class="sales-footnote" style="white-space: pre-wrap"></p>
+        </div>
+      </section>
+
+      <section class="sales-history" style="margin-top: 24px">
+        <div class="sales-section-heading"><h2>Taxas e despesas</h2></div>
+        <div style="padding: 0 24px 24px">
+          <p class="dispatcher-placeholder">
+            O controle financeiro do processo (taxas do órgão, honorários, vistoria,
+            pagamentos) chega na próxima fase. Essas despesas nunca serão somadas ao
+            custo de aquisição do veículo — ficam em uma tabela própria do despachante.
+          </p>
+        </div>
+      </section>
+
+      <section class="sales-history" style="margin-top: 24px">
+        <div class="sales-section-heading"><h2>Próximas tarefas</h2></div>
+        <div style="padding: 0 24px 24px">
+          <p class="dispatcher-placeholder">
+            Lembretes e tarefas do processo chegam na próxima fase.
+          </p>
+        </div>
+      </section>
+
+      <section class="dispatcher-ai-panel" style="margin-top: 24px">
+        <h3>Análise assistida por IA</h3>
+        <p>
+          Esta é uma análise assistida por IA e não substitui a conferência do
+          despachante. Recurso previsto para uma fase futura — ainda não está ativo.
+        </p>
+        <button class="sales-secondary" type="button" disabled title="Disponível em uma fase futura">
+          Analisar processo com IA
+        </button>
+      </section>
+
+      <section class="sales-history" style="margin-top: 24px">
+        <div class="sales-section-heading">
+          <h2>Linha do tempo</h2>
+          <span class="sales-footnote" style="margin: 0">Também serve como histórico de alterações</span>
+        </div>
+        <div style="padding: 0 24px 24px" id="eventList"></div>
+      </section>
+    </main>
+
+    <dialog id="statusDialog" class="sales-dialog" aria-labelledby="statusTitle">
+      <div class="sales-dialog-heading">
+        <h2 id="statusTitle">Alterar status</h2>
+        <button type="button" class="sales-close" data-close="statusDialog" aria-label="Fechar">×</button>
+      </div>
+      <form id="statusForm">
+        <div class="sales-form-grid">
+          <label class="sales-full"
+            >Novo status<select id="statusSelect" name="status" required>
+              <option value="">Selecione</option>
+            </select></label
+          >
+          <label class="sales-full" id="reasonField" hidden
+            >Motivo do cancelamento<textarea
+              name="reason"
+              maxlength="500"
+              rows="2"
+            ></textarea
+          ></label>
+          <label class="sales-full"
+            >Observação (opcional)<textarea
+              name="note"
+              maxlength="500"
+              rows="2"
+              placeholder="Registrado na linha do tempo."
+            ></textarea
+          ></label>
+        </div>
+        <p id="statusMessage" class="sales-message" role="alert" hidden></p>
+        <div class="sales-dialog-actions">
+          <button class="sales-secondary" type="button" data-close="statusDialog">Voltar</button>
+          <button class="sales-primary" type="submit" id="confirmStatus">Salvar status</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="editDialog" class="sales-dialog" aria-labelledby="editTitle">
+      <div class="sales-dialog-heading">
+        <h2 id="editTitle">Editar processo</h2>
+        <button type="button" class="sales-close" data-close="editDialog" aria-label="Fechar">×</button>
+      </div>
+      <form id="editForm">
+        <div class="sales-form-grid">
+          <label
+            >Prioridade<select name="priority">
+              <option value="normal">Normal</option>
+              <option value="baixa">Baixa</option>
+              <option value="alta">Alta</option>
+              <option value="urgente">Urgente</option>
+            </select></label
+          >
+          <label
+            >Responsável<select id="editResponsibleSelect" name="responsible_user_id">
+              <option value="">Sem responsável definido</option>
+            </select></label
+          >
+          <label
+            >Prazo previsto<input name="expected_deadline" type="date"
+          /></label>
+          <label
+            >Valor estimado<input
+              name="estimated_value"
+              type="number"
+              step="0.01"
+              min="0"
+              max="100000000"
+          /></label>
+          <label class="sales-full"
+            >Observações<textarea name="notes" rows="3" maxlength="2000"></textarea
+          ></label>
+        </div>
+        <p id="editMessage" class="sales-message" role="alert" hidden></p>
+        <div class="sales-dialog-actions">
+          <button class="sales-secondary" type="button" data-close="editDialog">Voltar</button>
+          <button class="sales-primary" type="submit" id="confirmEdit">Salvar</button>
+        </div>
+      </form>
+    </dialog>
+
+    <script src="../js/config.js"></script>
+    <script src="./js/auth.js"></script>
+    <script src="./js/nav-badge.js"></script>
+    <script src="./js/despachante-detail.js"></script>
+  </body>
+</html>

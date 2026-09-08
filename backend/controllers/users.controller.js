@@ -8,7 +8,7 @@ const pool = require("../database/connection");
 async function listUsers(req, res) {
   try {
     const result = await pool.query(
-      `SELECT id, name, role FROM users WHERE role IN ('admin', 'vendedor') ORDER BY name`,
+      `SELECT id, name, role FROM users WHERE role IN ('admin', 'vendedor', 'despachante') ORDER BY name`,
     );
 
     res.json({ users: result.rows });

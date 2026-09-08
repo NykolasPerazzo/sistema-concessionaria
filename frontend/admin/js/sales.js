@@ -222,6 +222,7 @@
     message("detailMessage");
     $("cancelReason").value = "";
     $("cancelForm").hidden = Boolean(s.cancelled_at);
+    $("sendToDispatcherButton").hidden = Boolean(s.cancelled_at);
     const dl = node("dl", "", "sales-details");
     const fields = [
       ["Veículo", s.vehicle_label],
@@ -244,6 +245,27 @@
     $("saleDetails").replaceChildren(dl);
     $("detailDialog").showModal();
   }
+  $("sendToDispatcherButton").addEventListener("click", async () => {
+    if (submitting || !selectedSale) return;
+    submitting = true;
+    $("sendToDispatcherButton").disabled = true;
+    message("detailMessage");
+    try {
+      const response = await fetch(`${API_URL}/dispatcher/from-sale/${selectedSale.id}`, {
+        method: "POST",
+        credentials: "include",
+      });
+      const data = await response.json();
+      if (!response.ok)
+        throw new Error(data.error || "Não foi possível enviar ao despachante.");
+      location.href = `./despachante-detail.html?id=${data.process.id}`;
+    } catch (error) {
+      message("detailMessage", error.message, true);
+    } finally {
+      submitting = false;
+      $("sendToDispatcherButton").disabled = false;
+    }
+  });
   $("vehicleSelect").addEventListener("change", () => {
     const v = vehicles.find((v) => String(v.id) === $("vehicleSelect").value);
     $("salePrice").value = v?.price || "";

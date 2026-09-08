@@ -129,7 +129,7 @@ const login = async (req, res) => {
     // VALIDAR ROLE
     // ======================================
 
-    const allowedRoles = ["admin", "vendedor"];
+    const allowedRoles = ["admin", "vendedor", "despachante", "financeiro"];
 
     if (!allowedRoles.includes(user.role)) {
       return res.status(403).json({

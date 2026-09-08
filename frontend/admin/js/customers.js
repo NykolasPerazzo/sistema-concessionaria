@@ -191,6 +191,7 @@
         for (const [label, page] of [
           ["Nova proposta", "proposals"],
           ["Nova venda", "sales"],
+          ["Enviar para despachante", "despachante"],
         ]) {
           const a = el("a", label, "sales-primary");
           a.href = `./${page}.html?customer=${selected.id}`;

@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Despachante | Admin | Car Dealer IA</title>
+    <link rel="stylesheet" href="./css/admin.css" />
+    <link rel="stylesheet" href="./css/sales.css" />
+    <link rel="stylesheet" href="./css/despachante.css" />
+  </head>
+  <body class="sales-page">
+    <aside class="sidebar">
+      <div class="admin-logo">
+        <span>⚡</span><strong>CAR DEALER IA</strong>
+      </div>
+      <nav aria-label="Administração">
+        <a href="./index.html">Dashboard</a
+        ><a href="./vehicles.html">Veículos</a><a href="./leads.html">Leads<span class="nav-badge" id="leadsNavBadge" hidden>0</span></a>
+        <a href="./customers.html">Clientes</a>
+        <a href="./proposals.html">Propostas</a>
+        <a href="./sales.html">Vendas</a>
+        <a href="./despachante.html" class="active" aria-current="page">Despachante</a>
+        <a href="./ai.html">IA</a><a href="./settings.html">Configurações</a>
+      </nav>
+      <a href="../index.html" class="public-site">← Ver site público</a>
+      <button id="logoutButton" class="sales-secondary" type="button">
+        Sair
+      </button>
+    </aside>
+    <main class="admin-main">
+      <header class="admin-header">
+        <div>
+          <span class="eyebrow">DOCUMENTAÇÃO</span>
+          <h1>Despachante</h1>
+          <p class="sales-subtitle">
+            Processos de documentação e serviços ligados a veículos e clientes.
+          </p>
+        </div>
+        <button class="sales-primary" id="newProcessButton" disabled>
+          + Novo processo
+        </button>
+      </header>
+      <p id="pageMessage" class="sales-message" role="status" hidden></p>
+      <section class="dispatcher-stats" aria-label="Resumo dos processos">
+        <article>
+          <span>Processos ativos</span><strong id="statActive">—</strong>
+        </article>
+        <article>
+          <span>Documentos pendentes</span><strong id="statPendingDocs">—</strong>
+        </article>
+        <article class="dispatcher-stat-danger">
+          <span>Processos atrasados</span><strong id="statOverdue">—</strong>
+        </article>
+        <article class="dispatcher-stat-warning">
+          <span>Vencimentos em 7 dias</span><strong id="statDueSoon">—</strong>
+        </article>
+        <article>
+          <span>Concluídos</span><strong id="statDone">—</strong>
+        </article>
+        <article class="dispatcher-stat-danger">
+          <span>Com problema</span><strong id="statProblem">—</strong>
+        </article>
+        <article class="dispatcher-stat-muted">
+          <span>Valor pendente</span><strong>—</strong>
+          <small class="sales-footnote" style="margin: 6px 0 0">Fase 2</small>
+        </article>
+        <article class="dispatcher-stat-muted">
+          <span>Custo total dos processos</span><strong>—</strong>
+          <small class="sales-footnote" style="margin: 6px 0 0">Fase 2</small>
+        </article>
+      </section>
+      <section class="sales-history">
+        <div class="sales-section-heading">
+          <h2>Processos</h2>
+          <span id="recordCount"></span>
+        </div>
+        <form id="filters" class="sales-filters">
+          <label class="sales-full" style="min-width: 260px"
+            >Buscar<input
+              id="search"
+              type="search"
+              placeholder="Cliente, marca, modelo ou nº do processo"
+          /></label>
+          <label
+            >Status<select id="statusFilter">
+              <option value="">Todos</option>
+            </select></label
+          >
+          <label
+            >Tipo de serviço<select id="typeFilter">
+              <option value="">Todos</option>
+            </select></label
+          >
+          <label
+            >Prioridade<select id="priorityFilter">
+              <option value="">Todas</option>
+              <option value="urgente">Urgente</option>
+              <option value="alta">Alta</option>
+              <option value="normal">Normal</option>
+              <option value="baixa">Baixa</option>
+            </select></label
+          >
+          <label
+            >Responsável<select id="responsibleFilter">
+              <option value="">Todos</option>
+            </select></label
+          >
+          <label style="flex-direction: row; align-items: center; gap: 8px"
+            ><input id="overdueFilter" type="checkbox" style="width: auto" />
+            Só atrasados</label
+          >
+          <button class="sales-secondary" type="submit">Filtrar</button>
+          <button class="sales-link" id="clearFilters" type="button">
+            Limpar
+          </button>
+        </form>
+        <div class="sales-table-scroll">
+          <table class="sales-table">
+            <thead>
+              <tr>
+                <th>Cliente</th>
+                <th>Veículo</th>
+                <th>Serviço</th>
+                <th>Status</th>
+                <th>Prioridade</th>
+                <th>Responsável</th>
+                <th>Prazo</th>
+                <th>Última atualização</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="processRows">
+              <tr>
+                <td colspan="9" class="sales-empty">Carregando processos...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <dialog id="processDialog" class="sales-dialog" aria-labelledby="processTitle">
+      <div class="sales-dialog-heading">
+        <div>
+          <span class="eyebrow">NOVO PROCESSO</span>
+          <h2 id="processTitle">Abrir processo</h2>
+        </div>
+        <button
+          type="button"
+          class="sales-close"
+          data-close="processDialog"
+          aria-label="Fechar"
+        >
+          ×
+        </button>
+      </div>
+      <form id="processForm">
+        <div class="sales-form-grid">
+          <label class="sales-full"
+            >Tipo de serviço<select name="service_type" required>
+              <option value="">Selecione</option>
+            </select></label
+          >
+          <label
+            >Veículo<select id="vehicleSelect" name="vehicle_id" required>
+              <option value="">Selecione um veículo</option>
+            </select></label
+          >
+          <label
+            >Cliente<select id="customerSelect" name="customer_id" required>
+              <option value="">Selecione um cliente</option>
+            </select></label
+          >
+          <label
+            >Prioridade<select name="priority">
+              <option value="normal">Normal</option>
+              <option value="baixa">Baixa</option>
+              <option value="alta">Alta</option>
+              <option value="urgente">Urgente</option>
+            </select></label
+          >
+          <label
+            >Responsável (opcional)<select id="responsibleSelect" name="responsible_user_id">
+              <option value="">Sem responsável definido</option>
+            </select></label
+          >
+          <label
+            >Prazo previsto (opcional)<input
+              name="expected_deadline"
+              type="date"
+          /></label>
+          <label
+            >Valor estimado (opcional)<input
+              name="estimated_value"
+              type="number"
+              step="0.01"
+              min="0"
+              max="100000000"
+              inputmode="decimal"
+          /></label>
+          <label class="sales-full"
+            >Observações (opcional)<textarea
+              name="notes"
+              rows="3"
+              maxlength="2000"
+            ></textarea>
+          </label>
+        </div>
+        <p id="formMessage" class="sales-message" role="alert" hidden></p>
+        <div class="sales-dialog-actions">
+          <button
+            class="sales-secondary"
+            type="button"
+            data-close="processDialog"
+          >
+            Voltar</button
+          ><button id="confirmProcess" class="sales-primary" type="submit">
+            Criar processo
+          </button>
+        </div>
+      </form>
+    </dialog>
+
+    <script src="../js/config.js"></script>
+    <script src="./js/auth.js"></script>
+    <script src="./js/nav-badge.js"></script>
+    <script src="./js/despachante.js"></script>
+  </body>
+</html>

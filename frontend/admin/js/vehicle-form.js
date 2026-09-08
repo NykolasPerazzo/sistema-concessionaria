@@ -38,6 +38,11 @@ const vehicleId = params.get("id");
 const isEditing = Boolean(vehicleId);
 const vehicleSaleLink = document.getElementById("vehicleSaleLink");
 if (vehicleSaleLink && vehicleId) vehicleSaleLink.href = `./sales.html?vehicle=${encodeURIComponent(vehicleId)}`;
+const vehicleDispatcherLink = document.getElementById("vehicleDispatcherLink");
+if (vehicleDispatcherLink && vehicleId) {
+  vehicleDispatcherLink.href = `./despachante.html?vehicle=${encodeURIComponent(vehicleId)}`;
+  vehicleDispatcherLink.hidden = false;
+}
 
 // Novas imagens selecionadas no computador
 let selectedGalleryFiles = [];

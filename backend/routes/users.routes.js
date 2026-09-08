@@ -4,6 +4,6 @@ const {
   authorizeRoles,
 } = require("../middleware/auth.middleware");
 const { listUsers } = require("../controllers/users.controller");
-router.use(authenticate, authorizeRoles("admin", "vendedor"));
+router.use(authenticate, authorizeRoles("admin", "vendedor", "despachante"));
 router.get("/", listUsers);
 module.exports = router;
