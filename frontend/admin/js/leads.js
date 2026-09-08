@@ -24,6 +24,37 @@
     walkin: "Visita à loja",
     other: "Outra",
   };
+  const paymentLabels = { cash: "À vista", financing: "Financiado" };
+  const timeframeLabels = {
+    immediate: "Compra imediata",
+    "7_days": "Em até 7 dias",
+    "30_days": "Em até 30 dias",
+    "90_days": "Em até 90 dias",
+    research_only: "Ainda só pesquisando",
+  };
+  const triLabels = { true: "Sim", false: "Não" };
+  const temperatureInfo = {
+    hot: { label: "Quente", cls: "lead-hot" },
+    warm: { label: "Morno", cls: "lead-warm" },
+    cold: { label: "Frio", cls: "lead-cold" },
+  };
+  const preferenceLabels = {
+    profession: "Profissão",
+    family_profile: "Perfil familiar",
+    vehicle_category: "Categoria de veículo desejada",
+    min_year: "Ano mínimo",
+    transmission: "Câmbio",
+    fuel: "Combustível",
+    seats: "Lugares",
+    usage_purpose: "Finalidade de uso",
+    preferred_contact: "Forma preferida de contato",
+  };
+  function temperatureOf(score) {
+    if (score == null) return null;
+    if (score >= 70) return "hot";
+    if (score >= 40) return "warm";
+    return "cold";
+  }
   const date = (s) =>
     s ? s.slice(0, 10).split("-").reverse().join("/") : "Não definido";
   let leads = [],
@@ -105,6 +136,15 @@
       const row = el("tr", ""),
         name = el("td", "");
       name.append(el("strong", l.name), el("small", l.phone || l.email));
+      const temp = temperatureInfo[temperatureOf(l.priority_score)];
+      if (temp)
+        name.append(
+          el(
+            "small",
+            `${temp.label} • ${l.priority_score}/100`,
+            `lead-score-tag ${temp.cls}`,
+          ),
+        );
       const interest = el("td", "");
       interest.append(
         el("strong", l.vehicle_label || "Veículo não definido"),
@@ -165,7 +205,7 @@
           ),
         ),
       );
-      if (l)
+      if (l) {
         for (const name of [
           "name",
           "phone",
@@ -176,8 +216,22 @@
           "budget",
           "next_contact_date",
           "notes",
+          "payment_method",
+          "down_payment",
+          "desired_installment",
+          "trade_in_estimated_value",
+          "purchase_timeframe",
         ])
           $("leadForm").elements[name].value = l[name] ?? "";
+        const tri = (v) => (v === true ? "yes" : v === false ? "no" : "");
+        $("leadForm").elements.has_trade_in.value = tri(l.has_trade_in);
+        $("leadForm").elements.financing_pre_approved.value = tri(
+          l.financing_pre_approved,
+        );
+        const prefs = l.declared_preferences || {};
+        for (const key of Object.keys(preferenceLabels))
+          $("leadForm").elements[`pref_${key}`].value = prefs[key] ?? "";
+      }
       if ($("detailDialog").open) $("detailDialog").close();
       $("leadDialog").showModal();
     } catch (error) {
@@ -204,6 +258,8 @@
     $("lossForm").hidden = true;
     $("convertForm").hidden = true;
     $("noteForm").reset();
+    $("interactionForm").reset();
+    $("taskForm").reset();
     const dl = el("dl", "", "sales-details");
     const fields = [
       ["Etapa", stages[l.status]],
@@ -219,6 +275,30 @@
       ],
       ["Observações", l.notes || "Sem observações"],
     ];
+    if (l.payment_method)
+      fields.push(["Forma de pagamento", paymentLabels[l.payment_method]]);
+    if (l.down_payment != null)
+      fields.push(["Valor de entrada", money(l.down_payment)]);
+    if (l.desired_installment != null)
+      fields.push(["Parcela desejada", money(l.desired_installment)]);
+    if (l.has_trade_in != null)
+      fields.push([
+        "Veículo na troca",
+        triLabels[l.has_trade_in] +
+          (l.has_trade_in && l.trade_in_estimated_value != null
+            ? ` (estimado em ${money(l.trade_in_estimated_value)})`
+            : ""),
+      ]);
+    if (l.financing_pre_approved != null)
+      fields.push([
+        "Financiamento pré-aprovado",
+        `${triLabels[l.financing_pre_approved]} (conforme informado pelo cliente, não verificado)`,
+      ]);
+    if (l.purchase_timeframe)
+      fields.push(["Prazo estimado de compra", timeframeLabels[l.purchase_timeframe]]);
+    const prefs = l.declared_preferences || {};
+    for (const [key, label] of Object.entries(preferenceLabels))
+      if (prefs[key]) fields.push([label, prefs[key]]);
     if (l.loss_reason) fields.push(["Motivo da perda", l.loss_reason]);
     fields.forEach(([label, value]) => {
       const d = el("div", "");
@@ -226,6 +306,8 @@
       dl.append(d);
     });
     $("leadDetails").replaceChildren(dl);
+    paintScore(data.score, l);
+    paintTasks(data.tasks || []);
     $("leadActions").replaceChildren();
     const ai = $("leadAiContent");
     ai.replaceChildren();
@@ -284,6 +366,98 @@
       $("eventList").append(item);
     });
     if (!$("detailDialog").open) $("detailDialog").showModal();
+  }
+  function paintScore(score, l) {
+    const box = $("leadScoreContent");
+    box.replaceChildren();
+    box.append(el("p", l.basic_summary || "", "lead-basic-summary"));
+    if (!score) {
+      box.append(el("p", "Ainda não avaliado. Clique em Atualizar pontuação."));
+      return;
+    }
+    const temp = temperatureInfo[temperatureOf(score.score)];
+    const badge = el(
+      "strong",
+      `${temp.label} • ${score.score}/100`,
+      `lead-score-badge ${temp.cls}`,
+    );
+    box.append(badge);
+    if (!score.reasons.length) {
+      box.append(
+        el("p", "Nenhum critério de pontuação foi atendido ainda.", "sales-footnote"),
+      );
+    } else {
+      const ul = el("ul", "", "lead-score-reasons");
+      score.reasons.forEach((r) => {
+        ul.append(el("li", `+${r.points} ${r.label}`));
+      });
+      box.append(ul);
+    }
+  }
+  function paintTasks(tasks) {
+    const box = $("taskList");
+    box.replaceChildren();
+    if (!tasks.length) {
+      box.append(el("p", "Nenhuma tarefa registrada.", "sales-footnote"));
+      return;
+    }
+    tasks.forEach((t) => {
+      const item = el("article", "", `lead-task-item lead-task-${t.status}`);
+      const head = el("div", "", "lead-task-head");
+      head.append(
+        el(
+          "span",
+          `${t.title}${t.due_date ? ` • até ${date(t.due_date)}` : ""}`,
+        ),
+      );
+      if (t.status === "open") {
+        const doneBtn = el("button", "Concluir", "sales-secondary");
+        doneBtn.type = "button";
+        doneBtn.addEventListener("click", () => setTaskStatus(t.id, "done"));
+        const cancelBtn = el("button", "Cancelar", "sales-secondary");
+        cancelBtn.type = "button";
+        cancelBtn.addEventListener("click", () =>
+          setTaskStatus(t.id, "cancelled"),
+        );
+        head.append(doneBtn, cancelBtn);
+      } else {
+        head.append(
+          el("small", t.status === "done" ? "Concluída" : "Cancelada"),
+        );
+      }
+      item.append(head);
+      box.append(item);
+    });
+  }
+  async function setTaskStatus(taskId, status) {
+    if (busy) return;
+    busy = true;
+    message("detailMessage");
+    try {
+      await send(`/leads/${selected.id}/tasks/${taskId}`, "PATCH", {
+        status,
+      });
+      await reloadAfterChange(
+        status === "done" ? "Tarefa concluída." : "Tarefa cancelada.",
+      );
+    } catch (error) {
+      message("detailMessage", error.message, true);
+    } finally {
+      busy = false;
+    }
+  }
+  async function recalculateCurrentScore() {
+    if (busy) return;
+    busy = true;
+    message("detailMessage");
+    try {
+      await send(`/leads/${selected.id}/score/recalculate`, "POST", {});
+      await reloadAfterChange("Pontuação atualizada.");
+    } catch (error) {
+      message("detailMessage", error.message, true);
+    } finally {
+      busy = false;
+    }
   }
   async function analyzeCurrentLead() {
     if (busy) return;
@@ -352,15 +526,25 @@
     busy = true;
     message("detailMessage");
     try {
-      const data = await api("/customers?active=true");
       $("customerSelect").replaceChildren(
         new Option("Criar novo cliente com os dados do lead", ""),
       );
-      data.customers.forEach((c) =>
-        $("customerSelect").add(
-          new Option(`${c.name} • ${c.phone || c.email || "#" + c.id}`, c.id),
-        ),
-      );
+      /*
+       * A listagem de clientes é restrita a administradores. Vendedores
+       * ainda podem converter criando um cliente novo — só não veem a
+       * lista de cadastros existentes para vincular.
+       */
+      try {
+        const data = await api("/customers?active=true");
+        data.customers.forEach((c) =>
+          $("customerSelect").add(
+            new Option(
+              `${c.name} • ${c.phone || c.email || "#" + c.id}`,
+              c.id,
+            ),
+          ),
+        );
+      } catch {}
       $("lossForm").hidden = true;
       $("convertForm").hidden = false;
       $("customerSelect").focus();
@@ -378,6 +562,15 @@
     message("formMessage");
     try {
       const body = Object.fromEntries(new FormData(e.target));
+      const declared_preferences = {};
+      for (const key of Object.keys(body)) {
+        if (key.startsWith("pref_")) {
+          const value = body[key];
+          delete body[key];
+          if (value) declared_preferences[key.slice(5)] = value;
+        }
+      }
+      body.declared_preferences = declared_preferences;
       if (editing) body.version = editing.version;
       await send(
         editing ? `/leads/${editing.id}` : "/leads",
@@ -425,6 +618,44 @@
       $("saveNote").disabled = false;
     }
   });
+  $("interactionForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if (busy) return;
+    busy = true;
+    $("saveInteraction").disabled = true;
+    message("detailMessage");
+    try {
+      await send(`/leads/${selected.id}/interactions`, "POST", {
+        version: selected.version,
+        type: $("interactionType").value,
+        note: $("interactionNote").value,
+      });
+      await reloadAfterChange("Interação registrada.");
+    } catch (error) {
+      message("detailMessage", error.message, true);
+    } finally {
+      busy = false;
+      $("saveInteraction").disabled = false;
+    }
+  });
+  $("taskForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if (busy) return;
+    busy = true;
+    message("detailMessage");
+    try {
+      await send(`/leads/${selected.id}/tasks`, "POST", {
+        title: $("taskTitle").value,
+        due_date: $("taskDueDate").value || undefined,
+      });
+      await reloadAfterChange("Tarefa adicionada.");
+    } catch (error) {
+      message("detailMessage", error.message, true);
+    } finally {
+      busy = false;
+    }
+  });
+  $("recalcScoreBtn").addEventListener("click", recalculateCurrentScore);
   $("convertForm").addEventListener("submit", async (e) => {
     e.preventDefault();
     if (busy) return;
@@ -477,10 +708,10 @@
     });
   requireAuth().then(async (user) => {
     if (!user) return;
-    if (user.role !== "admin") {
+    if (!["admin", "vendedor"].includes(user.role)) {
       message(
         "pageMessage",
-        "A área de leads está disponível apenas para administradores.",
+        "A área de leads está disponível apenas para administradores e vendedores.",
         true,
       );
       return;

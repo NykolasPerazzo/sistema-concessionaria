@@ -197,9 +197,110 @@
             ></textarea>
           </label>
         </div>
+        <fieldset class="lead-form-section">
+          <legend>Como ele compra (opcional)</legend>
+          <div class="sales-form-grid">
+            <label
+              >Forma de pagamento<select name="payment_method">
+                <option value="">Não informado</option>
+                <option value="cash">À vista</option>
+                <option value="financing">Financiado</option>
+              </select></label
+            ><label
+              >Financiamento pré-aprovado?<select name="financing_pre_approved">
+                <option value="">Não informado</option>
+                <option value="yes">Sim, conforme informado pelo cliente</option>
+                <option value="no">Não</option>
+              </select></label
+            ><label
+              >Valor de entrada (R$, opcional)<input
+                name="down_payment"
+                type="number"
+                min="0.01"
+                max="100000000"
+                step="0.01"
+                inputmode="decimal" /></label
+            ><label
+              >Parcela desejada (R$, opcional)<input
+                name="desired_installment"
+                type="number"
+                min="0.01"
+                max="100000000"
+                step="0.01"
+                inputmode="decimal" /></label
+            ><label
+              >Tem veículo na troca?<select name="has_trade_in">
+                <option value="">Não perguntado</option>
+                <option value="yes">Sim</option>
+                <option value="no">Não</option>
+              </select></label
+            ><label
+              >Valor estimado da troca (R$, opcional)<input
+                name="trade_in_estimated_value"
+                type="number"
+                min="0.01"
+                max="100000000"
+                step="0.01"
+                inputmode="decimal" /></label
+            >
+          </div>
+        </fieldset>
+        <fieldset class="lead-form-section">
+          <legend>Quando ele compra (opcional)</legend>
+          <label
+            >Prazo estimado de compra<select name="purchase_timeframe">
+              <option value="">Não informado</option>
+              <option value="immediate">Compra imediata</option>
+              <option value="7_days">Em até 7 dias</option>
+              <option value="30_days">Em até 30 dias</option>
+              <option value="90_days">Em até 90 dias</option>
+              <option value="research_only">Ainda só pesquisando</option>
+            </select></label
+          >
+        </fieldset>
+        <details class="lead-form-section">
+          <summary>Mais detalhes do perfil (opcional)</summary>
+          <div class="sales-form-grid">
+            <label>Profissão<input name="pref_profession" maxlength="120" /></label
+            ><label
+              >Perfil familiar<input
+                name="pref_family_profile"
+                maxlength="120"
+                placeholder="Ex.: casal com dois filhos" /></label
+            ><label
+              >Categoria de veículo desejada<input
+                name="pref_vehicle_category"
+                maxlength="120"
+                placeholder="Ex.: SUV automático" /></label
+            ><label
+              >Ano mínimo<input
+                name="pref_min_year"
+                maxlength="120"
+                inputmode="numeric" /></label
+            ><label>Câmbio<input name="pref_transmission" maxlength="120" /></label
+            ><label>Combustível<input name="pref_fuel" maxlength="120" /></label
+            ><label
+              >Lugares<input
+                name="pref_seats"
+                maxlength="120"
+                inputmode="numeric" /></label
+            ><label
+              >Finalidade de uso<input
+                name="pref_usage_purpose"
+                maxlength="120"
+                placeholder="Ex.: família, trabalho, viagens" /></label
+            ><label
+              >Forma preferida de contato<input
+                name="pref_preferred_contact"
+                maxlength="120"
+                placeholder="Ex.: WhatsApp" /></label
+            >
+          </div>
+        </details>
         <p class="sales-footnote">
           Preencha pelo menos um contato: telefone ou e-mail. O retorno aparece
-          no painel; não cria notificações.
+          no painel; não cria notificações. Os campos acima são só o que o
+          cliente informou ou o vendedor registrou — nada aqui é estimado.
         </p>
         <p id="formMessage" class="sales-message" role="alert" hidden></p>
         <div class="sales-dialog-actions">
@@ -228,9 +329,42 @@
         </button>
       </div>
       <div id="leadDetails"></div>
+      <section class="lead-score-panel">
+        <div class="lead-score-heading">
+          <h3>Perfil Inteligente</h3>
+          <button
+            id="recalcScoreBtn"
+            type="button"
+            class="sales-secondary"
+          >
+            Atualizar pontuação
+          </button>
+        </div>
+        <div id="leadScoreContent"></div>
+      </section>
       <section class="lead-ai-panel">
         <h3>Assistente IA</h3>
+        <p class="sales-footnote">
+          Estimativa da IA (Gemini) — sempre revise antes de agir. Não é um
+          fato, é uma sugestão baseada nos dados do lead.
+        </p>
         <div id="leadAiContent">Este lead ainda não foi analisado.</div>
+      </section>
+      <section class="lead-tasks-panel">
+        <h3>Tarefas</h3>
+        <div id="taskList"></div>
+        <form id="taskForm" class="lead-subform">
+          <div class="sales-form-grid">
+            <label class="sales-full"
+              >Nova tarefa<input
+                id="taskTitle"
+                maxlength="255"
+                required
+                placeholder="Ex.: Enviar simulação de financiamento" /></label
+            ><label>Data (opcional)<input id="taskDueDate" type="date" /></label>
+          </div>
+          <button type="submit" class="sales-secondary">Adicionar tarefa</button>
+        </form>
       </section>
       <div
         id="leadActions"
@@ -278,6 +412,32 @@
             Registrar atendimento
           </button>
         </form>
+        <form id="interactionForm">
+          <label
+            >Registrar interação observada<select id="interactionType" required>
+              <option value="">Selecione o que aconteceu</option>
+              <option value="responded">Respondeu ao vendedor</option>
+              <option value="asked_photos">Pediu fotos</option>
+              <option value="asked_test_drive">Pediu test drive</option>
+              <option value="asked_simulation">
+                Pediu simulação de financiamento
+              </option>
+              <option value="requested_proposal">Solicitou proposta</option>
+              <option value="will_think_it_over">Disse que vai pensar</option>
+              <option value="stopped_responding">Deixou de responder</option>
+              <option value="meeting_scheduled">Marcou reunião</option>
+              <option value="lost_interest">Perdeu o interesse</option>
+            </select></label
+          ><label
+            >Nota (opcional)<input id="interactionNote" maxlength="500" /></label
+          ><button id="saveInteraction" type="submit" class="sales-secondary">
+            Registrar interação
+          </button>
+        </form>
+        <p class="sales-footnote">
+          Estas interações alimentam a pontuação de prioridade (regras
+          internas, sem IA) e a linha do tempo abaixo.
+        </p>
         <div id="eventList"></div>
       </section>
     </dialog>

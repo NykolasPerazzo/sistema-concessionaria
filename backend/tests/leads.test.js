@@ -28,12 +28,16 @@ test("leads: atendimento, perdas, retornos e conversão", async (t) => {
     });
   let l;
   await t.test("autorização e validação", async () => {
-    for (const role of [null, "vendedor"])
+    for (const role of [null, "guest"])
       for (const route of ["/api/leads", "/api/leads/1"])
         assert.equal(
           (await f.request(route, { role })).status,
           role ? 403 : 401,
         );
+    assert.equal(
+      (await f.request("/api/leads", { role: "vendedor" })).status,
+      200,
+    );
     assert.equal(
       (
         await f.request("/api/leads", {

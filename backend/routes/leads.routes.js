@@ -12,8 +12,12 @@ const {
   convertLead,
   analyzeLeadNow,
   leadEvents,
+  addInteraction,
+  createTask,
+  updateTask,
+  recalculateScore,
 } = require("../controllers/leads.controller");
-router.use(authenticate, authorizeRoles("admin"));
+router.use(authenticate, authorizeRoles("admin", "vendedor"));
 router.get("/", listLeads);
 router.get("/stream", leadEvents);
 router.get("/:id", leadDetails);
@@ -23,4 +27,8 @@ router.patch("/:id/status", changeStage);
 router.post("/:id/notes", addNote);
 router.post("/:id/convert", convertLead);
 router.post("/:id/analyze", analyzeLeadNow);
+router.post("/:id/interactions", addInteraction);
+router.post("/:id/tasks", createTask);
+router.patch("/:id/tasks/:taskId", updateTask);
+router.post("/:id/score/recalculate", recalculateScore);
 module.exports = router;

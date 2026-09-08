@@ -18,6 +18,11 @@ const {
   notifyNewLead,
 } = require("../services/lead-notifications.service");
 
+const {
+  computeScore,
+  temperature,
+} = require("../services/lead-score.service");
+
 const sources = [
   "website",
   "whatsapp",
@@ -27,6 +32,64 @@ const sources = [
   "walkin",
   "other",
 ];
+
+const paymentMethods = ["cash", "financing"];
+
+const timeframes = [
+  "immediate",
+  "7_days",
+  "30_days",
+  "90_days",
+  "research_only",
+];
+
+const preferenceKeys = [
+  "profession",
+  "family_profile",
+  "vehicle_category",
+  "min_year",
+  "transmission",
+  "fuel",
+  "seats",
+  "usage_purpose",
+  "preferred_contact",
+];
+
+const interactionTypes = [
+  "responded",
+  "asked_photos",
+  "asked_test_drive",
+  "asked_simulation",
+  "requested_proposal",
+  "will_think_it_over",
+  "stopped_responding",
+  "meeting_scheduled",
+  "lost_interest",
+];
+
+const interactionLabels = {
+  responded: "Respondeu ao vendedor",
+  asked_photos: "Pediu fotos",
+  asked_test_drive: "Pediu test drive",
+  asked_simulation: "Pediu simulação de financiamento",
+  requested_proposal: "Solicitou proposta",
+  will_think_it_over: "Disse que vai pensar",
+  stopped_responding: "Deixou de responder",
+  meeting_scheduled: "Marcou reunião",
+  lost_interest: "Perdeu o interesse",
+};
+
+const paymentLabels = { cash: "à vista", financing: "financiado" };
+
+const timeframeLabels = {
+  immediate: "imediato",
+  "7_days": "em até 7 dias",
+  "30_days": "em até 30 dias",
+  "90_days": "em até 90 dias",
+  research_only: "ainda só pesquisando",
+};
+
+const temperatureLabels = { hot: "Quente", warm: "Morno", cold: "Frio" };
 
 const states = {
   new: ["contacting", "qualified", "lost"],
@@ -58,7 +121,9 @@ const projection = `
   ai.summary AS ai_summary,
   ai.next_action AS ai_next_action,
   ai.response_draft AS ai_response_draft,
-  ai.created_at AS ai_analyzed_at
+  ai.created_at AS ai_analyzed_at,
+
+  sc.score AS priority_score
 `;
 
 const aiJoin = `
@@ -70,6 +135,112 @@ const aiJoin = `
     LIMIT 1
   ) ai ON TRUE
 `;
+
+/*
+ * Pontuação de regras internas (não é IA). Usada tanto na listagem
+ * (badge de prioridade) quanto na ficha do lead.
+ */
+const scoreJoin = `
+  LEFT JOIN LATERAL (
+    SELECT score
+    FROM lead_scores s
+    WHERE s.lead_id = l.id
+    ORDER BY s.id DESC
+    LIMIT 1
+  ) sc ON TRUE
+`;
+
+/*
+ * Resumo básico, gerado por regras/template (SEM IA). O resumo de IA
+ * de fato é o campo ai_summary, calculado pelo Gemini em analyzeLead.
+ */
+function buildBasicSummary(lead) {
+  const parts = [
+    `Procura ${lead.vehicle_label || "veículo ainda não definido"}.`,
+  ];
+
+  if (lead.payment_method) {
+    parts.push(`Pagamento: ${paymentLabels[lead.payment_method]}.`);
+  }
+
+  if (lead.purchase_timeframe) {
+    parts.push(`Prazo: ${timeframeLabels[lead.purchase_timeframe]}.`);
+  }
+
+  const temp = temperature(lead.priority_score);
+
+  parts.push(
+    temp
+      ? `Prioridade: ${temperatureLabels[temp]} (${lead.priority_score}/100).`
+      : "Prioridade: ainda não avaliada.",
+  );
+
+  return parts.join(" ");
+}
+
+/*
+ * Recalcula a pontuação de regras a partir dos dados atuais do lead
+ * e das interações registradas. Só grava uma nova linha em
+ * lead_scores quando o resultado muda, para não poluir o histórico.
+ */
+async function recomputeScore(client, leadId) {
+  const leadResult = await client.query(
+    `SELECT * FROM leads WHERE id = $1`,
+    [leadId],
+  );
+
+  const lead = leadResult.rows[0];
+
+  if (!lead) {
+    return null;
+  }
+
+  const flagsResult = await client.query(
+    `
+      SELECT
+        COALESCE(bool_or(interaction_type = 'asked_simulation'), false) AS asked_simulation,
+        COALESCE(bool_or(interaction_type IN ('asked_test_drive', 'requested_proposal', 'meeting_scheduled')), false) AS engaged_action,
+        COALESCE(bool_or(interaction_type = 'responded' AND created_at::date = CURRENT_DATE), false) AS responded_today
+      FROM lead_events
+      WHERE lead_id = $1 AND event_type = 'interaction'
+    `,
+    [leadId],
+  );
+
+  const flags = flagsResult.rows[0];
+
+  const { score, reasons } = computeScore(lead, {
+    askedSimulation: flags.asked_simulation,
+    engagedAction: flags.engaged_action,
+    respondedToday: flags.responded_today,
+  });
+
+  const lastResult = await client.query(
+    `SELECT * FROM lead_scores WHERE lead_id = $1 ORDER BY id DESC LIMIT 1`,
+    [leadId],
+  );
+
+  const last = lastResult.rows[0];
+
+  if (
+    last &&
+    last.score === score &&
+    JSON.stringify(last.reasons) === JSON.stringify(reasons)
+  ) {
+    return last;
+  }
+
+  const inserted = await client.query(
+    `
+      INSERT INTO lead_scores(lead_id, score, reasons)
+      VALUES($1, $2, $3)
+      RETURNING *
+    `,
+    [leadId, score, JSON.stringify(reasons)],
+  );
+
+  return inserted.rows[0];
+}
 
 function errorResponse(res, error) {
   if (!error.status) {
@@ -95,6 +266,79 @@ function optionalId(value) {
   return Number(value);
 }
 
+function optionalMoney(value, label) {
+  if (value == null || value === "") {
+    return null;
+  }
+
+  if (!money(value)) {
+    throw fail(400, `${label} inválido.`);
+  }
+
+  return value;
+}
+
+function optionalTri(value, label) {
+  if (value == null || value === "") {
+    return null;
+  }
+
+  if (value === true || value === "true" || value === "yes") {
+    return true;
+  }
+
+  if (value === false || value === "false" || value === "no") {
+    return false;
+  }
+
+  throw fail(400, `${label} inválido.`);
+}
+
+/*
+ * Campos secundários e opcionais do perfil (só quando informados),
+ * guardados como JSON em vez de uma coluna por campo. Chaves fora da
+ * lista abaixo são recusadas para não virar um "campo livre" sem controle.
+ */
+function parsePreferences(input) {
+  if (input == null || input === "") {
+    return {};
+  }
+
+  let obj = input;
+
+  if (typeof input === "string") {
+    try {
+      obj = JSON.parse(input);
+    } catch {
+      throw fail(400, "Preferências declaradas inválidas.");
+    }
+  }
+
+  if (typeof obj !== "object" || Array.isArray(obj)) {
+    throw fail(400, "Preferências declaradas inválidas.");
+  }
+
+  const result = {};
+
+  for (const [key, value] of Object.entries(obj)) {
+    if (value == null || value === "") {
+      continue;
+    }
+
+    if (!preferenceKeys.includes(key)) {
+      throw fail(400, `Preferência desconhecida: ${key}.`);
+    }
+
+    const str = String(value).trim().slice(0, 120);
+
+    if (str) {
+      result[key] = str;
+    }
+  }
+
+  return result;
+}
+
 function validate(body) {
   const [name, phone, email, city, notes] = validateCustomer(body);
 
@@ -118,6 +362,18 @@ function validate(body) {
     throw fail(400, "Data de retorno inválida.");
   }
 
+  const paymentMethod = body.payment_method || null;
+
+  if (paymentMethod !== null && !paymentMethods.includes(paymentMethod)) {
+    throw fail(400, "Forma de pagamento inválida.");
+  }
+
+  const purchaseTimeframe = body.purchase_timeframe || null;
+
+  if (purchaseTimeframe !== null && !timeframes.includes(purchaseTimeframe)) {
+    throw fail(400, "Prazo de compra inválido.");
+  }
+
   return {
     name,
     phone,
@@ -128,6 +384,23 @@ function validate(body) {
     vehicle_id: optionalId(body.vehicle_id),
     budget,
     next,
+    payment_method: paymentMethod,
+    down_payment: optionalMoney(body.down_payment, "Valor de entrada"),
+    desired_installment: optionalMoney(
+      body.desired_installment,
+      "Parcela desejada",
+    ),
+    has_trade_in: optionalTri(body.has_trade_in, "Veículo na troca"),
+    trade_in_estimated_value: optionalMoney(
+      body.trade_in_estimated_value,
+      "Valor estimado da troca",
+    ),
+    financing_pre_approved: optionalTri(
+      body.financing_pre_approved,
+      "Financiamento pré-aprovado",
+    ),
+    purchase_timeframe: purchaseTimeframe,
+    declared_preferences: parsePreferences(body.declared_preferences),
   };
 }
 
@@ -183,11 +456,15 @@ async function listLeads(req, res) {
       SELECT ${projection}
       FROM leads l
       ${aiJoin}
+      ${scoreJoin}
       ORDER BY l.created_at DESC, l.id DESC
     `);
 
     res.json({
-      leads: result.rows,
+      leads: result.rows.map((row) => ({
+        ...row,
+        basic_summary: buildBasicSummary(row),
+      })),
     });
   } catch (error) {
     errorResponse(res, error);
@@ -205,6 +482,7 @@ async function leadDetails(req, res) {
         SELECT ${projection}
         FROM leads l
         ${aiJoin}
+        ${scoreJoin}
         WHERE l.id = $1
       `,
       [req.params.id],
@@ -216,6 +494,8 @@ async function leadDetails(req, res) {
       throw fail(404, "Lead não encontrado.");
     }
 
+    lead.basic_summary = buildBasicSummary(lead);
+
     const eventsResult = await pool.query(
       `
         SELECT *
@@ -226,9 +506,32 @@ async function leadDetails(req, res) {
       [lead.id],
     );
 
+    const scoreResult = await pool.query(
+      `
+        SELECT *
+        FROM lead_scores
+        WHERE lead_id = $1
+        ORDER BY id DESC
+        LIMIT 1
+      `,
+      [lead.id],
+    );
+
+    const tasksResult = await pool.query(
+      `
+        SELECT *
+        FROM lead_tasks
+        WHERE lead_id = $1
+        ORDER BY (status = 'open') DESC, due_date NULLS LAST, id DESC
+      `,
+      [lead.id],
+    );
+
     res.json({
       lead,
       events: eventsResult.rows,
+      score: scoreResult.rows[0] || null,
+      tasks: tasksResult.rows,
     });
   } catch (error) {
     errorResponse(res, error);
@@ -241,7 +544,7 @@ async function saveLead(req, res) {
 
     const editing = req.params.id !== undefined;
 
-    const lead = await transaction(async (client) => {
+    const saved = await transaction(async (client) => {
       let oldLead = null;
 
       if (editing) {
@@ -293,6 +596,14 @@ async function saveLead(req, res) {
         body.budget,
         body.next,
         body.notes,
+        body.payment_method,
+        body.down_payment,
+        body.desired_installment,
+        body.has_trade_in,
+        body.trade_in_estimated_value,
+        body.financing_pre_approved,
+        body.purchase_timeframe,
+        JSON.stringify(body.declared_preferences),
       ];
 
       let result;
@@ -312,9 +623,17 @@ async function saveLead(req, res) {
                 budget = $8,
                 next_contact_date = $9,
                 notes = $10,
+                payment_method = $11,
+                down_payment = $12,
+                desired_installment = $13,
+                has_trade_in = $14,
+                trade_in_estimated_value = $15,
+                financing_pre_approved = $16,
+                purchase_timeframe = $17,
+                declared_preferences = $18,
                 version = version + 1,
                 updated_at = NOW()
-              WHERE id = $11
+              WHERE id = $19
               RETURNING *
             `,
           [...values, oldLead.id],
@@ -333,6 +652,14 @@ async function saveLead(req, res) {
                 budget,
                 next_contact_date,
                 notes,
+                payment_method,
+                down_payment,
+                desired_installment,
+                has_trade_in,
+                trade_in_estimated_value,
+                financing_pre_approved,
+                purchase_timeframe,
+                declared_preferences,
                 created_by
               )
               VALUES(
@@ -346,7 +673,15 @@ async function saveLead(req, res) {
                 $8,
                 $9,
                 $10,
-                $11
+                $11,
+                $12,
+                $13,
+                $14,
+                $15,
+                $16,
+                $17,
+                $18,
+                $19
               )
               RETURNING *
             `,
@@ -364,7 +699,9 @@ async function saveLead(req, res) {
         req.user.sub,
       );
 
-      return savedLead;
+      const score = await recomputeScore(client, savedLead.id);
+
+      return { lead: savedLead, score };
     });
 
     /*
@@ -374,10 +711,12 @@ async function saveLead(req, res) {
      * Edições não geram nova notificação.
      */
     if (!editing) {
-      notifyNewLead(lead);
+      notifyNewLead(saved.lead);
     }
 
-    res.status(editing ? 200 : 201).json({ lead });
+    res
+      .status(editing ? 200 : 201)
+      .json({ lead: saved.lead, score: saved.score });
   } catch (error) {
     errorResponse(res, error);
   }
@@ -623,13 +962,31 @@ async function createPublicLead(req, res) {
   }
 }
 
+/*
+ * Trava simples em memória: impede que dois cliques (ou duas abas)
+ * disparem duas análises do MESMO lead ao mesmo tempo. Não bloqueia
+ * uma reanálise manual pedida depois que a anterior já terminou.
+ */
+const analyzingLeads = new Set();
+
 async function analyzeLeadNow(req, res) {
+  const leadId = Number(req.params.id);
+
   try {
     if (!validId(req.params.id)) {
       throw fail(400, "Lead inválido.");
     }
 
-    const analysis = await analyzeLead(Number(req.params.id), req.user.sub);
+    if (analyzingLeads.has(leadId)) {
+      throw fail(
+        429,
+        "Já existe uma análise em andamento para este lead. Aguarde terminar.",
+      );
+    }
+
+    analyzingLeads.add(leadId);
+
+    const analysis = await analyzeLead(leadId, req.user.sub);
 
     await pool.query(
       `
@@ -652,6 +1009,191 @@ async function analyzeLeadNow(req, res) {
     res.status(201).json({
       analysis,
     });
+  } catch (error) {
+    errorResponse(res, error);
+  } finally {
+    analyzingLeads.delete(leadId);
+  }
+}
+
+/*
+ * Registra uma interação de um tipo fixo (o que o vendedor observou
+ * no atendimento), soma à timeline e recalcula a pontuação — algumas
+ * interações (pedir simulação, test drive, proposta...) valem pontos.
+ */
+async function addInteraction(req, res) {
+  try {
+    const type = req.body?.type;
+
+    if (!interactionTypes.includes(type)) {
+      throw fail(400, "Tipo de interação inválido.");
+    }
+
+    const note = textValue(req.body?.note, 500);
+    const label = interactionLabels[type];
+    const content = note ? `${label}: ${note}` : label;
+
+    const score = await transaction(async (client) => {
+      const lead = await locked(client, req);
+
+      await client.query(
+        `
+          INSERT INTO lead_events(lead_id, event_type, interaction_type, content, created_by)
+          VALUES($1, 'interaction', $2, $3, $4)
+        `,
+        [lead.id, type, content, req.user.sub],
+      );
+
+      await client.query(
+        `
+          UPDATE leads
+          SET version = version + 1, updated_at = NOW()
+          WHERE id = $1
+        `,
+        [lead.id],
+      );
+
+      return recomputeScore(client, lead.id);
+    });
+
+    res.status(201).json({
+      message: "Interação registrada.",
+      score,
+    });
+  } catch (error) {
+    errorResponse(res, error);
+  }
+}
+
+/*
+ * Tarefa/lembrete de retorno do lead. Não usa o controle de versão do
+ * lead (locked()) porque é um registro à parte, não um campo do lead.
+ */
+async function createTask(req, res) {
+  try {
+    if (!validId(req.params.id)) {
+      throw fail(400, "Lead inválido.");
+    }
+
+    const title = textValue(req.body?.title, 255, true);
+    const dueDate = req.body?.due_date || null;
+
+    if (dueDate !== null && !validDate(dueDate)) {
+      throw fail(400, "Data da tarefa inválida.");
+    }
+
+    const leadCheck = await pool.query(`SELECT id FROM leads WHERE id = $1`, [
+      req.params.id,
+    ]);
+
+    if (!leadCheck.rows[0]) {
+      throw fail(404, "Lead não encontrado.");
+    }
+
+    const result = await pool.query(
+      `
+        INSERT INTO lead_tasks(lead_id, title, due_date, created_by)
+        VALUES($1, $2, $3, $4)
+        RETURNING *
+      `,
+      [req.params.id, title, dueDate, req.user.sub],
+    );
+
+    await pool.query(
+      `
+        INSERT INTO lead_events(lead_id, event_type, content, created_by)
+        VALUES($1, 'task_created', $2, $3)
+      `,
+      [
+        req.params.id,
+        `Tarefa criada: ${title}${dueDate ? ` (até ${dueDate})` : ""}`,
+        req.user.sub,
+      ],
+    );
+
+    res.status(201).json({ task: result.rows[0] });
+  } catch (error) {
+    errorResponse(res, error);
+  }
+}
+
+async function updateTask(req, res) {
+  try {
+    if (!validId(req.params.id) || !validId(req.params.taskId)) {
+      throw fail(400, "Lead ou tarefa inválidos.");
+    }
+
+    const status = req.body?.status;
+
+    if (!["done", "cancelled"].includes(status)) {
+      throw fail(400, "Status de tarefa inválido.");
+    }
+
+    const taskResult = await pool.query(
+      `SELECT * FROM lead_tasks WHERE id = $1 AND lead_id = $2`,
+      [req.params.taskId, req.params.id],
+    );
+
+    const task = taskResult.rows[0];
+
+    if (!task) {
+      throw fail(404, "Tarefa não encontrada.");
+    }
+
+    if (task.status !== "open") {
+      throw fail(409, "Esta tarefa já foi encerrada.");
+    }
+
+    const result = await pool.query(
+      `
+        UPDATE lead_tasks
+        SET status = $1, completed_by = $2, completed_at = NOW()
+        WHERE id = $3
+        RETURNING *
+      `,
+      [status, req.user.sub, task.id],
+    );
+
+    await pool.query(
+      `
+        INSERT INTO lead_events(lead_id, event_type, content, created_by)
+        VALUES($1, $2, $3, $4)
+      `,
+      [
+        req.params.id,
+        status === "done" ? "task_completed" : "task_cancelled",
+        `${status === "done" ? "Tarefa concluída" : "Tarefa cancelada"}: ${task.title}`,
+        req.user.sub,
+      ],
+    );
+
+    res.json({ task: result.rows[0] });
+  } catch (error) {
+    errorResponse(res, error);
+  }
+}
+
+/*
+ * Recomputa a pontuação sob demanda (botão "Atualizar pontuação").
+ * Não chama IA nem nenhum serviço externo — é só reaplicar as regras.
+ */
+async function recalculateScore(req, res) {
+  try {
+    if (!validId(req.params.id)) {
+      throw fail(400, "Lead inválido.");
+    }
+
+    const leadCheck = await pool.query(`SELECT id FROM leads WHERE id = $1`, [
+      req.params.id,
+    ]);
+
+    if (!leadCheck.rows[0]) {
+      throw fail(404, "Lead não encontrado.");
+    }
+
+    const score = await recomputeScore(pool, Number(req.params.id));
+
+    res.json({ score });
   } catch (error) {
     errorResponse(res, error);
   }
@@ -703,4 +1245,8 @@ module.exports = {
   analyzeLeadNow,
   leadEvents,
   createPublicLead,
+  addInteraction,
+  createTask,
+  updateTask,
+  recalculateScore,
 };
