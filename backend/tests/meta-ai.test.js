@@ -89,6 +89,11 @@ test("Meta Lead Ads e IA: assinatura, deduplicação, importação e sugestões"
                         "Confirmar disponibilidade e forma de pagamento.",
                       response_draft:
                         "Olá, Maria! Posso ajudar com o Onix Plus e explicar as opções disponíveis.",
+                      probable_objection:
+                        "Pode achar o valor da parcela alto.",
+                      advance_probability: "medium",
+                      score_justification:
+                        "Respondeu rápido e já tem um veículo específico em mente.",
                     }),
                   },
                 ],

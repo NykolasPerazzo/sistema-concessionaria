@@ -86,6 +86,7 @@ app.use("/api/sales", require("./routes/sales.routes"));
 app.use("/api/proposals", require("./routes/proposals.routes"));
 app.use("/api/customers", require("./routes/customers.routes"));
 app.use("/api/leads", require("./routes/leads.routes"));
+app.use("/api/users", require("./routes/users.routes"));
 app.use("/api/integrations/meta", require("./routes/meta.routes"));
 app.use("/api/settings", settingsRoutes);
 app.use("/api/ai", aiRoutes);

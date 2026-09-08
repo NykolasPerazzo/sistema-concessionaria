@@ -498,11 +498,38 @@ body.sales-page.light-theme .sales-message.error {
   white-space: pre-wrap;
   line-height: 1.5;
 }
+.lead-ai-panel > #leadAiContent button {
+  margin-top: 14px;
+}
+.lead-ai-history {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border-color);
+}
+.lead-ai-history summary {
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+.lead-ai-history #aiHistoryList {
+  margin-top: 12px;
+}
 @media (max-width: 750px) {
   .lead-integration-card {
     align-items: flex-start;
     flex-direction: column;
   }
+}
+.lead-inline-form {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  margin-top: 18px;
+  flex-wrap: wrap;
+}
+.lead-inline-form label {
+  flex: 1;
+  min-width: 200px;
 }
 .lead-form-section {
   grid-column: 1/-1;
@@ -555,6 +582,11 @@ body.sales-page.light-theme .sales-message.error {
   border-radius: 999px;
   font-size: 11px;
   font-weight: 700;
+}
+.lead-assignee-tag {
+  display: block;
+  margin-top: 4px;
+  color: var(--text-secondary);
 }
 .lead-hot {
   background: rgba(244, 123, 114, 0.18);

@@ -18,7 +18,11 @@
     "test:meta-ai": "node --test backend/tests/meta-ai.test.js",
     "migrate:cloudinary-images": "npm run migrate:meta-ai && node backend/scripts/migrate-cloudinary-images.js",
     "migrate:lead-intelligence": "npm run migrate:cloudinary-images && node backend/scripts/migrate-lead-intelligence.js",
-    "test:lead-intelligence": "node --test backend/tests/lead-intelligence.test.js"
+    "test:lead-intelligence": "node --test backend/tests/lead-intelligence.test.js",
+    "migrate:lead-ai-history": "npm run migrate:lead-intelligence && node backend/scripts/migrate-lead-ai-history.js",
+    "test:lead-ai-history": "node --test backend/tests/lead-ai-history.test.js",
+    "migrate:lead-assignment": "npm run migrate:lead-ai-history && node backend/scripts/migrate-lead-assignment.js",
+    "test:lead-assignment": "node --test backend/tests/lead-assignment.test.js"
   },
   "repository": {
     "type": "git",

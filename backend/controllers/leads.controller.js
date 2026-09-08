@@ -121,19 +121,37 @@ const projection = `
   ai.summary AS ai_summary,
   ai.next_action AS ai_next_action,
   ai.response_draft AS ai_response_draft,
+  ai.probable_objection AS ai_probable_objection,
+  ai.advance_probability AS ai_advance_probability,
+  ai.score_justification AS ai_score_justification,
   ai.created_at AS ai_analyzed_at,
+
+  ai_err.created_at AS ai_error_at,
+  ai_err.error_message AS ai_error_message,
 
   sc.score AS priority_score
 `;
 
+/*
+ * Só considera a última análise que deu certo (status='ok'), para
+ * uma tentativa que falhou depois não "apagar" a última análise boa
+ * da tela. A falha mais recente vem à parte (ai_err) só para avisar.
+ */
 const aiJoin = `
   LEFT JOIN LATERAL (
     SELECT *
     FROM lead_ai_analyses a
-    WHERE a.lead_id = l.id
+    WHERE a.lead_id = l.id AND a.status = 'ok'
     ORDER BY a.id DESC
     LIMIT 1
   ) ai ON TRUE
+  LEFT JOIN LATERAL (
+    SELECT created_at, error_message
+    FROM lead_ai_analyses e
+    WHERE e.lead_id = l.id AND e.status = 'error'
+    ORDER BY e.id DESC
+    LIMIT 1
+  ) ai_err ON TRUE
 `;
 
 /*
@@ -176,6 +194,26 @@ function buildBasicSummary(lead) {
   );
 
   return parts.join(" ");
+}
+
+/*
+ * Só mostra o aviso de falha quando ela é mais recente que a última
+ * análise boa (senão uma tentativa antiga e já superada voltaria a
+ * aparecer toda vez que a tela é aberta).
+ */
+function attachAiError(row) {
+  const hasNewerError =
+    row.ai_error_at &&
+    (!row.ai_analyzed_at || new Date(row.ai_error_at) > new Date(row.ai_analyzed_at));
+
+  row.ai_last_error = hasNewerError
+    ? { message: row.ai_error_message, at: row.ai_error_at }
+    : null;
+
+  delete row.ai_error_at;
+  delete row.ai_error_message;
+
+  return row;
 }
 
 /*
@@ -401,6 +439,7 @@ function validate(body) {
     ),
     purchase_timeframe: purchaseTimeframe,
     declared_preferences: parsePreferences(body.declared_preferences),
+    assigned_to: optionalId(body.assigned_to),
   };
 }
 
@@ -461,10 +500,10 @@ async function listLeads(req, res) {
     `);
 
     res.json({
-      leads: result.rows.map((row) => ({
-        ...row,
-        basic_summary: buildBasicSummary(row),
-      })),
+      leads: result.rows.map((row) => {
+        attachAiError(row);
+        return { ...row, basic_summary: buildBasicSummary(row) };
+      }),
     });
   } catch (error) {
     errorResponse(res, error);
@@ -494,6 +533,7 @@ async function leadDetails(req, res) {
       throw fail(404, "Lead não encontrado.");
     }
 
+    attachAiError(lead);
     lead.basic_summary = buildBasicSummary(lead);
 
     const eventsResult = await pool.query(
@@ -527,11 +567,27 @@ async function leadDetails(req, res) {
       [lead.id],
     );
 
+    const analysesResult = await pool.query(
+      `
+        SELECT
+          id, status, score, intent, urgency, summary, next_action,
+          response_draft, probable_objection, advance_probability,
+          score_justification, model, prompt_version, error_message,
+          created_at
+        FROM lead_ai_analyses
+        WHERE lead_id = $1
+        ORDER BY id DESC
+        LIMIT 10
+      `,
+      [lead.id],
+    );
+
     res.json({
       lead,
       events: eventsResult.rows,
       score: scoreResult.rows[0] || null,
       tasks: tasksResult.rows,
+      analyses: analysesResult.rows,
     });
   } catch (error) {
     errorResponse(res, error);
@@ -585,6 +641,17 @@ async function saveLead(req, res) {
           `${vehicle.brand} ` + `${vehicle.model} • ` + `${vehicle.year}`;
       }
 
+      if (body.assigned_to !== null) {
+        const userResult = await client.query(
+          `SELECT id FROM users WHERE id = $1 AND role IN ('admin', 'vendedor')`,
+          [body.assigned_to],
+        );
+
+        if (!userResult.rows[0]) {
+          throw fail(404, "Vendedor não encontrado.");
+        }
+      }
+
       const values = [
         body.name,
         body.phone,
@@ -604,6 +671,7 @@ async function saveLead(req, res) {
         body.financing_pre_approved,
         body.purchase_timeframe,
         JSON.stringify(body.declared_preferences),
+        body.assigned_to,
       ];
 
       let result;
@@ -631,9 +699,10 @@ async function saveLead(req, res) {
                 financing_pre_approved = $16,
                 purchase_timeframe = $17,
                 declared_preferences = $18,
+                assigned_to = $19,
                 version = version + 1,
                 updated_at = NOW()
-              WHERE id = $19
+              WHERE id = $20
               RETURNING *
             `,
           [...values, oldLead.id],
@@ -660,6 +729,7 @@ async function saveLead(req, res) {
                 financing_pre_approved,
                 purchase_timeframe,
                 declared_preferences,
+                assigned_to,
                 created_by
               )
               VALUES(
@@ -681,7 +751,8 @@ async function saveLead(req, res) {
                 $16,
                 $17,
                 $18,
-                $19
+                $19,
+                $20
               )
               RETURNING *
             `,
@@ -759,6 +830,60 @@ async function changeStage(req, res) {
 
     res.json({
       message: "Etapa atualizada.",
+    });
+  } catch (error) {
+    errorResponse(res, error);
+  }
+}
+
+/*
+ * Atribuição rápida de vendedor, sem precisar abrir o formulário
+ * inteiro. assigned_to = null desatribui.
+ */
+async function assignLead(req, res) {
+  try {
+    const assignedTo = optionalId(req.body?.assigned_to);
+
+    await transaction(async (client) => {
+      const lead = await locked(client, req);
+
+      let userName = null;
+
+      if (assignedTo !== null) {
+        const userResult = await client.query(
+          `SELECT id, name FROM users WHERE id = $1 AND role IN ('admin', 'vendedor')`,
+          [assignedTo],
+        );
+
+        if (!userResult.rows[0]) {
+          throw fail(404, "Vendedor não encontrado.");
+        }
+
+        userName = userResult.rows[0].name;
+      }
+
+      await client.query(
+        `
+          UPDATE leads
+          SET assigned_to = $2, version = version + 1, updated_at = NOW()
+          WHERE id = $1
+        `,
+        [lead.id, assignedTo],
+      );
+
+      await event(
+        client,
+        lead.id,
+        "assigned",
+        assignedTo === null
+          ? "Lead desatribuído."
+          : `Atribuído a ${userName}.`,
+        req.user.sub,
+      );
+    });
+
+    res.json({
+      message: "Atribuição atualizada.",
     });
   } catch (error) {
     errorResponse(res, error);
@@ -1240,6 +1365,7 @@ module.exports = {
   leadDetails,
   saveLead,
   changeStage,
+  assignLead,
   addNote,
   convertLead,
   analyzeLeadNow,

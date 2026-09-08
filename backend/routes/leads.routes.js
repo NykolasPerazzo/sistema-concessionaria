@@ -8,6 +8,7 @@ const {
   leadDetails,
   saveLead,
   changeStage,
+  assignLead,
   addNote,
   convertLead,
   analyzeLeadNow,
@@ -24,6 +25,7 @@ router.get("/:id", leadDetails);
 router.post("/", saveLead);
 router.put("/:id", saveLead);
 router.patch("/:id/status", changeStage);
+router.patch("/:id/assign", assignLead);
 router.post("/:id/notes", addNote);
 router.post("/:id/convert", convertLead);
 router.post("/:id/analyze", analyzeLeadNow);

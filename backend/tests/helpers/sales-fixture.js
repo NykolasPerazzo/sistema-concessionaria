@@ -10,7 +10,12 @@ async function fixture() {
     status TEXT, image_url TEXT, mileage INTEGER, fuel TEXT, transmission TEXT,
     body_type TEXT, color TEXT, description TEXT);
     CREATE TABLE vehicle_expenses(id SERIAL PRIMARY KEY, vehicle_id INTEGER REFERENCES vehicles(id), amount NUMERIC(14,2));
-    CREATE TABLE vehicle_images(id SERIAL PRIMARY KEY, vehicle_id INTEGER, image_url TEXT, is_cover BOOLEAN);`);
+    CREATE TABLE vehicle_images(id SERIAL PRIMARY KEY, vehicle_id INTEGER, image_url TEXT, is_cover BOOLEAN);
+    CREATE TABLE users(id SERIAL PRIMARY KEY, name TEXT, email TEXT, password_hash TEXT, role TEXT);
+    INSERT INTO users(id, name, email, password_hash, role) VALUES
+      (1, 'Admin Teste', 'admin@example.com', 'x', 'admin'),
+      (2, 'Vendedor Teste', 'vendedor@example.com', 'x', 'vendedor');
+    SELECT setval('users_id_seq', 2);`);
   const migration = fs.readFileSync(
     path.join(__dirname, "../../database/migrations/001_sales.sql"),
     "utf8",
@@ -56,6 +61,18 @@ async function fixture() {
   );
   await db.exec(leadIntelligenceMigration);
   await db.exec(leadIntelligenceMigration);
+  const leadAiHistoryMigration = fs.readFileSync(
+    path.join(__dirname, "../../database/migrations/008_lead_ai_history.sql"),
+    "utf8",
+  );
+  await db.exec(leadAiHistoryMigration);
+  await db.exec(leadAiHistoryMigration);
+  const leadAssignmentMigration = fs.readFileSync(
+    path.join(__dirname, "../../database/migrations/009_lead_assignment.sql"),
+    "utf8",
+  );
+  await db.exec(leadAssignmentMigration);
+  await db.exec(leadAssignmentMigration);
   // PGlite possui uma conexão. A fila impede intercalar transações HTTP no teste.
   let queue = Promise.resolve();
   async function acquire() {
@@ -102,6 +119,7 @@ async function fixture() {
   app.use("/api/proposals", require("../../routes/proposals.routes"));
   app.use("/api/customers", require("../../routes/customers.routes"));
   app.use("/api/leads", require("../../routes/leads.routes"));
+  app.use("/api/users", require("../../routes/users.routes"));
   app.use("/api/integrations/meta", require("../../routes/meta.routes"));
   app.use("/api/vehicles", require("../../routes/vehicles.routes"));
   const { authenticate } = require("../../middleware/auth.middleware");

@@ -187,20 +187,32 @@ test("perfil inteligente do lead: campos declarados, pontuação, tarefas e inte
     assert.equal(typeof r.data.score.score, "number");
   });
 
-  await t.test("falha da IA é tratada sem quebrar o processo", async () => {
-    l = (await detail(l.id)).lead;
-    const r = await f.request(`/api/leads/${l.id}/analyze`, {
-      method: "POST",
-    });
-    // Sem GEMINI_API_KEY configurada no ambiente de teste isolado.
-    assert.equal(r.status, 500);
-    assert.ok(r.data.error);
-    assert.equal(
-      Number(
-        (await f.db.query("SELECT COUNT(*) FROM lead_ai_analyses")).rows[0]
-          .count,
-      ),
-      0,
-    );
-  });
+  await t.test(
+    "falha da IA é tratada sem quebrar o processo e fica registrada",
+    async () => {
+      l = (await detail(l.id)).lead;
+      const r = await f.request(`/api/leads/${l.id}/analyze`, {
+        method: "POST",
+      });
+      // Sem GEMINI_API_KEY configurada no ambiente de teste isolado.
+      assert.equal(r.status, 500);
+      assert.ok(r.data.error);
+      // A falha fica registrada (auditoria), mas não aparece como
+      // "análise atual" — ai_score continua null na ficha do lead.
+      const failed = (
+        await f.db.query(
+          "SELECT status, error_message FROM lead_ai_analyses WHERE lead_id=$1",
+          [l.id],
+        )
+      ).rows;
+      assert.equal(failed.length, 1);
+      assert.equal(failed[0].status, "error");
+      assert.match(failed[0].error_message, /GEMINI_API_KEY/);
+      const after = await detail(l.id);
+      assert.equal(after.lead.ai_score, null);
+      assert.equal(after.lead.ai_last_error.message, failed[0].error_message);
+      assert.equal(after.analyses.length, 1);
+      assert.equal(after.analyses[0].status, "error");
+    },
+  );
 });

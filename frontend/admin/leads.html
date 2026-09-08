@@ -99,6 +99,11 @@
               <option value="all">Todos</option>
               <option value="overdue">Vencidos</option>
             </select></label
+          ><label
+            >Vendedor<select id="assigneeFilter">
+              <option value="all">Todos</option>
+              <option value="unassigned">Não atribuído</option>
+            </select></label
           ><button class="sales-secondary" type="submit">Atualizar</button>
         </form>
         <div class="sales-table-scroll">
@@ -188,6 +193,13 @@
             >Próximo retorno (opcional)<input
               name="next_contact_date"
               type="date" /></label
+          ><label
+            >Vendedor responsável (opcional)<select
+              name="assigned_to"
+              id="assignedToSelect"
+            >
+              <option value="">Não atribuído</option>
+            </select></label
           ><label class="sales-full"
             >Observações iniciais<textarea
               name="notes"
@@ -329,6 +341,13 @@
         </button>
       </div>
       <div id="leadDetails"></div>
+      <form id="assignForm" class="lead-inline-form">
+        <label
+          >Vendedor responsável<select id="assignSelect">
+            <option value="">Não atribuído</option>
+          </select></label
+        ><button type="submit" class="sales-secondary">Atribuir</button>
+      </form>
       <section class="lead-score-panel">
         <div class="lead-score-heading">
           <h3>Perfil Inteligente</h3>
@@ -348,7 +367,12 @@
           Estimativa da IA (Gemini) — sempre revise antes de agir. Não é um
           fato, é uma sugestão baseada nos dados do lead.
         </p>
+        <div id="leadAiError" class="sales-message error" hidden></div>
         <div id="leadAiContent">Este lead ainda não foi analisado.</div>
+        <details class="lead-ai-history">
+          <summary>Ver análises anteriores</summary>
+          <div id="aiHistoryList"></div>
+        </details>
       </section>
       <section class="lead-tasks-panel">
         <h3>Tarefas</h3>

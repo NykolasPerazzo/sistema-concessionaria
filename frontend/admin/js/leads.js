@@ -33,6 +33,8 @@
     research_only: "Ainda só pesquisando",
   };
   const triLabels = { true: "Sim", false: "Não" };
+  const triProbabilityLabels = { low: "Baixa", medium: "Média", high: "Alta" };
+  const analysisStatusLabels = { ok: "Concluída", error: "Falhou" };
   const temperatureInfo = {
     hot: { label: "Quente", cls: "lead-hot" },
     warm: { label: "Morno", cls: "lead-warm" },
@@ -61,7 +63,9 @@
     editing = null,
     selected = null,
     busy = false,
-    requestVersion = 0;
+    requestVersion = 0,
+    users = [],
+    usersById = {};
   function el(tag, text, cls) {
     const n = document.createElement(tag);
     n.textContent = text;
@@ -106,12 +110,17 @@
     const q = $("search").value.trim().toLocaleLowerCase("pt-BR"),
       digits = q.replace(/\D/g, ""),
       status = $("statusFilter").value,
-      source = $("sourceFilter").value;
+      source = $("sourceFilter").value,
+      assignee = $("assigneeFilter").value;
     const rows = leads.filter(
       (l) =>
         (status === "all" || l.status === status) &&
         (source === "all" || source === l.source) &&
         ($("returnFilter").value === "all" || l.overdue) &&
+        (assignee === "all" ||
+          (assignee === "unassigned"
+            ? l.assigned_to == null
+            : String(l.assigned_to) === assignee)) &&
         (`${l.name} ${l.phone || ""} ${l.email || ""} ${l.vehicle_label || ""}`
           .toLocaleLowerCase("pt-BR")
           .includes(q) ||
@@ -145,6 +154,15 @@
             `lead-score-tag ${temp.cls}`,
           ),
         );
+      name.append(
+        el(
+          "small",
+          l.assigned_to != null
+            ? `Vendedor: ${usersById[l.assigned_to] || "#" + l.assigned_to}`
+            : "Sem vendedor atribuído",
+          "lead-assignee-tag",
+        ),
+      );
       const interest = el("td", "");
       interest.append(
         el("strong", l.vehicle_label || "Veículo não definido"),
@@ -186,6 +204,31 @@
       throw error;
     }
   }
+  async function loadUsers() {
+    try {
+      const data = await api("/users");
+      users = data.users;
+      usersById = Object.fromEntries(users.map((u) => [u.id, u.name]));
+      for (const select of [
+        $("assignedToSelect"),
+        $("assignSelect"),
+      ]) {
+        const current = select.value;
+        select.replaceChildren(new Option("Não atribuído", ""));
+        users.forEach((u) => select.add(new Option(u.name, u.id)));
+        select.value = current;
+      }
+      const filterCurrent = $("assigneeFilter").value;
+      $("assigneeFilter").replaceChildren(
+        new Option("Todos", "all"),
+        new Option("Não atribuído", "unassigned"),
+      );
+      users.forEach((u) => $("assigneeFilter").add(new Option(u.name, u.id)));
+      $("assigneeFilter").value = filterCurrent || "all";
+    } catch {
+      // Sem lista de usuários, os seletores ficam só com "Não atribuído".
+    }
+  }
   async function form(l = null) {
     if (busy) return;
     busy = true;
@@ -221,6 +264,7 @@
           "desired_installment",
           "trade_in_estimated_value",
           "purchase_timeframe",
+          "assigned_to",
         ])
           $("leadForm").elements[name].value = l[name] ?? "";
         const tri = (v) => (v === true ? "yes" : v === false ? "no" : "");
@@ -260,6 +304,7 @@
     $("noteForm").reset();
     $("interactionForm").reset();
     $("taskForm").reset();
+    $("assignSelect").value = l.assigned_to ?? "";
     const dl = el("dl", "", "sales-details");
     const fields = [
       ["Etapa", stages[l.status]],
@@ -268,6 +313,12 @@
       ["E-mail", l.email || "Não informado"],
       ["Cidade", l.city || "Não informada"],
       ["Veículo de interesse", l.vehicle_label || "Não definido"],
+      [
+        "Vendedor responsável",
+        l.assigned_to != null
+          ? usersById[l.assigned_to] || `#${l.assigned_to}`
+          : "Não atribuído",
+      ],
       ["Orçamento", l.budget === null ? "Não informado" : money(l.budget)],
       [
         "Próximo retorno",
@@ -309,25 +360,48 @@
     paintScore(data.score, l);
     paintTasks(data.tasks || []);
     $("leadActions").replaceChildren();
+    if (l.ai_last_error) {
+      message(
+        "leadAiError",
+        `Última tentativa de análise falhou (${new Date(l.ai_last_error.at).toLocaleString("pt-BR")}): ${l.ai_last_error.message}`,
+        true,
+      );
+    } else {
+      message("leadAiError");
+    }
     const ai = $("leadAiContent");
     ai.replaceChildren();
     if (l.ai_score !== null && l.ai_score !== undefined) {
       ai.append(
         el(
           "strong",
-          `Prioridade ${l.ai_score}/100 • intenção ${l.ai_intent} • urgência ${l.ai_urgency}`,
+          `Prioridade estimada pela IA: ${l.ai_score}/100 • intenção ${l.ai_intent} • urgência ${l.ai_urgency}`,
         ),
       );
       for (const [label, value] of [
         ["Resumo", l.ai_summary],
+        ["Por que essa pontuação (estimativa da IA)", l.ai_score_justification],
+        [
+          "Objeção provável",
+          l.ai_probable_objection,
+        ],
+        [
+          "Probabilidade de avanço",
+          `${triProbabilityLabels[l.ai_advance_probability] || l.ai_advance_probability} — estimativa, não é garantia`,
+        ],
         ["Próximo passo sugerido", l.ai_next_action],
-        ["Rascunho de resposta", l.ai_response_draft],
+        ["Mensagem sugerida para o cliente", l.ai_response_draft],
       ]) {
         const box = el("div", "", "lead-ai-result");
         box.append(el("small", label), el("p", value));
         ai.append(box);
       }
+      const taskFromAi = el("button", "Criar tarefa a partir desta sugestão", "sales-secondary");
+      taskFromAi.type = "button";
+      taskFromAi.addEventListener("click", createTaskFromAiSuggestion);
+      ai.append(taskFromAi);
     } else ai.append(el("p", "Este lead ainda não foi analisado."));
+    paintAiHistory(data.analyses || []);
     action(
       l.ai_score == null ? "Analisar com IA" : "Analisar novamente",
       analyzeCurrentLead,
@@ -453,6 +527,45 @@
     try {
       await send(`/leads/${selected.id}/score/recalculate`, "POST", {});
       await reloadAfterChange("Pontuação atualizada.");
+    } catch (error) {
+      message("detailMessage", error.message, true);
+    } finally {
+      busy = false;
+    }
+  }
+  function paintAiHistory(analyses) {
+    const box = $("aiHistoryList");
+    box.replaceChildren();
+    if (!analyses.length) {
+      box.append(el("p", "Nenhuma análise anterior.", "sales-footnote"));
+      return;
+    }
+    analyses.forEach((a) => {
+      const item = el("article", "", "customer-history-item");
+      const when = new Date(a.created_at).toLocaleString("pt-BR");
+      item.append(
+        el("small", `${when} • ${analysisStatusLabels[a.status]} • ${a.model}`),
+      );
+      item.append(
+        el(
+          "p",
+          a.status === "ok"
+            ? `Prioridade ${a.score}/100 — ${a.summary}`
+            : `Erro: ${a.error_message}`,
+        ),
+      );
+      box.append(item);
+    });
+  }
+  async function createTaskFromAiSuggestion() {
+    if (busy || !selected?.ai_next_action) return;
+    busy = true;
+    message("detailMessage");
+    try {
+      await send(`/leads/${selected.id}/tasks`, "POST", {
+        title: selected.ai_next_action.slice(0, 255),
+      });
+      await reloadAfterChange("Tarefa criada a partir da sugestão da IA.");
     } catch (error) {
       message("detailMessage", error.message, true);
     } finally {
@@ -656,6 +769,23 @@
     }
   });
   $("recalcScoreBtn").addEventListener("click", recalculateCurrentScore);
+  $("assignForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if (busy) return;
+    busy = true;
+    message("detailMessage");
+    try {
+      await send(`/leads/${selected.id}/assign`, "PATCH", {
+        version: selected.version,
+        assigned_to: $("assignSelect").value || null,
+      });
+      await reloadAfterChange("Atribuição atualizada.");
+    } catch (error) {
+      message("detailMessage", error.message, true);
+    } finally {
+      busy = false;
+    }
+  });
   $("convertForm").addEventListener("submit", async (e) => {
     e.preventDefault();
     if (busy) return;
@@ -682,7 +812,13 @@
     }
   });
   $("newLead").addEventListener("click", () => form());
-  for (const id of ["search", "statusFilter", "sourceFilter", "returnFilter"])
+  for (const id of [
+    "search",
+    "statusFilter",
+    "sourceFilter",
+    "returnFilter",
+    "assigneeFilter",
+  ])
     $(id).addEventListener(id === "search" ? "input" : "change", render);
   $("filters").addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -717,6 +853,7 @@
       return;
     }
     $("newLead").disabled = false;
+    await loadUsers();
     try {
       await refresh();
       const id = new URLSearchParams(location.search).get("lead");
