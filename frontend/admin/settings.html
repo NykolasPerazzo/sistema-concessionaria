@@ -331,10 +331,86 @@
 
               <div class="security-card">
                 <div>
-                  <strong>Usuários administrativos</strong>
+                  <strong>Novo usuário</strong>
                   <span>
-                    O gerenciamento de usuários será implementado aqui.
+                    Crie acessos para administradores, vendedores,
+                    despachantes ou financeiro.
                   </span>
+                </div>
+
+                <div class="form-grid settings-textarea">
+                  <div class="form-group">
+                    <label for="newUserName">Nome</label>
+                    <input
+                      type="text"
+                      id="newUserName"
+                      placeholder="Nome completo"
+                    />
+                  </div>
+
+                  <div class="form-group">
+                    <label for="newUserEmail">E-mail</label>
+                    <input
+                      type="email"
+                      id="newUserEmail"
+                      placeholder="email@exemplo.com"
+                    />
+                  </div>
+
+                  <div class="form-group">
+                    <label for="newUserPassword">Senha</label>
+                    <input
+                      type="password"
+                      id="newUserPassword"
+                      placeholder="Mínimo 8 caracteres"
+                    />
+                  </div>
+
+                  <div class="form-group">
+                    <label for="newUserRole">Perfil</label>
+                    <select id="newUserRole">
+                      <option value="admin">Administrador</option>
+                      <option value="vendedor">Vendedor</option>
+                      <option value="despachante">Despachante</option>
+                      <option value="financeiro">Financeiro</option>
+                    </select>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  id="createUserButton"
+                  class="admin-primary-button"
+                >
+                  Criar usuário
+                </button>
+
+                <span id="userFormMessage" class="form-message"></span>
+              </div>
+
+              <div class="security-card settings-textarea">
+                <div>
+                  <strong>Usuários administrativos</strong>
+                  <span>Gerencie quem tem acesso ao painel.</span>
+                </div>
+
+                <div class="admin-table-wrapper settings-textarea">
+                  <table class="admin-table">
+                    <thead>
+                      <tr>
+                        <th>Nome</th>
+                        <th>E-mail</th>
+                        <th>Perfil</th>
+                        <th></th>
+                      </tr>
+                    </thead>
+
+                    <tbody id="usersTableBody">
+                      <tr>
+                        <td colspan="4">Carregando...</td>
+                      </tr>
+                    </tbody>
+                  </table>
                 </div>
               </div>
             </section>
