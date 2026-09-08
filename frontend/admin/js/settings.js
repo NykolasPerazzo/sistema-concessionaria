@@ -181,6 +181,17 @@ let currentUserId = null;
   });
 });
 
+// O servidor às vezes responde com uma página HTML (erro do proxy/
+// cold start do Render) em vez de JSON; evita quebrar com um erro
+// críptico de parsing nesses casos.
+async function parseJsonSafe(response) {
+  try {
+    return await response.json();
+  } catch (error) {
+    return null;
+  }
+}
+
 function showUserFormMessage(message, type) {
   if (!userFormMessage) return;
   userFormMessage.textContent = message;
@@ -272,10 +283,13 @@ async function createUser() {
       body: JSON.stringify({ name, email, password, role }),
     });
 
-    const data = await response.json();
+    const data = await parseJsonSafe(response);
 
     if (!response.ok) {
-      throw new Error(data.error || "Não foi possível criar o usuário.");
+      throw new Error(
+        data?.error ||
+          `Não foi possível criar o usuário (erro ${response.status}). Tente novamente em instantes.`,
+      );
     }
 
     showUserFormMessage("Usuário criado com sucesso.", "success");
@@ -305,10 +319,13 @@ async function deleteUser(id) {
       credentials: "include",
     });
 
-    const data = await response.json();
+    const data = await parseJsonSafe(response);
 
     if (!response.ok) {
-      throw new Error(data.error || "Não foi possível excluir o usuário.");
+      throw new Error(
+        data?.error ||
+          `Não foi possível excluir o usuário (erro ${response.status}). Tente novamente em instantes.`,
+      );
     }
 
     loadUsers();
