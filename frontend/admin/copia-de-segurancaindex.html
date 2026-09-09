@@ -1,0 +1,286 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
+    />
+    <title>Dashboard | Car Dealer IA</title>
+
+    <link rel="stylesheet" href="./css/admin.css" />
+  </head>
+
+  <body>
+    <aside class="sidebar">
+      <div class="admin-logo">
+        <span>⚡</span>
+        <strong>CAR DEALER IA</strong>
+      </div>
+
+      <nav>
+        <a href="./index.html" class="active">Dashboard</a>
+        <a href="./vehicles.html">Veículos</a>
+        <a href="./leads.html">Leads<span class="nav-badge" id="leadsNavBadge" hidden>0</span></a>
+        <a href="./customers.html">Clientes</a>
+        <a href="./proposals.html">Propostas</a>
+        <a href="./sales.html">Vendas</a>
+        <a href="./despachante.html">Despachante</a>
+        <a href="./ai.html">IA</a>
+        <a href="./settings.html">Configurações</a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <a href="../index.html" class="public-site"> ← Ver site público </a>
+
+        <button id="logoutButton" class="logout-button">
+          <span>↪</span>
+          Sair
+        </button>
+      </div>
+    </aside>
+
+    <main class="admin-main">
+      <header class="admin-header">
+        <div>
+          <span class="eyebrow">ADMINISTRAÇÃO</span>
+          <h1>Dashboard</h1>
+        </div>
+
+        <div class="admin-header-actions">
+          <button
+            id="themeToggle"
+            class="theme-toggle"
+            type="button"
+            aria-label="Alternar tema"
+          >
+            <i id="themeIcon" class="fa-solid fa-moon"></i>
+          </button>
+
+          <div class="admin-profile">
+            <div class="admin-avatar">A</div>
+
+            <div>
+              <strong>Administrador</strong>
+              <span>Gestor</span>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- NOTIFICAÇÃO DE NOVO LEAD -->
+      <aside
+        id="leadNotification"
+        class="lead-notification"
+        hidden
+        aria-live="polite"
+      >
+        <div class="lead-notification-icon">
+          <i class="fa-solid fa-bolt"></i>
+        </div>
+
+        <div class="lead-notification-content">
+          <span>NOVO LEAD IDENTIFICADO</span>
+
+          <strong id="leadNotificationName"> Novo interessado </strong>
+
+          <small id="leadNotificationDetail"> Aguardando informações... </small>
+
+          <div class="lead-notification-bars" aria-hidden="true">
+            <i></i>
+            <i></i>
+            <i></i>
+            <i></i>
+            <i></i>
+            <i></i>
+            <i></i>
+            <i></i>
+          </div>
+        </div>
+
+        <a href="./leads.html" class="lead-notification-action"> Ver lead </a>
+
+        <button
+          id="closeLeadNotification"
+          class="lead-notification-close"
+          type="button"
+          aria-label="Fechar notificação"
+        >
+          ×
+        </button>
+      </aside>
+
+      <section class="stats-grid">
+        <article class="stat-card">
+          <div>
+            <span>Total de veículos</span>
+            <strong id="totalVehicles">0</strong>
+          </div>
+
+          <span class="stat-icon">🚗</span>
+        </article>
+
+        <article class="stat-card">
+          <div>
+            <span>Disponíveis</span>
+            <strong id="availableVehicles">0</strong>
+          </div>
+
+          <span class="stat-icon">✅</span>
+        </article>
+
+        <article class="stat-card">
+          <div>
+            <span>Reservados</span>
+            <strong id="reservedVehicles">0</strong>
+          </div>
+
+          <span class="stat-icon">⏳</span>
+        </article>
+
+        <article class="stat-card">
+          <div>
+            <span>Vendidos</span>
+            <strong id="soldVehicles">0</strong>
+          </div>
+
+          <span class="stat-icon">💰</span>
+        </article>
+      </section>
+
+      <section class="finance-dashboard-grid">
+        <article class="finance-dashboard-card">
+          <span>Capital investido</span>
+
+          <strong id="investedStock"> R$ 0,00 </strong>
+
+          <small> Valor de compra dos veículos em estoque </small>
+        </article>
+
+        <article class="finance-dashboard-card">
+          <span>Despesas do estoque</span>
+
+          <strong id="stockExpenses"> R$ 0,00 </strong>
+
+          <small> Gastos acumulados com veículos em estoque </small>
+        </article>
+
+        <article class="finance-dashboard-card">
+          <span>Custo total do estoque</span>
+
+          <strong id="totalStockCost"> R$ 0,00 </strong>
+
+          <small> Compra + despesas </small>
+        </article>
+
+        <article class="finance-dashboard-card">
+          <span>Valor anunciado</span>
+
+          <strong id="advertisedStock"> R$ 0,00 </strong>
+
+          <small> Soma dos preços anunciados </small>
+        </article>
+
+        <article class="finance-dashboard-card">
+          <span>Lucro potencial</span>
+
+          <strong id="potentialProfit"> R$ 0,00 </strong>
+
+          <small> Se todo estoque for vendido pelo preço anunciado </small>
+        </article>
+
+        <article class="finance-dashboard-card">
+          <span>Veículo mais antigo</span>
+
+          <strong id="oldestStockDays"> 0 dias </strong>
+
+          <small id="oldestStockDate"> - </small>
+        </article>
+
+        <article class="finance-dashboard-card">
+          <span>Margem potencial</span>
+
+          <strong id="potentialMargin"> 0,00% </strong>
+
+          <small> Margem estimada sobre o custo total </small>
+        </article>
+      </section>
+
+      <section class="panel stock-alerts-panel">
+        <div class="panel-header">
+          <div>
+            <span class="eyebrow"> ALERTAS </span>
+
+            <h2>Atenção no estoque</h2>
+          </div>
+        </div>
+
+        <div id="stockAlerts">
+          <p class="loading">Analisando estoque...</p>
+        </div>
+      </section>
+
+      <section class="panel old-vehicles-panel">
+        <div class="panel-header">
+          <div>
+            <span class="eyebrow">GESTÃO DE ESTOQUE</span>
+            <h2>Veículos há mais tempo no estoque</h2>
+          </div>
+
+          <a href="./vehicles.html"> Ver estoque → </a>
+        </div>
+
+        <div id="oldVehicles" class="old-vehicles-list">
+          <p class="loading">Analisando veículos...</p>
+        </div>
+      </section>
+
+      <section class="dashboard-grid">
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <span class="eyebrow">ESTOQUE</span>
+              <h2>Veículos recentes</h2>
+            </div>
+
+            <a href="./vehicles.html"> Ver todos → </a>
+          </div>
+
+          <div id="recentVehicles" class="recent-vehicles">
+            <p class="loading">Carregando...</p>
+          </div>
+        </div>
+
+        <div class="panel quick-actions">
+          <div class="panel-header">
+            <div>
+              <span class="eyebrow">AÇÕES</span>
+              <h2>Acesso rápido</h2>
+            </div>
+          </div>
+
+          <a href="./vehicle-form.html" class="action-button">
+            <span>＋</span>
+            Cadastrar veículo
+          </a>
+
+          <a href="./vehicles.html" class="action-button">
+            <span>🚗</span>
+            Gerenciar veículos
+          </a>
+
+          <button class="action-button">
+            <span>🤖</span>
+            Abrir IA
+          </button>
+        </div>
+      </section>
+    </main>
+
+    <script src="../js/config.js"></script>
+    <script src="./js/auth.js"></script>
+    <script src="./js/nav-badge.js"></script>
+    <script src="./js/dashboard.js?v=7"></script>
+  </body>
+</html>

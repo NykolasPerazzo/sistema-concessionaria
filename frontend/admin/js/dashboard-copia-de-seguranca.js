@@ -39,13 +39,10 @@ async function loadDashboard() {
     const vehicles = vehiclesData.vehicles || [];
 
     updateDashboardSummary(summary);
-    updateStockRadar(summary);
 
     renderRecentVehicles(vehicles);
   } catch (error) {
     console.error("Erro ao carregar dashboard:", error);
-    showRadarUnavailable();
-    ["stockAlerts", "oldVehicles"].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = "Não foi possível carregar os dados. Recarregue a página para tentar novamente."; });
 
     const recentVehicles = document.getElementById("recentVehicles");
 
@@ -141,18 +138,121 @@ function updateOldestStock(entryDate) {
 ========================================= */
 
 function renderStockAlerts(summary) {
-  const el = document.getElementById("stockAlerts");
-  if (!el) return;
-  const result = evaluateStockRadar(summary);
-  el.replaceChildren();
-  const messages = result.reasons.length ? result.reasons : [result.description];
-  messages.forEach(message => {
-    const row = document.createElement("div");
-    row.className = `stock-alert ${result.state === "critical" ? "danger" : result.state === "warning" ? "warning" : result.state === "good" ? "success" : ""}`;
-    const title = document.createElement("strong"); title.textContent = result.label;
-    const text = document.createElement("span"); text.textContent = message;
-    row.append(title, text); el.append(row);
-  });
+  const container = document.getElementById("stockAlerts");
+
+  if (!container) {
+    return;
+  }
+
+  const alerts = [];
+
+  /* =====================================
+     VEÍCULO MAIS ANTIGO
+  ====================================== */
+
+  if (summary.oldestEntryDate) {
+    const entry = new Date(summary.oldestEntryDate);
+
+    const today = new Date();
+
+    entry.setHours(0, 0, 0, 0);
+
+    today.setHours(0, 0, 0, 0);
+
+    const days = Math.floor((today - entry) / (1000 * 60 * 60 * 24));
+
+    if (days >= 90) {
+      alerts.push({
+        type: "danger",
+
+        title: "Estoque crítico",
+
+        message: `Existe veículo no estoque há ${days} dias.`,
+      });
+    } else if (days >= 60) {
+      alerts.push({
+        type: "warning",
+
+        title: "Veículo parado há muito tempo",
+
+        message: `Existe veículo no estoque há ${days} dias.`,
+      });
+    }
+  }
+
+  /* =====================================
+     LUCRO POTENCIAL NEGATIVO
+  ====================================== */
+
+  if (Number(summary.potentialProfit || 0) < 0) {
+    alerts.push({
+      type: "danger",
+
+      title: "Lucro potencial negativo",
+
+      message: "O custo total do estoque está acima do valor anunciado.",
+    });
+  }
+
+  /* =====================================
+     MARGEM BAIXA
+  ====================================== */
+
+  const margin = Number(summary.potentialMargin || 0);
+
+  if (margin > 0 && margin < 10) {
+    alerts.push({
+      type: "warning",
+
+      title: "Margem potencial baixa",
+
+      message: `A margem atual do estoque está em ${margin.toFixed(2)}%.`,
+    });
+  }
+
+  /* =====================================
+     SEM ALERTAS
+  ====================================== */
+
+  if (alerts.length === 0) {
+    container.innerHTML = `
+      <div class="stock-alert success">
+
+        <strong>
+          Estoque saudável
+        </strong>
+
+        <span>
+          Nenhum alerta importante no momento.
+        </span>
+
+      </div>
+    `;
+
+    return;
+  }
+
+  /* =====================================
+     MOSTRAR ALERTAS
+  ====================================== */
+
+  container.innerHTML = alerts
+    .map((alert) => {
+      return `
+          <div class="stock-alert ${alert.type}">
+
+            <strong>
+              ${alert.title}
+            </strong>
+
+            <span>
+              ${alert.message}
+            </span>
+
+          </div>
+        `;
+    })
+    .join("");
 }
 
 /* =========================================
@@ -198,14 +298,14 @@ function renderOldVehicles(vehicles) {
 
       return `
         <a
-          href="./vehicle-form.html?id=${encodeURIComponent(vehicle.id)}"
+          href="./vehicle-form.html?id=${vehicle.id}"
           class="stock-showcase-card"
         >
 
           <div class="stock-showcase-top">
 
             <span class="stock-showcase-brand">
-              ${escapeDashboardHtml(vehicle.brand || "VEÍCULO")}
+              ${vehicle.brand || "VEÍCULO"}
             </span>
 
             <span class="stock-badge ${stockClass}">
@@ -215,8 +315,8 @@ function renderOldVehicles(vehicles) {
           </div>
 
           <h3 class="stock-showcase-name">
-            ${escapeDashboardHtml(vehicle.brand || "")}
-            ${escapeDashboardHtml(vehicle.model || "")}
+            ${vehicle.brand || ""}
+            ${vehicle.model || ""}
           </h3>
 
           <div class="stock-showcase-days">
@@ -233,8 +333,8 @@ function renderOldVehicles(vehicles) {
               image
                 ? `
                   <img
-                    loading="lazy" decoding="async" src="${escapeDashboardHtml(safeDashboardImage(image))}"
-                    alt="${escapeDashboardHtml(vehicle.brand || "")} ${escapeDashboardHtml(vehicle.model || "")}"
+                    src="${image}"
+                    alt="${vehicle.brand || ""} ${vehicle.model || ""}"
                   >
                 `
                 : `
@@ -313,13 +413,13 @@ function renderRecentVehicles(vehicles) {
             <div class="vehicle-main">
 
               <strong>
-                ${escapeDashboardHtml(vehicle.brand || "")}
-                ${escapeDashboardHtml(vehicle.model || "")}
+                ${vehicle.brand || ""}
+                ${vehicle.model || ""}
               </strong>
 
 
               <span>
-                ${escapeDashboardHtml(vehicle.year || "Ano não informado")}
+                ${vehicle.year || "Ano não informado"}
                 •
                 ${mileage}
               </span>
@@ -463,7 +563,7 @@ function showLeadNotification(lead) {
   }
 
   if (actionElement && lead.id) {
-    actionElement.href = `./leads.html?lead=${encodeURIComponent(lead.id)}`;
+    actionElement.href = `./leads.html?lead=${lead.id}`;
   }
 
   notification.hidden = false;
@@ -546,61 +646,4 @@ if (themeToggle) {
 
     setTheme(newTheme);
   });
-}
-
-/* Radar: regras locais sobre o resumo autenticado; não é avaliação de caixa.
- * Mantém os limites já usados pelo dashboard: 60 / 90 dias e margem de 10%.
- */
-function dashboardNumber(value) {
-  if (value === null || value === undefined || value === "" || typeof value === "boolean") return null;
-  const n = Number(value); return Number.isFinite(n) ? n : null;
-}
-function evaluateStockRadar(summary, now = new Date()) {
-  const reasons = [];
-  const available = dashboardNumber(summary.availableVehicles);
-  const reserved = dashboardNumber(summary.reservedVehicles);
-  const count = available !== null && reserved !== null ? available + reserved : null;
-  const unknown = {state:"unknown", label:"Dados insuficientes", description:"Complete os dados do estoque para avaliar os sinais disponíveis.", reasons:[]};
-  if (count === 0) return {...unknown, label:"Sem estoque", description:"Não há veículos disponíveis ou reservados para avaliar."};
-  const entry = summary.oldestEntryDate ? new Date(summary.oldestEntryDate) : null;
-  const dateValid = entry && Number.isFinite(entry.getTime()) && entry <= now;
-  const days = dateValid ? Math.floor((Date.UTC(now.getFullYear(),now.getMonth(),now.getDate()) - Date.UTC(entry.getFullYear(),entry.getMonth(),entry.getDate())) / 86400000) : null;
-  const profit = dashboardNumber(summary.potentialProfit);
-  const margin = dashboardNumber(summary.potentialMargin);
-  let state = "good";
-  if (days !== null && days >= 90) {state="critical"; reasons.push(`O veículo mais antigo está há ${days} dias no estoque.`);}
-  else if (days !== null && days >= 60) {state="warning"; reasons.push(`O veículo mais antigo está há ${days} dias no estoque.`);}
-  if (profit !== null && profit < 0) {state="critical"; reasons.push("O custo cadastrado do estoque supera o valor anunciado.");}
-  if (margin !== null && margin >= 0 && margin < 10) {if(state!=="critical") state="warning"; reasons.push(`Margem potencial de ${margin.toFixed(2)}%, abaixo do limite de 10%.`);}
-  const incomplete = count === null || count < 0 || days === null || profit === null || margin === null;
-  if (state === "good" && incomplete) return unknown;
-  return {state, label:state === "critical" ? "Crítico" : state === "warning" ? "Atenção" : "Em dia", description:state === "good" ? "Nenhum alerta nas regras avaliadas. Isso não representa a saúde financeira da empresa." : "Revise os alertas antes de alterar preços ou anúncios.", reasons, incomplete};
-}
-function updateStockRadar(summary) {
-  const result = evaluateStockRadar(summary);
-  const card = document.querySelector(".radar-card"); if (!card) return;
-  card.dataset.state = result.state;
-  const put = (selector, value) => { const el=card.querySelector(selector); if(el) el.textContent=value; };
-  put(".radar-pending", "Análise do estoque");
-  put(".radar-visual strong", result.label);
-  put(".radar-content h3", result.state === "good" ? "Estoque dentro dos limites" : result.label);
-  put(".radar-content p", (result.reasons.join(" ") || result.description) + (result.incomplete ? " Há dados incompletos; avaliação parcial." : ""));
-  const tags=card.querySelectorAll(".radar-tags span");
-  if(tags[0]) tags[0].textContent=`Estoque · ${result.label}`;
-  if(tags[1]) tags[1].textContent="Leads · Não avaliados";
-  if(tags[2]) tags[2].textContent="Propostas · Não avaliadas";
-  const svg=card.querySelector("svg"); if(svg) svg.setAttribute("aria-label",`Situação do estoque: ${result.label}`);
-}
-function showRadarUnavailable() {
-  const card=document.querySelector(".radar-card"); if(!card) return;
-  card.dataset.state="unknown";
-  for(const [selector,text] of [[".radar-pending","Falha ao carregar"],[".radar-visual strong","Indisponível"],[".radar-content h3","Não foi possível avaliar"],[".radar-content p","Recarregue a página para tentar novamente. Nenhuma avaliação foi concluída."]]) {
-    const el=card.querySelector(selector);if(el) el.textContent=text;
-  }
-}
-function escapeDashboardHtml(value) {
-  return String(value).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-}
-function safeDashboardImage(value) {
-  try { const url=new URL(value,window.location.href);return ["http:","https:"].includes(url.protocol) ? url.href : ""; } catch { return ""; }
 }
