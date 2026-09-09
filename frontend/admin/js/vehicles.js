@@ -183,7 +183,11 @@ function renderVehicleCardRow(vehicle) {
               <strong>${price}</strong>
 
               <span>
-                ${days} ${days === 1 ? "dia" : "dias"} no estoque
+                ${
+                  vehicle.status === "sold"
+                    ? "Venda concluída"
+                    : `${days} ${days === 1 ? "dia" : "dias"} no estoque`
+                }
               </span>
             </div>
 
@@ -196,7 +200,13 @@ function renderVehicleCardRow(vehicle) {
                 }
               </span>
 
-              <span>${getVehiclePriorityLabel(vehicle, days, margin)}</span>
+              <span>
+                ${
+                  vehicle.status === "sold"
+                    ? "Venda concluída"
+                    : getVehiclePriorityLabel(vehicle, days, margin)
+                }
+              </span>
             </div>
           </div>
 

@@ -914,3 +914,75 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+/* =========================================
+   AJUSTES FINAIS DOS CARDS DE VEICULOS
+========================================= */
+
+.vehicles-command-page .vehicle-stock-actions {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.vehicles-command-page .vehicle-stock-actions .table-action {
+  min-height: 34px;
+  padding: 0 8px;
+  font-size: 12px;
+  line-height: 1;
+  text-align: center;
+}
+
+.vehicles-command-page .vehicles-kpi-grid strong {
+  font-size: 24px;
+  white-space: nowrap;
+}
+
+.vehicles-command-page .vehicles-kpi-grid article:last-child strong {
+  font-size: 22px;
+}
+
+.vehicles-command-page .vehicle-stock-card.sold .vehicle-stock-result span {
+  color: #8f9aaa;
+}
+
+.vehicles-command-page
+  .vehicle-stock-card.sold
+  .vehicle-stock-intel
+  span:last-child {
+  color: #8f9aaa;
+}
+
+.vehicles-command-page .vehicle-image-placeholder {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  color: #8f9aaa;
+  background:
+    radial-gradient(
+      circle at 50% 35%,
+      rgba(255, 255, 255, 0.12),
+      transparent 38%
+    ),
+    linear-gradient(135deg, #171d27, #0c1017);
+}
+
+.vehicles-command-page .vehicle-image-placeholder span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.vehicles-command-page .vehicle-stock-image img {
+  background: #11161d;
+}
+
+.vehicles-command-page .vehicle-stock-title-row h3 {
+  min-height: 39px;
+}
