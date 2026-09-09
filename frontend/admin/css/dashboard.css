@@ -798,3 +798,146 @@
     font-size: 28px;
   }
 }
+
+/* CORRECOES DA CENTRAL DE COMANDO */
+
+.command-center-page {
+  background: #07090d;
+  color: #f8fafc;
+}
+
+.command-center-page .command-shell {
+  min-height: 100vh;
+  overflow: visible;
+}
+
+.command-center-page .priority-card,
+.command-center-page .radar-card,
+.command-center-page .command-card,
+.command-center-page .metric-card {
+  background: linear-gradient(145deg, #11151d, #090c12);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.command-center-page .priority-row,
+.command-center-page .stock-alert {
+  display: grid;
+  grid-template-columns: 16px 1fr auto;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 56px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  color: #f8fafc;
+}
+
+.command-center-page .stock-alert {
+  display: block;
+  border-left: 4px solid #ffd235;
+}
+
+.command-center-page .stock-alert.warning,
+.command-center-page .priority-row.warning {
+  border-left: 4px solid #ffd235;
+}
+
+.command-center-page .stock-alert.danger,
+.command-center-page .priority-row.danger {
+  border-left: 4px solid #ff443a;
+}
+
+.command-center-page .stock-alert.success,
+.command-center-page .priority-row.good {
+  border-left: 4px solid #3ddc7a;
+}
+
+.command-center-page .stock-alert strong,
+.command-center-page .priority-row p {
+  color: #ffffff;
+  font-weight: 800;
+}
+
+.command-center-page .stock-alert span {
+  display: block;
+  margin-top: 4px;
+  color: #b9c3d3;
+}
+
+.command-center-page .priority-row a {
+  background: #1a1f28;
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  color: #ffffff;
+  border-radius: 8px;
+  padding: 9px 14px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.command-center-page .radar-layout {
+  grid-template-columns: 290px 1fr;
+}
+
+.command-center-page .radar-status-grid {
+  grid-template-columns: repeat(3, minmax(120px, 1fr));
+}
+
+.command-center-page .radar-status-grid span {
+  overflow: hidden;
+  white-space: normal;
+  color: #dbe4f0;
+}
+
+.command-center-page .radar-status-grid strong {
+  white-space: nowrap;
+}
+
+.command-center-page .ai-recommendation h2,
+.command-center-page .ai-recommendation span,
+.command-center-page .copilot-cta h2,
+.command-center-page .copilot-cta p {
+  color: #ffffff;
+}
+
+.command-center-page .ai-recommendation p {
+  color: #ff6a21;
+}
+
+.command-center-page .lead-action-list a,
+.command-center-page .lead-action-list strong,
+.command-center-page .lead-action-list em {
+  color: #ffffff;
+}
+
+.command-center-page .lead-action-list a {
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.command-center-page .lead-action-list em {
+  color: #aeb7c6;
+}
+
+.command-center-page .funnel-row strong {
+  color: #ffffff;
+  text-align: right;
+}
+
+.command-center-page .sidebar {
+  overflow-y: auto;
+}
+
+.command-center-page .sidebar-footer {
+  padding-bottom: 18px;
+}
+
+.command-center-page .demo-pill i {
+  color: #9fb0c8;
+}
+
+@media (max-width: 1180px) {
+  .command-center-page .radar-layout {
+    grid-template-columns: 1fr;
+  }
+}

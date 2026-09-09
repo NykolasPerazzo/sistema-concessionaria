@@ -1,10 +1,7 @@
 requireAuth().then((user) => {
-  if (!user) {
-    return;
-  }
+  if (!user) return;
 
   loadDashboard();
-
   listenForNewLeads();
 });
 
@@ -33,29 +30,16 @@ async function loadDashboard() {
     }
 
     const summary = await summaryResponse.json();
-
     const vehiclesData = await vehiclesResponse.json();
-
     const vehicles = vehiclesData.vehicles || [];
 
-    updateDashboardSummary(summary);
-    updateStockRadar(summary);
-
+    updateDashboardSummary(summary, vehicles);
+    updateCommandIntelligence(summary, vehicles);
     renderRecentVehicles(vehicles);
   } catch (error) {
     console.error("Erro ao carregar dashboard:", error);
-    showRadarUnavailable();
-    ["stockAlerts", "oldVehicles"].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = "Não foi possível carregar os dados. Recarregue a página para tentar novamente."; });
 
-    const recentVehicles = document.getElementById("recentVehicles");
-
-    if (recentVehicles) {
-      recentVehicles.innerHTML = `
-        <p class="error">
-          Não foi possível carregar os dados.
-        </p>
-      `;
-    }
+    showDashboardError();
   }
 }
 
@@ -63,23 +47,52 @@ async function loadDashboard() {
    RESUMO DO DASHBOARD
 ========================================= */
 
-function updateDashboardSummary(summary) {
-  setText("totalVehicles", summary.totalVehicles || 0);
+function updateDashboardSummary(summary, vehicles = []) {
+  const totalVehicles = getNumber(summary.totalVehicles, vehicles.length);
 
-  setText("availableVehicles", summary.availableVehicles || 0);
+  const availableVehicles = getNumber(
+    summary.availableVehicles,
+    vehicles.filter((vehicle) => vehicle.status === "available").length,
+  );
 
-  setText("reservedVehicles", summary.reservedVehicles || 0);
+  const reservedVehicles = getNumber(
+    summary.reservedVehicles,
+    vehicles.filter((vehicle) => vehicle.status === "reserved").length,
+  );
 
-  setText("soldVehicles", summary.soldVehicles || 0);
+  const soldVehicles = getNumber(
+    summary.soldVehicles,
+    vehicles.filter((vehicle) => vehicle.status === "sold").length,
+  );
+
+  const openLeads =
+    summary.openLeads ??
+    summary.totalLeads ??
+    summary.pendingLeads ??
+    totalVehicles;
+
+  const qualifiedLeads = summary.qualifiedLeads ?? "—";
+
+  const activeProposals =
+    summary.activeProposals ?? summary.openProposals ?? reservedVehicles;
+
+  const monthSales =
+    summary.monthSales ?? summary.salesThisMonth ?? soldVehicles;
+
+  setText("availableVehicles", availableVehicles);
+  setText("totalVehicles", openLeads);
+  setText("reservedVehicles", activeProposals);
+  setText("soldVehicles", monthSales);
+
+  setText("funnelLeads", openLeads);
+  setText("funnelQualified", qualifiedLeads);
+  setText("funnelProposals", activeProposals);
+  setText("funnelSales", monthSales);
 
   setText("investedStock", formatCurrency(summary.investedStock));
-
   setText("stockExpenses", formatCurrency(summary.stockExpenses));
-
   setText("totalStockCost", formatCurrency(summary.totalCost));
-
   setText("advertisedStock", formatCurrency(summary.advertisedStock));
-
   setText("potentialProfit", formatCurrency(summary.potentialProfit));
 
   setText(
@@ -88,10 +101,196 @@ function updateDashboardSummary(summary) {
   );
 
   updateOldestStock(summary.oldestEntryDate);
-
   renderStockAlerts(summary);
+  renderOldVehicles(summary.oldVehicles || vehicles);
+}
 
-  renderOldVehicles(summary.oldVehicles || []);
+/* =========================================
+   INTELIGÊNCIA DA CENTRAL
+========================================= */
+
+function updateCommandIntelligence(summary, vehicles = []) {
+  const radar = evaluateOperation(summary, vehicles);
+
+  const radarCard =
+    document.getElementById("stockRadarCard") ||
+    document.querySelector(".radar-card");
+
+  if (radarCard) {
+    radarCard.dataset.state = radar.state;
+  }
+
+  setText("radarStatusLabel", radar.label);
+  setText("radarTitle", radar.title);
+  setText("radarDescription", radar.description);
+  setText("aiRecommendationTitle", radar.recommendationTitle);
+  setText("aiRecommendationText", radar.recommendationText);
+
+  updateRadarFallback(radar);
+  updateRadarTag("radarStockTag", "Estoque", radar.stockLabel, radar.state);
+  updateRadarTag("radarLeadsTag", "Leads", radar.leadsLabel, radar.leadsState);
+  updateRadarTag(
+    "radarProposalsTag",
+    "Propostas",
+    radar.proposalsLabel,
+    radar.proposalsState,
+  );
+
+  renderLeadActions(summary);
+}
+
+function evaluateOperation(summary, vehicles = []) {
+  const priorities = [];
+
+  const days = getOldestStockDays(summary.oldestEntryDate);
+  const profit = Number(summary.potentialProfit || 0);
+  const margin = Number(summary.potentialMargin || 0);
+
+  const openLeads = Number(
+    summary.openLeads || summary.totalLeads || summary.pendingLeads || 0,
+  );
+
+  const activeProposals = Number(
+    summary.activeProposals || summary.openProposals || 0,
+  );
+
+  if (days >= 90) {
+    priorities.push({
+      type: "danger",
+      message: `O veículo mais antigo está há ${days} dias no estoque.`,
+      action: "Ver estoque",
+      href: "vehicles.html",
+    });
+  } else if (days >= 60) {
+    priorities.push({
+      type: "warning",
+      message: `Existe veículo há ${days} dias no estoque.`,
+      action: "Ver estoque",
+      href: "vehicles.html",
+    });
+  }
+
+  if (profit < 0) {
+    priorities.push({
+      type: "danger",
+      message: "O custo do estoque está acima do valor anunciado.",
+      action: "Analisar",
+      href: "ai.html",
+    });
+  }
+
+  if (margin > 0 && margin < 10) {
+    priorities.push({
+      type: "warning",
+      message: `Margem potencial de ${margin.toFixed(2)}%.`,
+      action: "Ajustar",
+      href: "ai.html",
+    });
+  }
+
+  if (openLeads > 0) {
+    priorities.push({
+      type: "danger",
+      message: `${openLeads} ${openLeads === 1 ? "lead novo" : "leads novos"} para atender.`,
+      action: "Atender",
+      href: "leads.html",
+    });
+  }
+
+  if (activeProposals > 0) {
+    priorities.push({
+      type: "warning",
+      message: `${activeProposals} ${activeProposals === 1 ? "proposta ativa" : "propostas ativas"} para acompanhar.`,
+      action: "Abrir",
+      href: "proposals.html",
+    });
+  }
+
+  let state = "good";
+  let label = "Em dia";
+  let title = "Operação em dia";
+  let description =
+    "Seu estoque não tem alerta crítico no momento. Continue acompanhando leads e anúncios.";
+  let stockLabel = "Em dia";
+  let recommendationTitle = "Mantenha o ritmo comercial";
+  let recommendationText =
+    "A IA não encontrou urgência agora. Foque em responder leads e manter anúncios atualizados.";
+
+  if (priorities.some((priority) => priority.type === "danger")) {
+    state = "critical";
+    label = "Crítico";
+    title = "A operação precisa de ação agora";
+    description =
+      "A IA encontrou pontos que podem travar margem, velocidade de venda ou atendimento.";
+    stockLabel = days >= 90 || profit < 0 ? "Crítico" : "Atenção";
+    recommendationTitle = "Resolva o item mais crítico primeiro";
+    recommendationText =
+      priorities[0]?.message || "Revise estoque, preço, margem e leads agora.";
+  } else if (priorities.length > 0) {
+    state = "warning";
+    label = "Atenção";
+    title = "Estoque parado exige atenção";
+    description =
+      "Priorize veículos com mais tempo no estoque e revise preço, fotos e anúncio.";
+    stockLabel = "Atenção";
+    recommendationTitle = "Revise a estratégia do estoque";
+    recommendationText =
+      priorities[0]?.message ||
+      "Analise preço, anúncio e margem antes de agir.";
+  }
+
+  return {
+    state,
+    label,
+    title,
+    description,
+    stockLabel,
+    leadsLabel: openLeads > 0 ? "A atender" : "Em dia",
+    leadsState: openLeads > 0 ? "warning" : "good",
+    proposalsLabel: activeProposals > 0 ? "Acompanhar" : "Em dia",
+    proposalsState: activeProposals > 0 ? "warning" : "good",
+    recommendationTitle,
+    recommendationText,
+    priorities,
+  };
+}
+
+/* =========================================
+   PRIORIDADES
+========================================= */
+
+function renderStockAlerts(summary) {
+  const container = document.getElementById("stockAlerts");
+
+  if (!container) return;
+
+  const radar = evaluateOperation(summary);
+  const priorities = [...radar.priorities];
+
+  if (priorities.length === 0) {
+    priorities.push({
+      type: "good",
+      message: "Nenhuma prioridade crítica no estoque agora.",
+      action: "Ver estoque",
+      href: "vehicles.html",
+    });
+  }
+
+  container.innerHTML = priorities
+    .slice(0, 3)
+    .map((priority) => {
+      return `
+        <div class="priority-row ${escapeDashboardHtml(priority.type)}">
+          <span></span>
+          <p>${escapeDashboardHtml(priority.message)}</p>
+          <a href="${escapeDashboardHtml(priority.href)}">
+            ${escapeDashboardHtml(priority.action)}
+          </a>
+          <i class="fa-solid fa-chevron-right"></i>
+        </div>
+      `;
+    })
+    .join("");
 }
 
 /* =========================================
@@ -100,63 +299,44 @@ function updateDashboardSummary(summary) {
 
 function updateOldestStock(entryDate) {
   const daysElement = document.getElementById("oldestStockDays");
-
   const dateElement = document.getElementById("oldestStockDate");
 
   if (!entryDate) {
-    if (daysElement) {
-      daysElement.textContent = "0 dias";
-    }
-
-    if (dateElement) {
-      dateElement.textContent = "Nenhum veículo em estoque";
-    }
-
+    setElementText(daysElement, "0 dias");
+    setElementText(dateElement, "Nenhum veículo em estoque");
     return;
   }
 
   const entry = new Date(entryDate);
 
+  if (Number.isNaN(entry.getTime())) {
+    setElementText(daysElement, "0 dias");
+    setElementText(dateElement, "Data inválida");
+    return;
+  }
+
+  const days = getOldestStockDays(entryDate);
+
+  setElementText(daysElement, `${days} ${days === 1 ? "dia" : "dias"}`);
+  setElementText(dateElement, `Entrada: ${entry.toLocaleDateString("pt-BR")}`);
+}
+
+function getOldestStockDays(entryDate) {
+  if (!entryDate) return 0;
+
+  const entry = new Date(entryDate);
   const today = new Date();
 
-  entry.setHours(0, 0, 0, 0);
+  if (Number.isNaN(entry.getTime())) return 0;
 
+  entry.setHours(0, 0, 0, 0);
   today.setHours(0, 0, 0, 0);
 
-  const difference = today - entry;
-
-  const days = Math.max(0, Math.floor(difference / (1000 * 60 * 60 * 24)));
-
-  if (daysElement) {
-    daysElement.textContent = `${days} ${days === 1 ? "dia" : "dias"}`;
-  }
-
-  if (dateElement) {
-    dateElement.textContent = `Entrada: ${entry.toLocaleDateString("pt-BR")}`;
-  }
+  return Math.max(0, Math.floor((today - entry) / 86400000));
 }
 
 /* =========================================
-   ALERTAS DO ESTOQUE
-========================================= */
-
-function renderStockAlerts(summary) {
-  const el = document.getElementById("stockAlerts");
-  if (!el) return;
-  const result = evaluateStockRadar(summary);
-  el.replaceChildren();
-  const messages = result.reasons.length ? result.reasons : [result.description];
-  messages.forEach(message => {
-    const row = document.createElement("div");
-    row.className = `stock-alert ${result.state === "critical" ? "danger" : result.state === "warning" ? "warning" : result.state === "good" ? "success" : ""}`;
-    const title = document.createElement("strong"); title.textContent = result.label;
-    const text = document.createElement("span"); text.textContent = message;
-    row.append(title, text); el.append(row);
-  });
-}
-
-/* =========================================
-   VEÍCULOS MAIS ANTIGOS
+   VEÍCULOS IMPORTANTES
 ========================================= */
 
 function renderOldVehicles(vehicles) {
@@ -166,21 +346,26 @@ function renderOldVehicles(vehicles) {
 
   if (!vehicles || vehicles.length === 0) {
     container.innerHTML = `
-      <div class="empty-state">
+      <div class="vehicle-intel-card empty-card">
         Nenhum veículo encontrado no estoque.
       </div>
     `;
     return;
   }
 
-  container.innerHTML = vehicles
+  const orderedVehicles = [...vehicles]
+    .sort((a, b) => Number(b.daysInStock || 0) - Number(a.daysInStock || 0))
+    .slice(0, 3);
+
+  container.innerHTML = orderedVehicles
     .map((vehicle) => {
       const days = Number(vehicle.daysInStock || 0);
-      const purchasePrice = Number(vehicle.purchasePrice || 0);
-      const advertisedPrice = Number(vehicle.price || 0);
+      const image = safeDashboardImage(
+        vehicle.image_url || vehicle.imageUrl || vehicle.image || "",
+      );
 
-      let stockClass = "normal";
-      let stockLabel = "Recente";
+      let stockClass = "good";
+      let stockLabel = "Em dia";
 
       if (days >= 90) {
         stockClass = "danger";
@@ -188,84 +373,52 @@ function renderOldVehicles(vehicles) {
       } else if (days >= 60) {
         stockClass = "warning";
         stockLabel = "Atenção";
-      } else if (days >= 30) {
-        stockClass = "attention";
-        stockLabel = "Acompanhar";
       }
-
-      const image =
-        vehicle.image_url || vehicle.imageUrl || vehicle.image || "";
 
       return `
         <a
-          href="./vehicle-form.html?id=${encodeURIComponent(vehicle.id)}"
-          class="stock-showcase-card"
+          href="./vehicle-form.html?id=${encodeURIComponent(vehicle.id || "")}"
+          class="vehicle-intel-card"
         >
+          <span class="status-chip ${stockClass}">
+            ${escapeDashboardHtml(stockLabel)}
+          </span>
 
-          <div class="stock-showcase-top">
-
-            <span class="stock-showcase-brand">
-              ${escapeDashboardHtml(vehicle.brand || "VEÍCULO")}
-            </span>
-
-            <span class="stock-badge ${stockClass}">
-              ${stockLabel}
-            </span>
-
-          </div>
-
-          <h3 class="stock-showcase-name">
-            ${escapeDashboardHtml(vehicle.brand || "")}
-            ${escapeDashboardHtml(vehicle.model || "")}
-          </h3>
-
-          <div class="stock-showcase-days">
-            <strong>${days}</strong>
-
-            <span>
-              ${days === 1 ? "dia" : "dias"} no estoque
-            </span>
-          </div>
-
-          <div class="stock-showcase-image">
-
+          <div class="vehicle-photo">
             ${
               image
                 ? `
                   <img
-                    loading="lazy" decoding="async" src="${escapeDashboardHtml(safeDashboardImage(image))}"
-                    alt="${escapeDashboardHtml(vehicle.brand || "")} ${escapeDashboardHtml(vehicle.model || "")}"
+                    src="${escapeDashboardHtml(image)}"
+                    alt="${escapeDashboardHtml(`${vehicle.brand || ""} ${vehicle.model || ""}`.trim())}"
+                    loading="lazy"
+                    decoding="async"
                   >
                 `
-                : `
-                  <div class="stock-no-image">
-                    Sem imagem
-                  </div>
-                `
+                : `<i class="fa-solid fa-car-side"></i>`
             }
-
           </div>
 
-          <div class="stock-showcase-prices">
+          <div class="vehicle-info">
+            <h3>
+              ${escapeDashboardHtml(`${vehicle.brand || ""} ${vehicle.model || ""}`.trim() || "Veículo")}
+            </h3>
 
-            <div>
-              <span>Compra</span>
+            <p>
+              ${escapeDashboardHtml(vehicle.year || "Ano não informado")}
+              •
+              ${escapeDashboardHtml(formatStatus(vehicle.status))}
+            </p>
 
-              <strong>
-                ${formatCurrency(purchasePrice)}
-              </strong>
+            <div class="vehicle-meta">
+              <strong>${formatCurrency(vehicle.price)}</strong>
+
+              <span class="vehicle-days">
+                <i class="fa-regular fa-clock"></i>
+                ${days} ${days === 1 ? "dia" : "dias"}
+              </span>
             </div>
-
-            <div>
-              <span>Anunciado</span>
-
-              <strong>
-                ${formatCurrency(advertisedPrice)}
-              </strong>
-            </div>
-
           </div>
-
         </a>
       `;
     })
@@ -279,111 +432,212 @@ function renderOldVehicles(vehicles) {
 function renderRecentVehicles(vehicles) {
   const container = document.getElementById("recentVehicles");
 
-  if (!container) {
-    return;
-  }
+  if (!container) return;
 
-  if (vehicles.length === 0) {
+  if (!vehicles || vehicles.length === 0) {
     container.innerHTML = `
-      <p class="loading">
+      <div class="empty-card">
         Nenhum veículo cadastrado.
-      </p>
+      </div>
     `;
-
     return;
   }
 
   const recentVehicles = [...vehicles]
     .sort((a, b) => Number(b.id) - Number(a.id))
-    .slice(0, 6);
+    .slice(0, 4);
 
   container.innerHTML = recentVehicles
     .map((vehicle) => {
-      const price = formatCurrency(vehicle.price);
-
-      const mileage = vehicle.mileage
-        ? `${Number(vehicle.mileage).toLocaleString("pt-BR")} km`
-        : "Quilometragem não informada";
-
-      const status = formatStatus(vehicle.status);
+      const image = safeDashboardImage(
+        vehicle.image_url || vehicle.imageUrl || vehicle.image || "",
+      );
 
       return `
-          <div class="vehicle-row">
+        <a
+          class="recent-vehicle-card"
+          href="./vehicle-form.html?id=${encodeURIComponent(vehicle.id || "")}"
+        >
+          ${
+            image
+              ? `
+                <img
+                  src="${escapeDashboardHtml(image)}"
+                  alt="${escapeDashboardHtml(`${vehicle.brand || ""} ${vehicle.model || ""}`.trim())}"
+                  loading="lazy"
+                  decoding="async"
+                >
+              `
+              : `<div class="recent-vehicle-placeholder"><i class="fa-solid fa-car-side"></i></div>`
+          }
 
-            <div class="vehicle-main">
+          <div>
+            <strong>
+              ${escapeDashboardHtml(`${vehicle.brand || ""} ${vehicle.model || ""}`.trim() || "Veículo")}
+            </strong>
 
-              <strong>
-                ${escapeDashboardHtml(vehicle.brand || "")}
-                ${escapeDashboardHtml(vehicle.model || "")}
-              </strong>
-
-
-              <span>
-                ${escapeDashboardHtml(vehicle.year || "Ano não informado")}
-                •
-                ${mileage}
-              </span>
-
-            </div>
-
-
-            <div>
-
-              <div class="vehicle-price">
-                ${price}
-              </div>
-
-
-              <div class="vehicle-status">
-                ${status}
-              </div>
-
-            </div>
-
+            <span>
+              ${escapeDashboardHtml(vehicle.year || "Ano não informado")}
+              •
+              ${formatCurrency(vehicle.price)}
+            </span>
           </div>
-        `;
+        </a>
+      `;
     })
     .join("");
 }
 
 /* =========================================
-   STATUS
+   LEADS DA CENTRAL
 ========================================= */
 
-function formatStatus(status) {
-  const statuses = {
-    available: "Disponível",
+function renderLeadActions(summary) {
+  const container = document.getElementById("leadActionList");
 
-    reserved: "Reservado",
+  if (!container) return;
 
-    sold: "Vendido",
-  };
+  const openLeads = Number(
+    summary.openLeads || summary.totalLeads || summary.pendingLeads || 0,
+  );
 
-  return statuses[status] || "Sem status";
+  const activeProposals = Number(
+    summary.activeProposals || summary.openProposals || 0,
+  );
+
+  const items = [
+    {
+      initial: "L",
+      title:
+        openLeads > 0
+          ? `${openLeads} leads para atender`
+          : "Nenhum lead atrasado",
+      detail: openLeads > 0 ? "Agora" : "Em dia",
+      href: "leads.html",
+    },
+    {
+      initial: "P",
+      title:
+        activeProposals > 0
+          ? `${activeProposals} propostas para acompanhar`
+          : "Propostas em dia",
+      detail: "Hoje",
+      href: "proposals.html",
+    },
+    {
+      initial: "I",
+      title: "Perguntar para a IA",
+      detail: "Copiloto",
+      href: "ai.html",
+    },
+  ];
+
+  container.innerHTML = items
+    .map((item) => {
+      return `
+        <a href="${item.href}">
+          <span>${escapeDashboardHtml(item.initial)}</span>
+          <strong>${escapeDashboardHtml(item.title)}</strong>
+          <em>${escapeDashboardHtml(item.detail)}</em>
+        </a>
+      `;
+    })
+    .join("");
 }
 
 /* =========================================
-   FORMATAR MOEDA
+   RADAR
 ========================================= */
 
-function formatCurrency(value) {
-  return Number(value || 0).toLocaleString("pt-BR", {
-    style: "currency",
-
-    currency: "BRL",
-  });
-}
-
-/* =========================================
-   UTILITÁRIO
-========================================= */
-
-function setText(id, value) {
+function updateRadarTag(id, title, label, state) {
   const element = document.getElementById(id);
 
-  if (element) {
-    element.textContent = value;
+  if (!element) return;
+
+  const colors = {
+    good: "var(--cc-green, #3ddc7a)",
+    warning: "var(--cc-yellow, #ffd235)",
+    critical: "var(--cc-red, #ff443a)",
+    danger: "var(--cc-red, #ff443a)",
+  };
+
+  const color = colors[state] || colors.warning;
+
+  element.innerHTML = `
+    <i style="background:${color}"></i>
+    ${escapeDashboardHtml(title)}
+    <strong style="color:${color}">
+      ${escapeDashboardHtml(label)}
+    </strong>
+  `;
+}
+
+function updateRadarFallback(radar) {
+  const card =
+    document.getElementById("stockRadarCard") ||
+    document.querySelector(".radar-card");
+
+  if (!card) return;
+
+  const fallbackMap = [
+    [".radar-pending", "Análise da IA"],
+    [".radar-visual strong", radar.label],
+    [".radar-content h3", radar.title],
+    [".radar-content p", radar.description],
+  ];
+
+  fallbackMap.forEach(([selector, value]) => {
+    const element = card.querySelector(selector);
+
+    if (element) {
+      element.textContent = value;
+    }
+  });
+
+  const tags = card.querySelectorAll(".radar-tags span");
+
+  if (tags[0]) tags[0].textContent = `Estoque · ${radar.stockLabel}`;
+  if (tags[1]) tags[1].textContent = `Leads · ${radar.leadsLabel}`;
+  if (tags[2]) tags[2].textContent = `Propostas · ${radar.proposalsLabel}`;
+
+  const svg = card.querySelector("svg");
+
+  if (svg) {
+    svg.setAttribute("aria-label", `Situação da operação: ${radar.label}`);
   }
+}
+
+/* =========================================
+   ERRO
+========================================= */
+
+function showDashboardError() {
+  setText("radarStatusLabel", "Indisponível");
+  setText("radarTitle", "Não foi possível avaliar");
+  setText(
+    "radarDescription",
+    "Recarregue a página para tentar novamente. Nenhuma avaliação foi concluída.",
+  );
+
+  const radarCard =
+    document.getElementById("stockRadarCard") ||
+    document.querySelector(".radar-card");
+
+  if (radarCard) {
+    radarCard.dataset.state = "unknown";
+  }
+
+  ["stockAlerts", "oldVehicles", "recentVehicles"].forEach((id) => {
+    const element = document.getElementById(id);
+
+    if (element) {
+      element.innerHTML = `
+        <div class="empty-card">
+          Não foi possível carregar os dados.
+        </div>
+      `;
+    }
+  });
 }
 
 /* =========================================
@@ -392,13 +646,14 @@ function setText(id, value) {
 
 let leadNotificationTimeout = null;
 let leadStreamReconnectTimeout = null;
+let currentLeadStreamIndex = 0;
+
+const leadStreamUrls = ["/leads/stream", "/leads/events/stream"];
 
 function listenForNewLeads() {
   const notification = document.getElementById("leadNotification");
 
-  if (!notification) {
-    return;
-  }
+  if (!notification || typeof EventSource === "undefined") return;
 
   const closeButton = document.getElementById("closeLeadNotification");
 
@@ -410,9 +665,20 @@ function listenForNewLeads() {
 }
 
 function connectLeadStream() {
-  const source = new EventSource(`${API_URL}/leads/stream`, {
-    withCredentials: true,
-  });
+  clearTimeout(leadStreamReconnectTimeout);
+
+  const route = leadStreamUrls[currentLeadStreamIndex] || leadStreamUrls[0];
+
+  let source;
+
+  try {
+    source = new EventSource(`${API_URL}${route}`, {
+      withCredentials: true,
+    });
+  } catch (error) {
+    console.error("Erro ao abrir stream de leads:", error);
+    return;
+  }
 
   source.addEventListener("new_lead", (event) => {
     try {
@@ -425,32 +691,24 @@ function connectLeadStream() {
   });
 
   source.onerror = () => {
-    /*
-     * Uma conexão fechada (ex.: reinício do
-     * servidor) não é retomada automaticamente
-     * pelo navegador, então reconectamos.
-     */
-    if (source.readyState === EventSource.CLOSED) {
-      source.close();
+    source.close();
 
-      clearTimeout(leadStreamReconnectTimeout);
+    currentLeadStreamIndex =
+      (currentLeadStreamIndex + 1) % leadStreamUrls.length;
 
-      leadStreamReconnectTimeout = setTimeout(connectLeadStream, 5000);
-    }
+    clearTimeout(leadStreamReconnectTimeout);
+
+    leadStreamReconnectTimeout = setTimeout(connectLeadStream, 5000);
   };
 }
 
 function showLeadNotification(lead) {
   const notification = document.getElementById("leadNotification");
 
-  if (!notification || !lead) {
-    return;
-  }
+  if (!notification || !lead) return;
 
   const nameElement = document.getElementById("leadNotificationName");
-
   const detailElement = document.getElementById("leadNotificationDetail");
-
   const actionElement = notification.querySelector(".lead-notification-action");
 
   if (nameElement) {
@@ -458,8 +716,7 @@ function showLeadNotification(lead) {
   }
 
   if (detailElement) {
-    detailElement.textContent =
-      lead.vehicle_label || sourceLabel(lead.source);
+    detailElement.textContent = lead.vehicle_label || sourceLabel(lead.source);
   }
 
   if (actionElement && lead.id) {
@@ -467,6 +724,7 @@ function showLeadNotification(lead) {
   }
 
   notification.hidden = false;
+  notification.classList.remove("hidden");
 
   requestAnimationFrame(() => {
     notification.classList.add("is-visible");
@@ -480,9 +738,7 @@ function showLeadNotification(lead) {
 function hideLeadNotification() {
   const notification = document.getElementById("leadNotification");
 
-  if (!notification) {
-    return;
-  }
+  if (!notification) return;
 
   clearTimeout(leadNotificationTimeout);
 
@@ -490,6 +746,7 @@ function hideLeadNotification() {
 
   setTimeout(() => {
     notification.hidden = true;
+    notification.classList.add("hidden");
   }, 250);
 }
 
@@ -524,22 +781,13 @@ function setTheme(theme) {
   }
 }
 
-/* =========================================
-   RECUPERAR TEMA SALVO
-========================================= */
-
 const savedTheme = localStorage.getItem("carDealerAdminTheme") || "dark";
 
 setTheme(savedTheme);
 
-/* =========================================
-   ALTERAR TEMA
-========================================= */
-
 if (themeToggle) {
   themeToggle.addEventListener("click", () => {
     const isLight = document.body.classList.contains("light-theme");
-
     const newTheme = isLight ? "dark" : "light";
 
     localStorage.setItem("carDealerAdminTheme", newTheme);
@@ -548,59 +796,77 @@ if (themeToggle) {
   });
 }
 
-/* Radar: regras locais sobre o resumo autenticado; não é avaliação de caixa.
- * Mantém os limites já usados pelo dashboard: 60 / 90 dias e margem de 10%.
- */
-function dashboardNumber(value) {
-  if (value === null || value === undefined || value === "" || typeof value === "boolean") return null;
-  const n = Number(value); return Number.isFinite(n) ? n : null;
+/* =========================================
+   FORMATADORES
+========================================= */
+
+function formatStatus(status) {
+  const statuses = {
+    available: "Disponível",
+    reserved: "Reservado",
+    sold: "Vendido",
+  };
+
+  return statuses[status] || "Sem status";
 }
-function evaluateStockRadar(summary, now = new Date()) {
-  const reasons = [];
-  const available = dashboardNumber(summary.availableVehicles);
-  const reserved = dashboardNumber(summary.reservedVehicles);
-  const count = available !== null && reserved !== null ? available + reserved : null;
-  const unknown = {state:"unknown", label:"Dados insuficientes", description:"Complete os dados do estoque para avaliar os sinais disponíveis.", reasons:[]};
-  if (count === 0) return {...unknown, label:"Sem estoque", description:"Não há veículos disponíveis ou reservados para avaliar."};
-  const entry = summary.oldestEntryDate ? new Date(summary.oldestEntryDate) : null;
-  const dateValid = entry && Number.isFinite(entry.getTime()) && entry <= now;
-  const days = dateValid ? Math.floor((Date.UTC(now.getFullYear(),now.getMonth(),now.getDate()) - Date.UTC(entry.getFullYear(),entry.getMonth(),entry.getDate())) / 86400000) : null;
-  const profit = dashboardNumber(summary.potentialProfit);
-  const margin = dashboardNumber(summary.potentialMargin);
-  let state = "good";
-  if (days !== null && days >= 90) {state="critical"; reasons.push(`O veículo mais antigo está há ${days} dias no estoque.`);}
-  else if (days !== null && days >= 60) {state="warning"; reasons.push(`O veículo mais antigo está há ${days} dias no estoque.`);}
-  if (profit !== null && profit < 0) {state="critical"; reasons.push("O custo cadastrado do estoque supera o valor anunciado.");}
-  if (margin !== null && margin >= 0 && margin < 10) {if(state!=="critical") state="warning"; reasons.push(`Margem potencial de ${margin.toFixed(2)}%, abaixo do limite de 10%.`);}
-  const incomplete = count === null || count < 0 || days === null || profit === null || margin === null;
-  if (state === "good" && incomplete) return unknown;
-  return {state, label:state === "critical" ? "Crítico" : state === "warning" ? "Atenção" : "Em dia", description:state === "good" ? "Nenhum alerta nas regras avaliadas. Isso não representa a saúde financeira da empresa." : "Revise os alertas antes de alterar preços ou anúncios.", reasons, incomplete};
+
+function formatCurrency(value) {
+  return Number(value || 0).toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  });
 }
-function updateStockRadar(summary) {
-  const result = evaluateStockRadar(summary);
-  const card = document.querySelector(".radar-card"); if (!card) return;
-  card.dataset.state = result.state;
-  const put = (selector, value) => { const el=card.querySelector(selector); if(el) el.textContent=value; };
-  put(".radar-pending", "Análise do estoque");
-  put(".radar-visual strong", result.label);
-  put(".radar-content h3", result.state === "good" ? "Estoque dentro dos limites" : result.label);
-  put(".radar-content p", (result.reasons.join(" ") || result.description) + (result.incomplete ? " Há dados incompletos; avaliação parcial." : ""));
-  const tags=card.querySelectorAll(".radar-tags span");
-  if(tags[0]) tags[0].textContent=`Estoque · ${result.label}`;
-  if(tags[1]) tags[1].textContent="Leads · Não avaliados";
-  if(tags[2]) tags[2].textContent="Propostas · Não avaliadas";
-  const svg=card.querySelector("svg"); if(svg) svg.setAttribute("aria-label",`Situação do estoque: ${result.label}`);
-}
-function showRadarUnavailable() {
-  const card=document.querySelector(".radar-card"); if(!card) return;
-  card.dataset.state="unknown";
-  for(const [selector,text] of [[".radar-pending","Falha ao carregar"],[".radar-visual strong","Indisponível"],[".radar-content h3","Não foi possível avaliar"],[".radar-content p","Recarregue a página para tentar novamente. Nenhuma avaliação foi concluída."]]) {
-    const el=card.querySelector(selector);if(el) el.textContent=text;
+
+/* =========================================
+   UTILITÁRIOS
+========================================= */
+
+function setText(id, value) {
+  const element = document.getElementById(id);
+
+  if (element) {
+    element.textContent = value;
   }
 }
-function escapeDashboardHtml(value) {
-  return String(value).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+function setElementText(element, value) {
+  if (element) {
+    element.textContent = value;
+  }
 }
+
+function getNumber(value, fallback = 0) {
+  const number = Number(value);
+
+  return Number.isFinite(number) ? number : fallback;
+}
+
+function escapeDashboardHtml(value) {
+  return String(value ?? "").replace(
+    /[&<>"']/g,
+    (character) =>
+      ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#039;",
+      })[character],
+  );
+}
+
 function safeDashboardImage(value) {
-  try { const url=new URL(value,window.location.href);return ["http:","https:"].includes(url.protocol) ? url.href : ""; } catch { return ""; }
+  if (!value) return "";
+
+  try {
+    const url = new URL(value, window.location.href);
+
+    if (!["http:", "https:"].includes(url.protocol)) {
+      return "";
+    }
+
+    return url.href;
+  } catch (error) {
+    return "";
+  }
 }
