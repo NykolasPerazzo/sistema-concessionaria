@@ -3,13 +3,12 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
     <title>Veículos | Admin | Car Dealer IA</title>
-
     <link rel="stylesheet" href="./css/admin.css" />
+    <link rel="stylesheet" href="./css/vehicles-command.css" />
   </head>
 
-  <body>
+  <body class="vehicles-command-page">
     <aside class="sidebar">
       <div class="admin-logo">
         <span>⚡</span>
@@ -17,7 +16,7 @@
       </div>
 
       <nav>
-        <a href="./index.html">Dashboard</a>
+        <a href="./index.html">Central de comando</a>
         <a href="./vehicles.html" class="active">Veículos</a>
         <a href="./leads.html">Leads<span class="nav-badge" id="leadsNavBadge" hidden>0</span></a>
         <a href="./customers.html">Clientes</a>
@@ -28,198 +27,192 @@
         <a href="./settings.html">Configurações</a>
       </nav>
 
-      <a href="../index.html" class="public-site"> ← Ver site público </a>
+      <a href="../index.html" class="public-site">← Ver site público</a>
     </aside>
 
-    <main class="admin-main">
-      <header class="admin-header">
-        <div>
-          <span class="eyebrow">ESTOQUE</span>
-          <h1>Veículos</h1>
-        </div>
-
-        <a href="./vehicle-form.html" class="admin-primary-button">
-          + Novo veículo
-        </a>
-      </header>
-
-      <section class="vehicle-toolbar">
-        <input
-          type="text"
-          id="searchInput"
-          placeholder="Buscar por marca ou modelo..."
-        />
-
-        <select id="statusFilter">
-          <option value="">Todos os status</option>
-          <option value="available">Disponível</option>
-          <option value="reserved">Reservado</option>
-          <option value="sold">Vendido</option>
-        </select>
-
-        <select id="brandFilter">
-          <option value="">Todas as marcas</option>
-        </select>
-      </section>
-
-      <section class="panel">
-        <div class="panel-header">
+    <main class="vehicles-shell">
+      <section class="vehicles-content">
+        <header class="vehicles-hero">
           <div>
-            <span class="eyebrow">INVENTÁRIO</span>
-            <h2>Veículos cadastrados</h2>
+            <span class="eyebrow">ESTOQUE</span>
+            <h1>Veículos</h1>
+            <p>Controle seu estoque, prioridades e anúncios em um só lugar.</p>
           </div>
 
-          <span id="vehicleCount"> 0 veículos </span>
-        </div>
+          <div class="vehicles-hero-actions">
+            <button type="button" class="ai-dark-button" id="aiAnalysisButtonTop">
+              ✦ Análise da IA
+            </button>
 
-        <div class="admin-table-wrapper">
-          <table class="admin-table">
-            <thead>
-              <tr>
-                <th>Veículo</th>
-                <th>Ano</th>
-                <th>Preço</th>
-                <th>Quilometragem</th>
-                <th>Status</th>
-                <th>Ações</th>
-              </tr>
-            </thead>
+            <a href="./vehicle-form.html" class="admin-primary-button">
+              + Novo veículo
+            </a>
+          </div>
+        </header>
 
-            <tbody id="vehiclesTableBody">
-              <tr>
-                <td colspan="6" class="loading">Carregando veículos...</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+        <section class="vehicles-kpi-grid" aria-label="Resumo do estoque">
+          <article>
+            <i>▣</i>
+            <span>Disponíveis</span>
+            <strong id="vehiclesAvailableKpi">24</strong>
+            <small>Veículos prontos para venda</small>
+          </article>
+
+          <article>
+            <i>△</i>
+            <span>Atenção</span>
+            <strong id="vehiclesAttentionKpi">3</strong>
+            <small>Com mais tempo no estoque</small>
+          </article>
+
+          <article>
+            <i>◇</i>
+            <span>Vendidos no mês</span>
+            <strong id="vehiclesSoldKpi">6</strong>
+            <small>Giro comercial recente</small>
+          </article>
+
+          <article>
+            <i>▥</i>
+            <span>Margem potencial</span>
+            <strong id="vehiclesMarginKpi">R$ 65.150</strong>
+            <small>Estimativa cadastrada</small>
+          </article>
+        </section>
+
+        <section class="vehicle-toolbar command-toolbar">
+          <label class="search-field" for="searchInput">
+            <span>⌕</span>
+            <input
+              type="text"
+              id="searchInput"
+              placeholder="Buscar por marca ou modelo..."
+            />
+          </label>
+
+          <select id="statusFilter">
+            <option value="">Todos os status</option>
+            <option value="available">Disponível</option>
+            <option value="reserved">Reservado</option>
+            <option value="sold">Vendido</option>
+          </select>
+
+          <select id="brandFilter">
+            <option value="">Todas as marcas</option>
+          </select>
+        </section>
+
+        <section class="panel vehicles-inventory-panel">
+          <div class="panel-header">
+            <div>
+              <span class="eyebrow">INVENTÁRIO</span>
+              <h2>Veículos cadastrados</h2>
+            </div>
+
+            <span id="vehicleCount">0 veículos</span>
+          </div>
+
+          <div class="admin-table-wrapper vehicle-card-wrapper">
+            <table class="admin-table vehicles-card-table">
+              <thead>
+                <tr>
+                  <th>Veículo</th>
+                  <th>Ano</th>
+                  <th>Preço</th>
+                  <th>Quilometragem</th>
+                  <th>Status</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+
+              <tbody id="vehiclesTableBody">
+                <tr>
+                  <td colspan="6" class="loading">Carregando veículos...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
       </section>
-
-      <!-- =========================================
-     IA ASSISTENTE - LATERAL
-========================================= -->
 
       <aside class="vehicles-ai-sidebar">
         <div class="vehicles-ai-header">
           <div class="vehicles-ai-title">
             <span class="vehicles-ai-spark">✦</span>
-
             <div>
               <strong>IA Assistente</strong>
               <span class="vehicles-ai-beta">Beta</span>
             </div>
           </div>
-
           <p>Análises inteligentes do seu estoque</p>
         </div>
 
-        <!-- RESUMO -->
-
         <section class="ai-summary-section">
-          <h3>
-            <span>◈</span>
-            Resumo inteligente
-          </h3>
-
+          <h3><span>◈</span> Resumo inteligente</h3>
           <div class="ai-summary-card">
             <p id="aiSummaryText">Analisando os dados do seu estoque...</p>
-
-            <button
-              type="button"
-              class="ai-analysis-button"
-              id="aiAnalysisButton"
-            >
+            <button type="button" class="ai-analysis-button" id="aiAnalysisButton">
               Ver análise completa
             </button>
           </div>
         </section>
-
-        <!-- INSIGHTS -->
 
         <section class="ai-insights-section">
           <h3>Insights rápidos</h3>
 
           <div class="ai-insight-card">
             <div class="ai-insight-icon green">↗</div>
-
             <div>
-              <span class="ai-insight-label green-text"> Maior margem </span>
-
-              <strong id="aiHighestMarginVehicle"> Calculando... </strong>
-
-              <small id="aiHighestMarginValue"> - </small>
+              <span class="ai-insight-label green-text">Maior margem</span>
+              <strong id="aiHighestMarginVehicle">Calculando...</strong>
+              <small id="aiHighestMarginValue">-</small>
             </div>
           </div>
 
           <div class="ai-insight-card">
             <div class="ai-insight-icon orange">◷</div>
-
             <div>
-              <span class="ai-insight-label orange-text"> Mais parado </span>
-
-              <strong id="aiOldestVehicle"> Calculando... </strong>
-
-              <small id="aiOldestVehicleDays"> - </small>
+              <span class="ai-insight-label orange-text">Mais parado</span>
+              <strong id="aiOldestVehicle">Calculando...</strong>
+              <small id="aiOldestVehicleDays">-</small>
             </div>
           </div>
 
           <div class="ai-insight-card">
             <div class="ai-insight-icon blue">◴</div>
-
             <div>
-              <span class="ai-insight-label blue-text"> Giro mais rápido </span>
-
-              <strong id="aiFastestVehicle"> Calculando... </strong>
-
-              <small id="aiFastestVehicleDays"> - </small>
+              <span class="ai-insight-label blue-text">Giro mais rápido</span>
+              <strong id="aiFastestVehicle">Calculando...</strong>
+              <small id="aiFastestVehicleDays">-</small>
             </div>
           </div>
         </section>
 
-        <!-- PERGUNTAR PARA IA -->
-
         <section class="ai-question-section">
           <h3>Pergunte à IA</h3>
-
-          <p>Faça perguntas sobre seu estoque</p>
+          <p>Faça perguntas sobre seu estoque, preços e estratégia de venda.</p>
 
           <div class="ai-question-box">
             <textarea
               id="aiQuestion"
               rows="2"
-              placeholder="Ex: Quais carros estão há mais tempo?"
+              placeholder="Ex: Quais veículos devo anunciar?"
             ></textarea>
-
-            <button
-              type="button"
-              id="aiSendQuestion"
-              aria-label="Enviar pergunta"
-            >
-              ➤
-            </button>
+            <button type="button" id="aiSendQuestion" aria-label="Enviar pergunta">➤</button>
           </div>
 
           <div class="ai-suggestions">
             <button type="button">Quais carros estão há mais tempo?</button>
-
             <button type="button">Qual veículo tem maior margem?</button>
-
             <button type="button">Qual o valor total do estoque?</button>
-
-            <button type="button">
-              Quais carros devo priorizar para venda?
-            </button>
+            <button type="button">Quais carros devo priorizar?</button>
           </div>
         </section>
       </aside>
     </main>
 
-    <!-- =========================================
-       MODAL DE CONFIRMAÇÃO
-    ========================================= -->
-
     <div id="confirmModal" class="confirm-modal" hidden>
       <div class="confirm-modal-backdrop" id="confirmModalBackdrop"></div>
-
       <div
         class="confirm-modal-card"
         role="alertdialog"
@@ -227,28 +220,15 @@
         aria-labelledby="confirmModalTitle"
       >
         <div class="confirm-modal-icon">!</div>
-
         <h3 id="confirmModalTitle">Excluir veículo?</h3>
-
         <p id="confirmModalMessage">
-          Tem certeza que deseja excluir este veículo? Essa ação não pode
-          ser desfeita.
+          Tem certeza que deseja excluir este veículo? Essa ação não pode ser desfeita.
         </p>
-
         <div class="confirm-modal-actions">
-          <button
-            type="button"
-            class="confirm-modal-cancel"
-            id="confirmModalCancel"
-          >
+          <button type="button" class="confirm-modal-cancel" id="confirmModalCancel">
             Cancelar
           </button>
-
-          <button
-            type="button"
-            class="confirm-modal-confirm"
-            id="confirmModalConfirm"
-          >
+          <button type="button" class="confirm-modal-confirm" id="confirmModalConfirm">
             Excluir
           </button>
         </div>

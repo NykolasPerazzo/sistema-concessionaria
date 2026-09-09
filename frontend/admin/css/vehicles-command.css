@@ -1,0 +1,673 @@
+/* =========================================
+   VEICULOS - CENTRAL DE COMANDO
+========================================= */
+
+:root {
+  --vehicles-bg: #07090d;
+  --vehicles-panel: #101318;
+  --vehicles-panel-2: #151922;
+  --vehicles-border: rgba(255, 255, 255, 0.1);
+  --vehicles-text: #f8fafc;
+  --vehicles-muted: #9ca3af;
+  --vehicles-soft: #cbd5e1;
+  --vehicles-orange: #ff4d12;
+  --vehicles-yellow: #ffd235;
+  --vehicles-green: #3ddc7a;
+  --vehicles-red: #ff443a;
+  --vehicles-blue: #4895ff;
+}
+
+.vehicles-command-page {
+  min-height: 100vh;
+  background:
+    radial-gradient(
+      circle at 36% -12%,
+      rgba(255, 77, 18, 0.12),
+      transparent 32%
+    ),
+    #07090d;
+  color: var(--vehicles-text);
+}
+
+.vehicles-command-page a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.vehicles-command-page .sidebar {
+  position: fixed;
+  inset: 0 auto 0 0;
+  width: 220px;
+  padding: 20px 10px;
+  background: linear-gradient(180deg, #0d1117 0%, #080a0f 100%);
+  border-right: 1px solid var(--vehicles-border);
+  z-index: 20;
+  overflow-y: auto;
+}
+
+.vehicles-command-page .admin-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 14px 22px;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 900;
+  letter-spacing: 0.3px;
+}
+
+.vehicles-command-page .admin-logo span {
+  color: var(--vehicles-orange);
+  font-size: 28px;
+}
+
+.vehicles-command-page .sidebar nav {
+  display: grid;
+  gap: 8px;
+}
+
+.vehicles-command-page .sidebar nav a,
+.vehicles-command-page .public-site {
+  position: relative;
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 14px;
+  border-radius: 8px;
+  color: #c9d2df;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.vehicles-command-page .sidebar nav a.active {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 77, 18, 0.24),
+    rgba(255, 77, 18, 0.06)
+  );
+  color: #fff;
+  font-weight: 900;
+}
+
+.vehicles-command-page .sidebar nav a.active::before {
+  content: "";
+  position: absolute;
+  left: -10px;
+  top: 8px;
+  bottom: 8px;
+  width: 4px;
+  border-radius: 8px;
+  background: var(--vehicles-orange);
+}
+
+.vehicles-command-page .public-site {
+  margin-top: 130px;
+  color: #9ca3af;
+}
+
+.vehicles-shell {
+  margin-left: 220px;
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 330px;
+}
+
+.vehicles-content {
+  padding: 26px 30px 36px;
+  min-width: 0;
+}
+
+.vehicles-hero {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 18px;
+  margin-bottom: 22px;
+}
+
+.vehicles-command-page .eyebrow {
+  display: block;
+  margin-bottom: 6px;
+  color: #7b8494;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.vehicles-hero h1 {
+  margin: 0;
+  color: #fff;
+  font-size: 38px;
+  line-height: 1;
+  font-weight: 900;
+}
+
+.vehicles-hero p {
+  margin: 8px 0 0;
+  color: #aeb8c8;
+  font-size: 15px;
+}
+
+.vehicles-hero-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.vehicles-command-page .admin-primary-button,
+.ai-dark-button {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  border-radius: 9px;
+  padding: 0 18px;
+  border: 1px solid var(--vehicles-border);
+  font-size: 14px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.vehicles-command-page .admin-primary-button {
+  background: linear-gradient(135deg, var(--vehicles-orange), #ff6a21);
+  color: #08090d;
+  border-color: transparent;
+}
+
+.ai-dark-button {
+  background: #121722;
+  color: #fff;
+}
+
+.vehicles-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.vehicles-kpi-grid article {
+  min-height: 96px;
+  display: grid;
+  grid-template-columns: 48px 1fr auto;
+  grid-template-rows: auto auto;
+  align-items: center;
+  column-gap: 13px;
+  padding: 15px;
+  border-radius: 10px;
+  background: linear-gradient(
+    145deg,
+    rgba(18, 22, 29, 0.96),
+    rgba(9, 12, 17, 0.96)
+  );
+  border: 1px solid var(--vehicles-border);
+}
+
+.vehicles-kpi-grid i {
+  grid-row: 1 / 3;
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  background: #1a202b;
+  color: var(--vehicles-orange);
+  font-style: normal;
+  font-size: 22px;
+}
+
+.vehicles-kpi-grid span {
+  color: #cbd5e1;
+  font-size: 14px;
+}
+
+.vehicles-kpi-grid strong {
+  color: #fff;
+  font-size: 28px;
+  line-height: 1;
+}
+
+.vehicles-kpi-grid small {
+  grid-column: 2 / 4;
+  color: #8f9aaa;
+  font-size: 12px;
+}
+
+.command-toolbar {
+  display: grid;
+  grid-template-columns: minmax(280px, 1fr) 220px 220px;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.command-toolbar .search-field {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.command-toolbar .search-field span {
+  position: absolute;
+  left: 15px;
+  color: #8f9aaa;
+  z-index: 1;
+}
+
+.command-toolbar input,
+.command-toolbar select {
+  width: 100%;
+  min-height: 48px;
+  border-radius: 9px;
+  border: 1px solid var(--vehicles-border);
+  background: #0d1118;
+  color: #fff;
+  padding: 0 16px;
+  outline: none;
+}
+
+.command-toolbar input {
+  padding-left: 42px;
+}
+
+.vehicles-inventory-panel {
+  padding: 18px;
+  border-radius: 11px;
+  background: linear-gradient(
+    145deg,
+    rgba(18, 22, 29, 0.96),
+    rgba(9, 12, 17, 0.96)
+  );
+  border: 1px solid var(--vehicles-border);
+}
+
+.vehicles-command-page .panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.vehicles-command-page .panel-header h2 {
+  margin: 0;
+  color: #fff;
+  font-size: 22px;
+}
+
+.vehicles-command-page #vehicleCount {
+  color: #fff;
+  font-weight: 900;
+}
+
+.vehicle-card-wrapper {
+  overflow: visible;
+}
+
+.vehicles-card-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.vehicles-card-table thead {
+  display: none;
+}
+
+.vehicles-card-table tbody {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.vehicles-card-table tr {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr;
+  min-height: 245px;
+  border: 1px solid var(--vehicles-border);
+  border-radius: 10px;
+  overflow: hidden;
+  background: linear-gradient(180deg, #171c25 0%, #0f131a 100%);
+}
+
+.vehicles-card-table td {
+  display: block;
+  padding: 0 14px;
+  border: 0;
+  color: #dbe4f0;
+}
+
+.vehicles-card-table td:first-child {
+  min-height: 132px;
+  padding: 0;
+  background:
+    radial-gradient(
+      circle at 50% 10%,
+      rgba(255, 255, 255, 0.12),
+      transparent 48%
+    ),
+    #11161d;
+}
+
+.vehicles-card-table td:first-child img {
+  width: 100%;
+  height: 132px;
+  object-fit: cover;
+  display: block;
+}
+
+.vehicles-card-table td:first-child strong,
+.vehicles-card-table td:first-child b {
+  display: block;
+  padding: 12px 14px 0;
+  color: #fff;
+  font-size: 16px;
+}
+
+.vehicles-card-table td:nth-child(2),
+.vehicles-card-table td:nth-child(3),
+.vehicles-card-table td:nth-child(4) {
+  font-size: 13px;
+  color: #aeb8c8;
+}
+
+.vehicles-card-table td:nth-child(3) {
+  color: #fff;
+  font-size: 19px;
+  font-weight: 900;
+}
+
+.vehicles-card-table td:nth-child(5) {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  width: auto;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(61, 220, 122, 0.16);
+  color: var(--vehicles-green);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.vehicles-card-table td:nth-child(6) {
+  display: flex;
+  gap: 8px;
+  padding: 12px 14px 14px;
+  margin-top: auto;
+}
+
+.vehicles-card-table td:nth-child(6) a,
+.vehicles-card-table td:nth-child(6) button {
+  flex: 1;
+  min-height: 34px;
+  border-radius: 8px;
+  border: 1px solid var(--vehicles-border);
+  background: transparent;
+  color: #fff;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.vehicles-card-table td:nth-child(6) a:last-child,
+.vehicles-card-table td:nth-child(6) button:last-child {
+  color: var(--vehicles-orange);
+  border-color: rgba(255, 77, 18, 0.6);
+}
+
+.vehicles-card-table .loading {
+  grid-column: 1 / -1;
+  min-height: 130px;
+  display: grid;
+  place-items: center;
+  color: #aeb8c8;
+}
+
+.vehicles-ai-sidebar {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+  padding: 24px 22px;
+  border-left: 1px solid var(--vehicles-border);
+  background: linear-gradient(180deg, #0c0f15 0%, #07090d 100%);
+}
+
+.vehicles-ai-header {
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--vehicles-border);
+  margin-bottom: 18px;
+}
+
+.vehicles-ai-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #fff;
+}
+
+.vehicles-ai-title strong {
+  font-size: 18px;
+}
+
+.vehicles-ai-spark {
+  color: #8b5cf6;
+  font-size: 20px;
+}
+
+.vehicles-ai-beta {
+  margin-left: 7px;
+  padding: 3px 7px;
+  border-radius: 6px;
+  background: rgba(139, 92, 246, 0.28);
+  color: #d9ccff;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.vehicles-ai-header p,
+.ai-question-section p {
+  color: #8f9aaa;
+  font-size: 13px;
+}
+
+.vehicles-ai-sidebar h3 {
+  color: #fff;
+  font-size: 16px;
+  margin: 0 0 12px;
+}
+
+.ai-summary-card,
+.ai-insight-card,
+.ai-question-box {
+  border: 1px solid var(--vehicles-border);
+  border-radius: 10px;
+  background: #151922;
+}
+
+.ai-summary-card {
+  padding: 16px;
+  margin-bottom: 22px;
+}
+
+.ai-summary-card p {
+  margin: 0 0 14px;
+  color: #dbe4f0;
+  line-height: 1.55;
+}
+
+.ai-analysis-button {
+  width: 100%;
+  min-height: 40px;
+  border: 0;
+  border-radius: 8px;
+  color: #fff;
+  background: linear-gradient(135deg, #7c3aed, #ff4d12);
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.ai-insights-section {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+.ai-insight-card {
+  display: grid;
+  grid-template-columns: 48px 1fr;
+  gap: 12px;
+  align-items: center;
+  padding: 14px;
+}
+
+.ai-insight-icon {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  font-weight: 900;
+}
+
+.ai-insight-icon.green {
+  background: rgba(61, 220, 122, 0.16);
+  color: var(--vehicles-green);
+}
+.ai-insight-icon.orange {
+  background: rgba(255, 210, 53, 0.14);
+  color: var(--vehicles-yellow);
+}
+.ai-insight-icon.blue {
+  background: rgba(72, 149, 255, 0.14);
+  color: var(--vehicles-blue);
+}
+
+.ai-insight-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.green-text {
+  color: var(--vehicles-green);
+}
+.orange-text {
+  color: var(--vehicles-yellow);
+}
+.blue-text {
+  color: var(--vehicles-blue);
+}
+
+.ai-insight-card strong {
+  display: block;
+  color: #fff;
+  margin-top: 3px;
+}
+
+.ai-insight-card small {
+  color: #8f9aaa;
+}
+
+.ai-question-box {
+  display: grid;
+  grid-template-columns: 1fr 38px;
+  gap: 8px;
+  padding: 10px;
+}
+
+.ai-question-box textarea {
+  border: 0;
+  resize: none;
+  outline: none;
+  background: transparent;
+  color: #fff;
+  font: inherit;
+  font-size: 13px;
+}
+
+.ai-question-box button {
+  border: 0;
+  border-radius: 8px;
+  background: #252b36;
+  color: #fff;
+  cursor: pointer;
+}
+
+.ai-suggestions {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.ai-suggestions button {
+  min-height: 34px;
+  border: 1px solid var(--vehicles-border);
+  border-radius: 8px;
+  background: transparent;
+  color: #cbd5e1;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+@media (max-width: 1180px) {
+  .vehicles-command-page .sidebar {
+    width: 190px;
+  }
+  .vehicles-shell {
+    margin-left: 190px;
+    grid-template-columns: 1fr;
+  }
+  .vehicles-ai-sidebar {
+    position: relative;
+    height: auto;
+    border-left: 0;
+    border-top: 1px solid var(--vehicles-border);
+  }
+  .vehicles-card-table tbody {
+    grid-template-columns: repeat(2, minmax(220px, 1fr));
+  }
+  .vehicles-kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 760px) {
+  .vehicles-command-page .sidebar {
+    position: sticky;
+    top: 0;
+    width: auto;
+    padding: 12px;
+  }
+  .vehicles-command-page .sidebar nav {
+    display: flex;
+    overflow-x: auto;
+  }
+  .vehicles-command-page .public-site {
+    display: none;
+  }
+  .vehicles-shell {
+    margin-left: 0;
+    display: block;
+  }
+  .vehicles-content {
+    padding: 16px;
+  }
+  .vehicles-hero,
+  .vehicles-hero-actions {
+    display: grid;
+    width: 100%;
+  }
+  .vehicles-hero h1 {
+    font-size: 31px;
+  }
+  .vehicles-kpi-grid,
+  .command-toolbar,
+  .vehicles-card-table tbody {
+    grid-template-columns: 1fr;
+  }
+}
