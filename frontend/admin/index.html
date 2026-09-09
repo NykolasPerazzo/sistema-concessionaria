@@ -1,210 +1,340 @@
-<!DOCTYPE html>
-
+<!doctype html>
 <html lang="pt-BR">
-<head>
-<meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" rel="stylesheet"/>
-<title>Dashboard | Car Dealer IA</title>
-<link href="./css/admin.css" rel="stylesheet"/>
-<link href="./css/dashboard.css" rel="stylesheet"/></head>
-<body class="dashboard-page">
-<aside class="sidebar">
-<div class="admin-logo">
-<span>⚡</span>
-<strong>CAR DEALER IA</strong>
-</div>
-<nav>
-<a class="active" href="./index.html">Central de comando</a>
-<a href="./vehicles.html">Veículos</a>
-<a href="./leads.html">Leads<span class="nav-badge" hidden="" id="leadsNavBadge">0</span></a>
-<a href="./customers.html">Clientes</a>
-<a href="./proposals.html">Propostas</a>
-<a href="./sales.html">Vendas</a>
-<a href="./despachante.html">Despachante</a>
-<a href="./ai.html">IA</a>
-<a href="./settings.html">Configurações</a>
-</nav>
-<div class="sidebar-footer">
-<a class="public-site" href="../index.html"> ← Ver site público </a>
-<button class="logout-button" id="logoutButton">
-<span>↪</span>
-          Sair
-        </button>
-</div>
-</aside>
-<main class="admin-main">
-<header class="admin-header">
-<div>
-<span class="eyebrow">CENTRAL DE COMANDO</span>
-<h1>O que precisa acontecer hoje?</h1><p class="dashboard-subtitle">Sua operação, suas prioridades e suas próximas vendas.</p>
-</div>
-<div class="admin-header-actions"><a class="dashboard-primary" href="./vehicle-form.html">+ Novo veículo</a>
-<button aria-label="Alternar tema" class="theme-toggle" id="themeToggle" type="button">
-<i class="fa-solid fa-moon" id="themeIcon"></i>
-</button>
-<div class="admin-profile">
-<div class="admin-avatar">A</div>
-<div>
-<strong>Administrador</strong>
-<span>Gestor</span>
-</div>
-</div>
-</div>
-</header>
-<!-- NOTIFICAÇÃO DE NOVO LEAD -->
-<aside aria-live="polite" class="lead-notification" hidden="" id="leadNotification">
-<div class="lead-notification-icon">
-<i class="fa-solid fa-bolt"></i>
-</div>
-<div class="lead-notification-content">
-<span>NOVO LEAD IDENTIFICADO</span>
-<strong id="leadNotificationName"> Novo interessado </strong>
-<small id="leadNotificationDetail"> Aguardando informações... </small>
-<div aria-hidden="true" class="lead-notification-bars">
-<i></i>
-<i></i>
-<i></i>
-<i></i>
-<i></i>
-<i></i>
-<i></i>
-<i></i>
-</div>
-</div>
-<a class="lead-notification-action" href="./leads.html"> Ver lead </a>
-<button aria-label="Fechar notificação" class="lead-notification-close" id="closeLeadNotification" type="button">
-          ×
-        </button>
-</aside>
-<section aria-label="Resumo da operação" class="command-grid"><article class="radar-card"><div class="panel-header"><div><h2>Radar da Revenda</h2><p class="dashboard-subtitle">Situação operacional</p></div><span class="radar-pending">Em preparação</span></div><div class="radar-content"><div class="radar-visual"><svg aria-label="Indicador sem avaliação: aguardando integração" role="img" viewbox="0 0 240 140"><path d="M 24 116 A 96 96 0 0 1 72 33" stroke="#36bd82"></path><path d="M 76 31 A 96 96 0 0 1 164 31" stroke="#efb938"></path><path d="M 168 33 A 96 96 0 0 1 216 116" stroke="#ef545b"></path></svg><strong>Sem avaliação</strong></div><div><h3>Aguardando integração</h3><p>O radar reunirá os sinais do estoque, leads e propostas para indicar o que precisa de atenção.</p><div class="radar-tags"><span>Estoque · Pendente</span><span>Leads · Pendente</span><span>Propostas · Pendente</span></div><a class="dashboard-text-link" href="#stockAlerts">Consultar alertas do estoque →</a></div></div></article><article class="priority-card"><h2>Central de ações</h2><p class="dashboard-subtitle">Acesse sua rotina de atendimento.</p><a href="./leads.html"><span><strong>Atender leads</strong><small>Consultar contatos recebidos</small></span><span>→</span></a><a href="./proposals.html"><span><strong>Acompanhar propostas</strong><small>Revisar negociações em andamento</small></span><span>→</span></a><a href="./vehicles.html"><span><strong>Revisar estoque</strong><small>Consultar veículos e anúncios</small></span><span>→</span></a></article></section><section class="stats-grid">
-<article class="stat-card">
-<div>
-<span>Total de veículos</span>
-<strong id="totalVehicles">—</strong>
-</div>
-<span class="stat-icon">🚗</span>
-</article>
-<article class="stat-card">
-<div>
-<span>Disponíveis</span>
-<strong id="availableVehicles">—</strong>
-</div>
-<span class="stat-icon">✅</span>
-</article>
-<article class="stat-card">
-<div>
-<span>Reservados</span>
-<strong id="reservedVehicles">—</strong>
-</div>
-<span class="stat-icon">⏳</span>
-</article>
-<article class="stat-card">
-<div>
-<span>Vendidos</span>
-<strong id="soldVehicles">—</strong>
-</div>
-<span class="stat-icon">💰</span>
-</article>
-</section>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Central de comando | Car Dealer IA</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
+    />
+    <link rel="stylesheet" href="./css/admin.css" />
+    <link rel="stylesheet" href="./css/dashboard.css" />
+  </head>
+  <body class="dashboard-page command-center-page">
+    <nav class="sidebar">
+      <a class="brand" href="dashboard.html" aria-label="Car Dealer IA">
+        <i class="fa-solid fa-bolt"></i>
+        <span>Car Dealer <strong>IA</strong></span>
+      </a>
 
-<section class="panel stock-alerts-panel">
-<div class="panel-header">
-<div>
-<span class="eyebrow"> ALERTAS </span>
-<h2>Atenção no estoque</h2>
-</div>
-</div>
-<div id="stockAlerts">
-<p class="loading">Analisando estoque...</p>
-</div>
-</section>
-<section class="panel old-vehicles-panel">
-<div class="panel-header">
-<div>
-<span class="eyebrow">VEÍCULOS HÁ MAIS TEMPO NA LOJA</span>
-<h2>Inteligência do estoque</h2>
-</div>
-<a href="./vehicles.html"> Ver estoque → </a>
-</div>
-<div class="old-vehicles-list" id="oldVehicles">
-<p class="loading">Analisando veículos...</p>
-</div>
-</section><section class="finance-dashboard-grid">
-<article class="finance-dashboard-card">
-<span>Capital investido</span>
-<strong id="investedStock">—</strong>
-<small> Valor de compra dos veículos em estoque </small>
-</article>
-<article class="finance-dashboard-card">
-<span>Despesas do estoque</span>
-<strong id="stockExpenses">—</strong>
-<small> Gastos acumulados com veículos em estoque </small>
-</article>
-<article class="finance-dashboard-card">
-<span>Custo total do estoque</span>
-<strong id="totalStockCost">—</strong>
-<small> Compra + despesas </small>
-</article>
-<article class="finance-dashboard-card">
-<span>Valor anunciado</span>
-<strong id="advertisedStock">—</strong>
-<small> Soma dos preços anunciados </small>
-</article>
-<article class="finance-dashboard-card">
-<span>Lucro potencial</span>
-<strong id="potentialProfit">—</strong>
-<small> Se todo estoque for vendido pelo preço anunciado </small>
-</article>
-<article class="finance-dashboard-card">
-<span>Veículo mais antigo</span>
-<strong id="oldestStockDays">—</strong>
-<small id="oldestStockDate"> - </small>
-</article>
-<article class="finance-dashboard-card">
-<span>Margem potencial</span>
-<strong id="potentialMargin">—</strong>
-<small> Margem estimada sobre o custo total </small>
-</article>
-</section>
-<section class="dashboard-grid">
-<div class="panel">
-<div class="panel-header">
-<div>
-<span class="eyebrow">ESTOQUE</span>
-<h2>Veículos recentes</h2>
-</div>
-<a href="./vehicles.html"> Ver todos → </a>
-</div>
-<div class="recent-vehicles" id="recentVehicles">
-<p class="loading">Carregando...</p>
-</div>
-</div>
-<div class="panel quick-actions">
-<div class="panel-header">
-<div>
-<span class="eyebrow">AÇÕES</span>
-<h2>Acesso rápido</h2>
-</div>
-</div>
-<a class="action-button" href="./vehicle-form.html">
-<span>＋</span>
-            Cadastrar veículo
-          </a>
-<a class="action-button" href="./vehicles.html">
-<span>🚗</span>
-            Gerenciar veículos
-          </a>
-<a class="action-button" href="./ai.html">
-<span>🤖</span>
-            Abrir IA
-          </a>
-</div>
-</section>
-<section class="copilot-banner"><div><h2>Seu copiloto de vendas</h2><p>Acesse as ferramentas de inteligência artificial da sua loja.</p></div><a class="dashboard-primary" href="./ai.html">Abrir IA →</a></section></main>
-<script src="../js/config.js"></script>
-<script src="./js/auth.js"></script>
-<script src="./js/nav-badge.js"></script>
-<script src="./js/dashboard.js?v=7"></script>
-</body>
+      <div class="nav-section">
+        <a class="nav-link active" href="dashboard.html"
+          ><i class="fa-solid fa-house"></i><span>Central de comando</span></a
+        >
+        <a class="nav-link" href="vehicles.html"
+          ><i class="fa-solid fa-car-side"></i><span>Veículos</span></a
+        >
+        <a class="nav-link nav-link-with-badge" href="leads.html"
+          ><i class="fa-solid fa-users"></i><span>Leads</span
+          ><span id="leadsNavBadge" class="nav-badge hidden">0</span></a
+        >
+        <a class="nav-link" href="clients.html"
+          ><i class="fa-regular fa-user"></i><span>Clientes</span></a
+        >
+        <a class="nav-link" href="proposals.html"
+          ><i class="fa-regular fa-file-lines"></i><span>Propostas</span></a
+        >
+        <a class="nav-link" href="sales.html"
+          ><i class="fa-solid fa-chart-simple"></i><span>Vendas</span></a
+        >
+        <a class="nav-link" href="dispatcher.html"
+          ><i class="fa-solid fa-truck"></i><span>Despachante</span></a
+        >
+        <a class="nav-link" href="ai.html"
+          ><i class="fa-solid fa-wand-magic-sparkles"></i><span>IA</span></a
+        >
+        <a class="nav-link" href="settings.html"
+          ><i class="fa-solid fa-gear"></i><span>Configurações</span></a
+        >
+      </div>
+
+      <div class="nav-section sidebar-footer">
+        <a class="nav-link" href="../index.html" target="_blank" rel="noopener"
+          ><i class="fa-solid fa-arrow-up-right-from-square"></i
+          ><span>Ver site público</span></a
+        >
+        <button id="logoutButton" class="nav-link nav-button" type="button">
+          <i class="fa-solid fa-arrow-right-from-bracket"></i><span>Sair</span>
+        </button>
+        <button
+          id="themeToggle"
+          class="nav-link nav-button theme-toggle"
+          type="button"
+          aria-label="Alternar tema"
+        >
+          <i id="themeIcon" class="fa-regular fa-moon"></i><span>Tema</span>
+        </button>
+      </div>
+    </nav>
+
+    <aside
+      id="leadNotification"
+      class="lead-notification hidden"
+      role="status"
+      aria-live="polite"
+    >
+      <strong id="leadNotificationName">Novo lead</strong>
+      <small id="leadNotificationDetail">Um novo atendimento chegou.</small>
+      <button
+        id="closeLeadNotification"
+        type="button"
+        aria-label="Fechar aviso"
+      >
+        ×
+      </button>
+    </aside>
+
+    <main class="command-shell">
+      <header class="command-hero">
+        <div>
+          <p class="eyebrow">Central de comando</p>
+          <h1>O que precisa acontecer hoje?</h1>
+          <p>Sua operação, suas prioridades e suas próximas vendas.</p>
+        </div>
+        <div class="hero-actions">
+          <span class="demo-pill"
+            ><i class="fa-regular fa-circle-info"></i> Dados em tempo real</span
+          >
+          <a href="vehicle-form.html" class="btn-primary"
+            ><i class="fa-solid fa-plus"></i> Novo veículo</a
+          >
+        </div>
+      </header>
+
+      <section class="top-command-grid" aria-label="Situação da operação">
+        <article class="radar-card" id="stockRadarCard" data-state="loading">
+          <div class="section-title-row">
+            <div>
+              <h2>Radar da Revenda</h2>
+              <p>Situação operacional</p>
+            </div>
+          </div>
+          <div class="radar-layout">
+            <div class="radar-meter" aria-hidden="true">
+              <svg
+                viewBox="0 0 260 150"
+                role="img"
+                aria-label="Radar da revenda"
+              >
+                <path class="meter-track" d="M35 130 A95 95 0 0 1 225 130" />
+                <path class="meter-green" d="M35 130 A95 95 0 0 1 89 45" />
+                <path class="meter-yellow" d="M89 45 A95 95 0 0 1 171 45" />
+                <path class="meter-red" d="M171 45 A95 95 0 0 1 225 130" />
+                <line class="meter-needle" x1="130" y1="122" x2="153" y2="42" />
+                <circle class="meter-center" cx="130" cy="122" r="8" />
+              </svg>
+              <strong id="radarStatusLabel">Carregando</strong>
+            </div>
+            <div class="radar-copy">
+              <h3 id="radarTitle">Analisando sua operação</h3>
+              <p id="radarDescription">
+                A IA está cruzando estoque, margem e tempo parado para definir a
+                prioridade.
+              </p>
+              <div class="radar-status-grid">
+                <span id="radarStockTag"
+                  ><i></i>Estoque <strong>Aguardando</strong></span
+                >
+                <span id="radarLeadsTag"
+                  ><i></i>Leads <strong>Em dia</strong></span
+                >
+                <span id="radarProposalsTag"
+                  ><i></i>Propostas <strong>Em dia</strong></span
+                >
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <article class="priority-card">
+          <div class="section-title-row">
+            <div>
+              <h2>Prioridades de hoje</h2>
+              <p>Ações que movem o resultado.</p>
+            </div>
+          </div>
+          <div class="priority-list" id="stockAlerts">
+            <div class="priority-row skeleton-row">
+              <span></span>
+              <p>Carregando prioridades</p>
+              <a href="vehicles.html">Ver</a>
+            </div>
+          </div>
+        </article>
+      </section>
+
+      <section class="ai-recommendation" aria-label="Recomendação da IA">
+        <div class="spark"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+        <div>
+          <p>Recomendação da IA</p>
+          <h2 id="aiRecommendationTitle">Aguardando análise do estoque</h2>
+          <span id="aiRecommendationText"
+            >Quando os dados carregarem, a IA aponta a ação mais importante do
+            dia.</span
+          >
+        </div>
+        <a href="ai.html" class="btn-primary"
+          >Analisar sugestão <i class="fa-solid fa-arrow-right"></i
+        ></a>
+      </section>
+
+      <section class="metric-grid" aria-label="Indicadores principais">
+        <a class="metric-card" href="vehicles.html"
+          ><i class="fa-solid fa-car-side"></i><span>Veículos disponíveis</span
+          ><strong id="availableVehicles">—</strong><em>Ver estoque</em></a
+        >
+        <a class="metric-card" href="leads.html"
+          ><i class="fa-solid fa-users"></i><span>Leads em aberto</span
+          ><strong id="totalVehicles">—</strong><em>Atender agora</em></a
+        >
+        <a class="metric-card" href="proposals.html"
+          ><i class="fa-regular fa-file-lines"></i><span>Propostas ativas</span
+          ><strong id="reservedVehicles">—</strong><em>Acompanhar</em></a
+        >
+        <a class="metric-card" href="sales.html"
+          ><i class="fa-solid fa-chart-simple"></i><span>Vendas no mês</span
+          ><strong id="soldVehicles">—</strong><em>Ver vendas</em></a
+        >
+      </section>
+
+      <section class="middle-grid">
+        <article class="command-card funnel-card">
+          <h2>Funil comercial</h2>
+          <p>Acompanhe onde estão suas oportunidades.</p>
+          <div class="funnel-row">
+            <span>Leads</span>
+            <div><b style="width: 88%"></b></div>
+            <strong id="funnelLeads">—</strong>
+          </div>
+          <div class="funnel-row">
+            <span>Qualificados</span>
+            <div><b style="width: 58%"></b></div>
+            <strong id="funnelQualified">—</strong>
+          </div>
+          <div class="funnel-row">
+            <span>Propostas</span>
+            <div><b style="width: 32%"></b></div>
+            <strong id="funnelProposals">—</strong>
+          </div>
+          <div class="funnel-row">
+            <span>Vendas</span>
+            <div><b style="width: 18%"></b></div>
+            <strong id="funnelSales">—</strong>
+          </div>
+        </article>
+
+        <article class="command-card live-leads-card">
+          <div class="section-title-row compact">
+            <div>
+              <h2>Leads para agir agora</h2>
+              <p>Atendimentos mais recentes.</p>
+            </div>
+            <a href="leads.html"
+              >Ver todos <i class="fa-solid fa-arrow-right"></i
+            ></a>
+          </div>
+          <div class="lead-action-list" id="leadActionList">
+            <a href="leads.html"
+              ><span>M</span><strong>Atender novos leads</strong
+              ><em>Agora</em></a
+            >
+            <a href="leads.html"
+              ><span>A</span><strong>Responder interessados</strong
+              ><em>Hoje</em></a
+            >
+            <a href="leads.html"
+              ><span>J</span><strong>Retomar conversas</strong><em>Hoje</em></a
+            >
+          </div>
+        </article>
+      </section>
+
+      <section class="command-card stock-intel-card">
+        <div class="section-title-row">
+          <div>
+            <h2>Inteligência do estoque</h2>
+            <p>Priorize os veículos que precisam de uma ação.</p>
+          </div>
+          <a href="vehicles.html"
+            >Ver todos os veículos <i class="fa-solid fa-arrow-right"></i
+          ></a>
+        </div>
+        <div class="vehicle-intel-grid" id="oldVehicles">
+          <div class="vehicle-intel-card empty-card">
+            Carregando veículos críticos...
+          </div>
+        </div>
+      </section>
+
+      <section class="bottom-grid">
+        <article class="command-card channel-card">
+          <h2>Publicação multicanal</h2>
+          <p>Seus anúncios nas principais plataformas.</p>
+          <a href="settings.html"
+            ><i class="fa-solid fa-globe"></i><span>Site próprio</span
+            ><strong>Publicado</strong></a
+          >
+          <a href="settings.html"
+            ><i class="fa-solid fa-store"></i><span>Webmotors</span
+            ><strong>Integração planejada</strong></a
+          >
+          <a href="settings.html"
+            ><i class="fa-brands fa-instagram"></i><span>Instagram</span
+            ><strong>Integração planejada</strong></a
+          >
+        </article>
+
+        <article class="command-card result-card">
+          <div>
+            <h2>Resultado do estoque</h2>
+            <p>Margem potencial cadastrada.</p>
+          </div>
+          <strong id="potentialProfit">—</strong>
+          <span>Estimativa antes das despesas gerais.</span>
+          <i class="fa-solid fa-chart-simple"></i>
+        </article>
+      </section>
+
+      <section class="finance-strip" aria-label="Resumo financeiro do estoque">
+        <div><span>Investido</span><strong id="investedStock">—</strong></div>
+        <div><span>Despesas</span><strong id="stockExpenses">—</strong></div>
+        <div>
+          <span>Custo total</span><strong id="totalStockCost">—</strong>
+        </div>
+        <div><span>Anunciado</span><strong id="advertisedStock">—</strong></div>
+        <div>
+          <span>Mais antigo</span><strong id="oldestStockDays">—</strong
+          ><small id="oldestStockDate">—</small>
+        </div>
+        <div><span>Margem</span><strong id="potentialMargin">—</strong></div>
+      </section>
+
+      <section class="recent-stock command-card">
+        <div class="section-title-row">
+          <div>
+            <h2>Últimos veículos cadastrados</h2>
+            <p>Entradas recentes no estoque.</p>
+          </div>
+        </div>
+        <div class="recent-vehicle-grid" id="recentVehicles"></div>
+      </section>
+
+      <section class="copilot-cta">
+        <div class="spark"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+        <div>
+          <h2>Seu copiloto de vendas está pronto.</h2>
+          <p>Pergunte sobre estoque, leads, preço ou a próxima venda.</p>
+        </div>
+        <a href="ai.html" class="btn-primary"
+          >Conversar com IA <i class="fa-solid fa-arrow-right"></i
+        ></a>
+      </section>
+    </main>
+
+    <script src="../js/config.js"></script>
+    <script src="./js/auth.js"></script>
+    <script src="./js/nav-badge.js"></script>
+    <script src="./js/dashboard.js?v=9"></script>
+  </body>
 </html>
