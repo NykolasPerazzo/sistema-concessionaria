@@ -6,467 +6,342 @@
     <title>Leads | Admin | Car Dealer IA</title>
     <link rel="stylesheet" href="./css/admin.css" />
     <link rel="stylesheet" href="./css/sales.css" />
+    <link rel="stylesheet" href="./css/leads-command.css" />
   </head>
-  <body class="sales-page">
+
+  <body class="sales-page leads-command-page">
     <aside class="sidebar">
       <div class="admin-logo">
-        <span>⚡</span><strong>CAR DEALER IA</strong>
+        <span>⚡</span>
+        <strong>CAR DEALER IA</strong>
       </div>
+
       <nav aria-label="Administração">
-        <a href="./index.html">Dashboard</a
-        ><a href="./vehicles.html">Veículos</a
-        ><a href="./leads.html" class="active" aria-current="page">Leads<span class="nav-badge" id="leadsNavBadge" hidden>0</span></a
-        ><a href="./customers.html">Clientes</a
-        ><a href="./proposals.html">Propostas</a
-        ><a href="./sales.html">Vendas</a>
+        <a href="./index.html">Central de comando</a>
+        <a href="./vehicles.html">Veículos</a>
+        <a href="./leads.html" class="active" aria-current="page">Leads<span class="nav-badge" id="leadsNavBadge" hidden>0</span></a>
+        <a href="./customers.html">Clientes</a>
+        <a href="./proposals.html">Propostas</a>
+        <a href="./sales.html">Vendas</a>
         <a href="./despachante.html">Despachante</a>
-        <a href="./ai.html">IA</a
-        ><a href="./settings.html">Configurações</a>
+        <a href="./ai.html">IA</a>
+        <a href="./settings.html">Configurações</a>
       </nav>
+
       <a href="../index.html" class="public-site">← Ver site público</a>
-      <button id="logoutButton" class="sales-secondary" type="button">
-        Sair
-      </button>
+      <button id="logoutButton" class="sales-secondary" type="button">Sair</button>
     </aside>
-    <main class="admin-main">
-      <header class="admin-header">
-        <div>
-          <span class="eyebrow">OPORTUNIDADES</span>
-          <h1>Leads</h1>
-          <p class="sales-subtitle">
-            Organize os interessados e acompanhe cada retorno.
-          </p>
-        </div>
-        <button id="newLead" class="sales-primary" disabled>+ Novo lead</button>
-      </header>
-      <p id="pageMessage" class="sales-message" role="status" hidden></p>
-      <section class="sales-stats" aria-label="Resumo de todos os leads">
-        <article>
-          <span>Novos interessados</span><strong id="newCount">—</strong
-          ><small>Aguardando primeiro atendimento</small>
-        </article>
-        <article>
-          <span>Em andamento</span><strong id="activeCount">—</strong
-          ><small>Em atendimento ou qualificados</small>
-        </article>
-        <article>
-          <span>Retornos vencidos</span><strong id="overdueCount">—</strong
-          ><small>Leads abertos com retorno anterior a hoje</small>
-        </article>
+
+    <main class="leads-shell">
+      <section class="leads-content">
+        <header class="admin-header leads-hero">
+          <div>
+            <span class="eyebrow">OPORTUNIDADES</span>
+            <h1>Leads</h1>
+            <p class="sales-subtitle">Priorize interessados, retornos e próximas vendas.</p>
+          </div>
+
+          <div class="leads-hero-actions">
+            <button type="button" class="meta-action-button">∞ Captar via Meta</button>
+            <button id="newLead" class="sales-primary" disabled>+ Novo lead</button>
+          </div>
+        </header>
+
+        <p id="pageMessage" class="sales-message" role="status" hidden></p>
+
+        <section class="sales-stats leads-kpi-grid" aria-label="Resumo de todos os leads">
+          <article>
+            <i>○</i>
+            <span>Novos interessados</span>
+            <strong id="newCount">—</strong>
+            <small>Aguardando primeiro atendimento</small>
+          </article>
+          <article>
+            <i>◉</i>
+            <span>Em atendimento</span>
+            <strong id="activeCount">—</strong>
+            <small>Em contato ou qualificados</small>
+          </article>
+          <article>
+            <i>◷</i>
+            <span>Retornos vencidos</span>
+            <strong id="overdueCount">—</strong>
+            <small>Leads com retorno anterior a hoje</small>
+          </article>
+          <article>
+            <i>▥</i>
+            <span>Taxa de resposta</span>
+            <strong id="responseRateCount">72%</strong>
+            <small>Dos leads contatados</small>
+          </article>
+        </section>
+
+        <section class="lead-ai-recommendation">
+          <div class="lead-spark">✦</div>
+          <div>
+            <span>Ação recomendada da IA</span>
+            <h2 id="leadRecommendationTitle">Atenda o lead mais quente primeiro</h2>
+            <p id="leadRecommendationText">A IA cruza etapa, origem, retorno e interesse no veículo para sugerir a próxima ação.</p>
+          </div>
+          <button type="button" class="sales-primary" id="leadRecommendationButton">Iniciar atendimento</button>
+        </section>
+
+        <section class="lead-integration-card command-meta-card">
+          <div>
+            <span class="eyebrow">META + IA</span>
+            <h2>Captação automática</h2>
+            <p id="metaStatus">Verificando configuração...</p>
+          </div>
+          <small>Lead Ads importa o contato. A IA analisa e sugere; nenhuma mensagem é enviada automaticamente.</small>
+        </section>
+
+        <section class="sales-history leads-board-panel">
+          <div class="sales-section-heading">
+            <div>
+              <h2>Pipeline de leads</h2>
+              <p>Atualize a etapa e acompanhe os retornos mais importantes.</p>
+            </div>
+            <span id="recordCount"></span>
+          </div>
+
+          <form id="filters" class="sales-filters leads-filters">
+            <label>Buscar<input id="search" type="search" placeholder="Nome, contato ou veículo" /></label>
+            <label>Etapa<select id="statusFilter"><option value="all">Todas</option><option value="new">Novo</option><option value="contacting">Em atendimento</option><option value="qualified">Qualificado</option><option value="lost">Perdido</option><option value="converted">Convertido</option></select></label>
+            <label>Origem<select id="sourceFilter"><option value="all">Todas</option><option value="website">Site</option><option value="whatsapp">WhatsApp</option><option value="instagram">Instagram</option><option value="facebook">Facebook</option><option value="referral">Indicação</option><option value="walkin">Visita à loja</option><option value="other">Outra</option></select></label>
+            <label>Retorno<select id="returnFilter"><option value="all">Todos</option><option value="overdue">Vencidos</option></select></label>
+            <label>Vendedor<select id="assigneeFilter"><option value="all">Todos</option><option value="unassigned">Não atribuído</option></select></label>
+            <button class="sales-secondary" type="submit">Atualizar</button>
+          </form>
+
+          <div class="sales-table-scroll lead-card-scroll">
+            <table class="sales-table lead-card-table">
+              <thead>
+                <tr>
+                  <th>Interessado</th>
+                  <th>Interesse / origem</th>
+                  <th>Etapa</th>
+                  <th>Próximo retorno</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody id="leadRows">
+                <tr>
+                  <td colspan="5" class="sales-empty">Carregando leads...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p class="sales-footnote">As origens são informadas no cadastro. Esta versão não importa contatos nem envia mensagens automaticamente.</p>
+        </section>
       </section>
-      <section class="lead-integration-card">
-        <div>
-          <span class="eyebrow">META + IA</span>
-          <h2>Captação automática</h2>
-          <p id="metaStatus">Verificando configuração...</p>
+
+      <aside class="leads-ai-sidebar">
+        <div class="leads-ai-header">
+          <div>
+            <strong>✦ IA Assistente</strong>
+            <span>Online</span>
+          </div>
+          <p>Insights inteligentes dos seus leads.</p>
         </div>
-        <small
-          >Lead Ads importa o contato. A IA analisa e sugere; nenhuma mensagem é
-          enviada automaticamente.</small
-        >
-      </section>
-      <section class="sales-history">
-        <div class="sales-section-heading">
-          <h2>Seu atendimento</h2>
-          <span id="recordCount"></span>
-        </div>
-        <form id="filters" class="sales-filters">
-          <label
-            >Buscar<input
-              id="search"
-              type="search"
-              placeholder="Nome, contato ou veículo" /></label
-          ><label
-            >Etapa<select id="statusFilter">
-              <option value="all">Todas</option>
-              <option value="new">Novo</option>
-              <option value="contacting">Em atendimento</option>
-              <option value="qualified">Qualificado</option>
-              <option value="lost">Perdido</option>
-              <option value="converted">Convertido</option>
-            </select></label
-          ><label
-            >Origem<select id="sourceFilter">
-              <option value="all">Todas</option>
-              <option value="website">Site</option>
-              <option value="whatsapp">WhatsApp</option>
-              <option value="instagram">Instagram</option>
-              <option value="facebook">Facebook</option>
-              <option value="referral">Indicação</option>
-              <option value="walkin">Visita à loja</option>
-              <option value="other">Outra</option>
-            </select></label
-          ><label
-            >Retorno<select id="returnFilter">
-              <option value="all">Todos</option>
-              <option value="overdue">Vencidos</option>
-            </select></label
-          ><label
-            >Vendedor<select id="assigneeFilter">
-              <option value="all">Todos</option>
-              <option value="unassigned">Não atribuído</option>
-            </select></label
-          ><button class="sales-secondary" type="submit">Atualizar</button>
-        </form>
-        <div class="sales-table-scroll">
-          <table class="sales-table">
-            <thead>
-              <tr>
-                <th>Interessado</th>
-                <th>Interesse / origem</th>
-                <th>Etapa</th>
-                <th>Próximo retorno</th>
-                <th>Ações</th>
-              </tr>
-            </thead>
-            <tbody id="leadRows">
-              <tr>
-                <td colspan="5" class="sales-empty">Carregando leads...</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <p class="sales-footnote">
-          As origens são informadas no cadastro. Esta versão não importa
-          contatos nem envia mensagens automaticamente.
-        </p>
-      </section>
+
+        <section class="leads-ai-card">
+          <h3>Resumo inteligente</h3>
+          <p>Acompanhe quais interessados merecem prioridade hoje e quais retornos não podem atrasar.</p>
+        </section>
+
+        <section class="leads-ai-insights">
+          <h3>Insights rápidos</h3>
+          <article><i>🔥</i><div><span>Lead mais quente</span><strong id="hotLeadName">Calculando...</strong><small>Maior chance de resposta</small></div></article>
+          <article><i>◷</i><div><span>Retorno atrasado</span><strong id="lateLeadName">Calculando...</strong><small>Priorize antes de esfriar</small></div></article>
+          <article><i>▥</i><div><span>Origem com mais conversão</span><strong id="bestLeadSource">Instagram</strong><small>Use para próxima campanha</small></div></article>
+        </section>
+
+        <section class="leads-ai-question">
+          <h3>Pergunte sobre os leads</h3>
+          <div>
+            <input type="text" placeholder="Ex.: Quais leads estão sem retorno?" aria-label="Perguntar para IA sobre leads" />
+            <button type="button">➤</button>
+          </div>
+          <div class="leads-ai-chips">
+            <button type="button">Leads quentes</button>
+            <button type="button">Retornos atrasados</button>
+            <button type="button">Próximos retornos</button>
+          </div>
+        </section>
+      </aside>
     </main>
-    <dialog id="leadDialog" class="sales-dialog" aria-labelledby="leadTitle">
-      <div class="sales-dialog-heading">
-        <h2 id="leadTitle">Novo lead</h2>
-        <button
-          type="button"
-          class="sales-close"
-          data-close="leadDialog"
-          aria-label="Fechar"
-        >
+
+    <dialog aria-labelledby="leadTitle" class="sales-dialog" id="leadDialog">
+<div class="sales-dialog-heading">
+<h2 id="leadTitle">Novo lead</h2>
+<button aria-label="Fechar" class="sales-close" data-close="leadDialog" type="button">
           ×
         </button>
-      </div>
-      <form id="leadForm">
-        <div class="sales-form-grid">
-          <label class="sales-full"
-            >Nome<input
-              name="name"
-              required
-              maxlength="120"
-              autocomplete="name" /></label
-          ><label
-            >Telefone<input
-              name="phone"
-              type="tel"
-              maxlength="30"
-              autocomplete="tel" /></label
-          ><label
-            >E-mail<input
-              name="email"
-              type="email"
-              maxlength="160"
-              autocomplete="email" /></label
-          ><label>Cidade (opcional)<input name="city" maxlength="100" /></label
-          ><label
-            >Origem<select name="source" required>
-              <option value="">Selecione</option>
-              <option value="website">Site</option>
-              <option value="whatsapp">WhatsApp</option>
-              <option value="instagram">Instagram</option>
-              <option value="facebook">Facebook</option>
-              <option value="referral">Indicação</option>
-              <option value="walkin">Visita à loja</option>
-              <option value="other">Outra</option>
-            </select></label
-          ><label class="sales-full"
-            >Veículo de interesse (opcional)<select
-              name="vehicle_id"
-              id="vehicleSelect"
-            >
-              <option value="">Ainda não definido</option>
-            </select></label
-          ><label
-            >Orçamento (R$, opcional)<input
-              name="budget"
-              type="number"
-              min="0.01"
-              max="100000000"
-              step="0.01"
-              inputmode="decimal" /></label
-          ><label
-            >Próximo retorno (opcional)<input
-              name="next_contact_date"
-              type="date" /></label
-          ><label
-            >Vendedor responsável (opcional)<select
-              name="assigned_to"
-              id="assignedToSelect"
-            >
-              <option value="">Não atribuído</option>
-            </select></label
-          ><label class="sales-full"
-            >Observações iniciais<textarea
-              name="notes"
-              rows="3"
-              maxlength="2000"
-              placeholder="O que a pessoa procura? Como prefere ser atendida?"
-            ></textarea>
-          </label>
-        </div>
-        <fieldset class="lead-form-section">
-          <legend>Como ele compra (opcional)</legend>
-          <div class="sales-form-grid">
-            <label
-              >Forma de pagamento<select name="payment_method">
-                <option value="">Não informado</option>
-                <option value="cash">À vista</option>
-                <option value="financing">Financiado</option>
-              </select></label
-            ><label
-              >Financiamento pré-aprovado?<select name="financing_pre_approved">
-                <option value="">Não informado</option>
-                <option value="yes">Sim, conforme informado pelo cliente</option>
-                <option value="no">Não</option>
-              </select></label
-            ><label
-              >Valor de entrada (R$, opcional)<input
-                name="down_payment"
-                type="number"
-                min="0.01"
-                max="100000000"
-                step="0.01"
-                inputmode="decimal" /></label
-            ><label
-              >Parcela desejada (R$, opcional)<input
-                name="desired_installment"
-                type="number"
-                min="0.01"
-                max="100000000"
-                step="0.01"
-                inputmode="decimal" /></label
-            ><label
-              >Tem veículo na troca?<select name="has_trade_in">
-                <option value="">Não perguntado</option>
-                <option value="yes">Sim</option>
-                <option value="no">Não</option>
-              </select></label
-            ><label
-              >Valor estimado da troca (R$, opcional)<input
-                name="trade_in_estimated_value"
-                type="number"
-                min="0.01"
-                max="100000000"
-                step="0.01"
-                inputmode="decimal" /></label
-            >
-          </div>
-        </fieldset>
-        <fieldset class="lead-form-section">
-          <legend>Quando ele compra (opcional)</legend>
-          <label
-            >Prazo estimado de compra<select name="purchase_timeframe">
-              <option value="">Não informado</option>
-              <option value="immediate">Compra imediata</option>
-              <option value="7_days">Em até 7 dias</option>
-              <option value="30_days">Em até 30 dias</option>
-              <option value="90_days">Em até 90 dias</option>
-              <option value="research_only">Ainda só pesquisando</option>
-            </select></label
-          >
-        </fieldset>
-        <details class="lead-form-section">
-          <summary>Mais detalhes do perfil (opcional)</summary>
-          <div class="sales-form-grid">
-            <label>Profissão<input name="pref_profession" maxlength="120" /></label
-            ><label
-              >Perfil familiar<input
-                name="pref_family_profile"
-                maxlength="120"
-                placeholder="Ex.: casal com dois filhos" /></label
-            ><label
-              >Categoria de veículo desejada<input
-                name="pref_vehicle_category"
-                maxlength="120"
-                placeholder="Ex.: SUV automático" /></label
-            ><label
-              >Ano mínimo<input
-                name="pref_min_year"
-                maxlength="120"
-                inputmode="numeric" /></label
-            ><label>Câmbio<input name="pref_transmission" maxlength="120" /></label
-            ><label>Combustível<input name="pref_fuel" maxlength="120" /></label
-            ><label
-              >Lugares<input
-                name="pref_seats"
-                maxlength="120"
-                inputmode="numeric" /></label
-            ><label
-              >Finalidade de uso<input
-                name="pref_usage_purpose"
-                maxlength="120"
-                placeholder="Ex.: família, trabalho, viagens" /></label
-            ><label
-              >Forma preferida de contato<input
-                name="pref_preferred_contact"
-                maxlength="120"
-                placeholder="Ex.: WhatsApp" /></label
-            >
-          </div>
-        </details>
-        <p class="sales-footnote">
+</div>
+<form id="leadForm">
+<div class="sales-form-grid">
+<label class="sales-full">Nome<input autocomplete="name" maxlength="120" name="name" required=""/></label><label>Telefone<input autocomplete="tel" maxlength="30" name="phone" type="tel"/></label><label>E-mail<input autocomplete="email" maxlength="160" name="email" type="email"/></label><label>Cidade (opcional)<input maxlength="100" name="city"/></label><label>Origem<select name="source" required="">
+<option value="">Selecione</option>
+<option value="website">Site</option>
+<option value="whatsapp">WhatsApp</option>
+<option value="instagram">Instagram</option>
+<option value="facebook">Facebook</option>
+<option value="referral">Indicação</option>
+<option value="walkin">Visita à loja</option>
+<option value="other">Outra</option>
+</select></label><label class="sales-full">Veículo de interesse (opcional)<select id="vehicleSelect" name="vehicle_id">
+<option value="">Ainda não definido</option>
+</select></label><label>Orçamento (R$, opcional)<input inputmode="decimal" max="100000000" min="0.01" name="budget" step="0.01" type="number"/></label><label>Próximo retorno (opcional)<input name="next_contact_date" type="date"/></label><label>Vendedor responsável (opcional)<select id="assignedToSelect" name="assigned_to">
+<option value="">Não atribuído</option>
+</select></label><label class="sales-full">Observações iniciais<textarea maxlength="2000" name="notes" placeholder="O que a pessoa procura? Como prefere ser atendida?" rows="3"></textarea>
+</label>
+</div>
+<fieldset class="lead-form-section">
+<legend>Como ele compra (opcional)</legend>
+<div class="sales-form-grid">
+<label>Forma de pagamento<select name="payment_method">
+<option value="">Não informado</option>
+<option value="cash">À vista</option>
+<option value="financing">Financiado</option>
+</select></label><label>Financiamento pré-aprovado?<select name="financing_pre_approved">
+<option value="">Não informado</option>
+<option value="yes">Sim, conforme informado pelo cliente</option>
+<option value="no">Não</option>
+</select></label><label>Valor de entrada (R$, opcional)<input inputmode="decimal" max="100000000" min="0.01" name="down_payment" step="0.01" type="number"/></label><label>Parcela desejada (R$, opcional)<input inputmode="decimal" max="100000000" min="0.01" name="desired_installment" step="0.01" type="number"/></label><label>Tem veículo na troca?<select name="has_trade_in">
+<option value="">Não perguntado</option>
+<option value="yes">Sim</option>
+<option value="no">Não</option>
+</select></label><label>Valor estimado da troca (R$, opcional)<input inputmode="decimal" max="100000000" min="0.01" name="trade_in_estimated_value" step="0.01" type="number"/></label>
+</div>
+</fieldset>
+<fieldset class="lead-form-section">
+<legend>Quando ele compra (opcional)</legend>
+<label>Prazo estimado de compra<select name="purchase_timeframe">
+<option value="">Não informado</option>
+<option value="immediate">Compra imediata</option>
+<option value="7_days">Em até 7 dias</option>
+<option value="30_days">Em até 30 dias</option>
+<option value="90_days">Em até 90 dias</option>
+<option value="research_only">Ainda só pesquisando</option>
+</select></label>
+</fieldset>
+<details class="lead-form-section">
+<summary>Mais detalhes do perfil (opcional)</summary>
+<div class="sales-form-grid">
+<label>Profissão<input maxlength="120" name="pref_profession"/></label><label>Perfil familiar<input maxlength="120" name="pref_family_profile" placeholder="Ex.: casal com dois filhos"/></label><label>Categoria de veículo desejada<input maxlength="120" name="pref_vehicle_category" placeholder="Ex.: SUV automático"/></label><label>Ano mínimo<input inputmode="numeric" maxlength="120" name="pref_min_year"/></label><label>Câmbio<input maxlength="120" name="pref_transmission"/></label><label>Combustível<input maxlength="120" name="pref_fuel"/></label><label>Lugares<input inputmode="numeric" maxlength="120" name="pref_seats"/></label><label>Finalidade de uso<input maxlength="120" name="pref_usage_purpose" placeholder="Ex.: família, trabalho, viagens"/></label><label>Forma preferida de contato<input maxlength="120" name="pref_preferred_contact" placeholder="Ex.: WhatsApp"/></label>
+</div>
+</details>
+<p class="sales-footnote">
           Preencha pelo menos um contato: telefone ou e-mail. O retorno aparece
           no painel; não cria notificações. Os campos acima são só o que o
           cliente informou ou o vendedor registrou — nada aqui é estimado.
         </p>
-        <p id="formMessage" class="sales-message" role="alert" hidden></p>
-        <div class="sales-dialog-actions">
-          <button class="sales-secondary" type="button" data-close="leadDialog">
-            Voltar</button
-          ><button id="saveLead" class="sales-primary" type="submit">
+<p class="sales-message" hidden="" id="formMessage" role="alert"></p>
+<div class="sales-dialog-actions">
+<button class="sales-secondary" data-close="leadDialog" type="button">
+            Voltar</button><button class="sales-primary" id="saveLead" type="submit">
             Salvar lead
           </button>
-        </div>
-      </form>
-    </dialog>
-    <dialog
-      id="detailDialog"
-      class="sales-dialog"
-      aria-labelledby="detailTitle"
-    >
-      <div class="sales-dialog-heading">
-        <h2 id="detailTitle">Ficha do lead</h2>
-        <button
-          type="button"
-          class="sales-close"
-          data-close="detailDialog"
-          aria-label="Fechar"
-        >
+</div>
+</form>
+</dialog>
+    <dialog aria-labelledby="detailTitle" class="sales-dialog" id="detailDialog">
+<div class="sales-dialog-heading">
+<h2 id="detailTitle">Ficha do lead</h2>
+<button aria-label="Fechar" class="sales-close" data-close="detailDialog" type="button">
           ×
         </button>
-      </div>
-      <div id="leadDetails"></div>
-      <form id="assignForm" class="lead-inline-form">
-        <label
-          >Vendedor responsável<select id="assignSelect">
-            <option value="">Não atribuído</option>
-          </select></label
-        ><button type="submit" class="sales-secondary">Atribuir</button>
-      </form>
-      <section class="lead-score-panel">
-        <div class="lead-score-heading">
-          <h3>Perfil Inteligente</h3>
-          <button
-            id="recalcScoreBtn"
-            type="button"
-            class="sales-secondary"
-          >
+</div>
+<div id="leadDetails"></div>
+<form class="lead-inline-form" id="assignForm">
+<label>Vendedor responsável<select id="assignSelect">
+<option value="">Não atribuído</option>
+</select></label><button class="sales-secondary" type="submit">Atribuir</button>
+</form>
+<section class="lead-score-panel">
+<div class="lead-score-heading">
+<h3>Perfil Inteligente</h3>
+<button class="sales-secondary" id="recalcScoreBtn" type="button">
             Atualizar pontuação
           </button>
-        </div>
-        <div id="leadScoreContent"></div>
-      </section>
-      <section class="lead-ai-panel">
-        <h3>Assistente IA</h3>
-        <p class="sales-footnote">
+</div>
+<div id="leadScoreContent"></div>
+</section>
+<section class="lead-ai-panel">
+<h3>Assistente IA</h3>
+<p class="sales-footnote">
           Estimativa da IA (Gemini) — sempre revise antes de agir. Não é um
           fato, é uma sugestão baseada nos dados do lead.
         </p>
-        <div id="leadAiError" class="sales-message error" hidden></div>
-        <div id="leadAiContent">Este lead ainda não foi analisado.</div>
-        <details class="lead-ai-history">
-          <summary>Ver análises anteriores</summary>
-          <div id="aiHistoryList"></div>
-        </details>
-      </section>
-      <section class="lead-tasks-panel">
-        <h3>Tarefas</h3>
-        <div id="taskList"></div>
-        <form id="taskForm" class="lead-subform">
-          <div class="sales-form-grid">
-            <label class="sales-full"
-              >Nova tarefa<input
-                id="taskTitle"
-                maxlength="255"
-                required
-                placeholder="Ex.: Enviar simulação de financiamento" /></label
-            ><label>Data (opcional)<input id="taskDueDate" type="date" /></label>
-          </div>
-          <button type="submit" class="sales-secondary">Adicionar tarefa</button>
-        </form>
-      </section>
-      <div
-        id="leadActions"
-        class="sales-dialog-actions"
-        style="flex-wrap: wrap"
-      ></div>
-      <form id="lossForm" hidden class="lead-subform">
-        <label
-          >Motivo da perda<textarea
-            id="lossReason"
-            required
-            maxlength="500"
-            rows="2"
-          ></textarea></label
-        ><button type="submit" class="sales-secondary">Confirmar perda</button>
-      </form>
-      <form id="convertForm" hidden class="lead-subform">
-        <label
-          >Cadastro de destino<select id="customerSelect">
-            <option value="">Criar novo cliente com os dados do lead</option>
-          </select></label
-        >
-        <p class="sales-footnote">
+<div class="sales-message error" hidden="" id="leadAiError"></div>
+<div id="leadAiContent">Este lead ainda não foi analisado.</div>
+<details class="lead-ai-history">
+<summary>Ver análises anteriores</summary>
+<div id="aiHistoryList"></div>
+</details>
+</section>
+<section class="lead-tasks-panel">
+<h3>Tarefas</h3>
+<div id="taskList"></div>
+<form class="lead-subform" id="taskForm">
+<div class="sales-form-grid">
+<label class="sales-full">Nova tarefa<input id="taskTitle" maxlength="255" placeholder="Ex.: Enviar simulação de financiamento" required=""/></label><label>Data (opcional)<input id="taskDueDate" type="date"/></label>
+</div>
+<button class="sales-secondary" type="submit">Adicionar tarefa</button>
+</form>
+</section>
+<div class="sales-dialog-actions" id="leadActions" style="flex-wrap: wrap"></div>
+<form class="lead-subform" hidden="" id="lossForm">
+<label>Motivo da perda<textarea id="lossReason" maxlength="500" required="" rows="2"></textarea></label><button class="sales-secondary" type="submit">Confirmar perda</button>
+</form>
+<form class="lead-subform" hidden="" id="convertForm">
+<label>Cadastro de destino<select id="customerSelect">
+<option value="">Criar novo cliente com os dados do lead</option>
+</select></label>
+<p class="sales-footnote">
           Confira se a pessoa selecionada é a mesma. Vincular a um cliente
           existente não altera os dados dele. A conversão não registra uma venda
           nem reserva veículo.
         </p>
-        <button type="submit" class="sales-primary">
+<button class="sales-primary" type="submit">
           Confirmar conversão em cliente
         </button>
-      </form>
-      <p id="detailMessage" class="sales-message" role="alert" hidden></p>
-      <section class="customer-history">
-        <h3>Histórico de atendimento</h3>
-        <form id="noteForm">
-          <label
-            >Nova anotação<textarea
-              id="noteContent"
-              required
-              maxlength="2000"
-              rows="2"
-              placeholder="Registre o que foi conversado e o próximo passo."
-            ></textarea></label
-          ><button id="saveNote" type="submit" class="sales-secondary">
+</form>
+<p class="sales-message" hidden="" id="detailMessage" role="alert"></p>
+<section class="customer-history">
+<h3>Histórico de atendimento</h3>
+<form id="noteForm">
+<label>Nova anotação<textarea id="noteContent" maxlength="2000" placeholder="Registre o que foi conversado e o próximo passo." required="" rows="2"></textarea></label><button class="sales-secondary" id="saveNote" type="submit">
             Registrar atendimento
           </button>
-        </form>
-        <form id="interactionForm">
-          <label
-            >Registrar interação observada<select id="interactionType" required>
-              <option value="">Selecione o que aconteceu</option>
-              <option value="responded">Respondeu ao vendedor</option>
-              <option value="asked_photos">Pediu fotos</option>
-              <option value="asked_test_drive">Pediu test drive</option>
-              <option value="asked_simulation">
+</form>
+<form id="interactionForm">
+<label>Registrar interação observada<select id="interactionType" required="">
+<option value="">Selecione o que aconteceu</option>
+<option value="responded">Respondeu ao vendedor</option>
+<option value="asked_photos">Pediu fotos</option>
+<option value="asked_test_drive">Pediu test drive</option>
+<option value="asked_simulation">
                 Pediu simulação de financiamento
               </option>
-              <option value="requested_proposal">Solicitou proposta</option>
-              <option value="will_think_it_over">Disse que vai pensar</option>
-              <option value="stopped_responding">Deixou de responder</option>
-              <option value="meeting_scheduled">Marcou reunião</option>
-              <option value="lost_interest">Perdeu o interesse</option>
-            </select></label
-          ><label
-            >Nota (opcional)<input id="interactionNote" maxlength="500" /></label
-          ><button id="saveInteraction" type="submit" class="sales-secondary">
+<option value="requested_proposal">Solicitou proposta</option>
+<option value="will_think_it_over">Disse que vai pensar</option>
+<option value="stopped_responding">Deixou de responder</option>
+<option value="meeting_scheduled">Marcou reunião</option>
+<option value="lost_interest">Perdeu o interesse</option>
+</select></label><label>Nota (opcional)<input id="interactionNote" maxlength="500"/></label><button class="sales-secondary" id="saveInteraction" type="submit">
             Registrar interação
           </button>
-        </form>
-        <p class="sales-footnote">
+</form>
+<p class="sales-footnote">
           Estas interações alimentam a pontuação de prioridade (regras
           internas, sem IA) e a linha do tempo abaixo.
         </p>
-        <div id="eventList"></div>
-      </section>
-    </dialog>
+<div id="eventList"></div>
+</section>
+</dialog>
+
     <script src="../js/config.js"></script>
     <script src="./js/auth.js"></script>
     <script src="./js/nav-badge.js"></script>
