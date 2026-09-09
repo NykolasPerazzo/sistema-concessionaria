@@ -986,3 +986,104 @@
 .vehicles-command-page .vehicle-stock-title-row h3 {
   min-height: 39px;
 }
+
+/* =========================================
+   CARDS PREENCHENDO A TELA
+========================================= */
+
+.vehicles-command-page .vehicles-card-table tbody {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 14px;
+}
+
+.vehicles-command-page .vehicle-stock-card {
+  min-height: 285px;
+  grid-template-rows: 128px 1fr auto;
+}
+
+.vehicles-command-page .vehicle-stock-image {
+  height: 128px;
+}
+
+.vehicles-command-page .vehicle-stock-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
+  padding: 8px 10px 0;
+  background:
+    radial-gradient(
+      circle at 50% 35%,
+      rgba(255, 255, 255, 0.14),
+      transparent 42%
+    ),
+    linear-gradient(180deg, #151a22 0%, #0c1016 100%);
+}
+
+.vehicles-command-page .vehicle-stock-body {
+  padding: 10px 12px;
+}
+
+.vehicles-command-page .vehicle-stock-title-row h3 {
+  min-height: auto;
+  font-size: 15px;
+  line-height: 1.15;
+}
+
+.vehicles-command-page .vehicle-stock-title-row small {
+  font-size: 11px;
+}
+
+.vehicles-command-page .vehicle-favorite-button {
+  width: 26px;
+  height: 26px;
+  font-size: 18px;
+}
+
+.vehicles-command-page .vehicle-stock-specs {
+  margin-top: 8px;
+  gap: 5px;
+  font-size: 11px;
+}
+
+.vehicles-command-page .vehicle-stock-specs span:not(:last-child)::after {
+  margin-left: 5px;
+}
+
+.vehicles-command-page .vehicle-stock-result {
+  margin-top: 10px;
+}
+
+.vehicles-command-page .vehicle-stock-result strong {
+  font-size: 17px;
+}
+
+.vehicles-command-page .vehicle-stock-result span {
+  max-width: 90px;
+  font-size: 11px;
+}
+
+.vehicles-command-page .vehicle-stock-intel {
+  margin-top: 7px;
+  font-size: 11px;
+}
+
+.vehicles-command-page .vehicle-stock-actions {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+  padding: 0 12px 12px;
+}
+
+.vehicles-command-page .vehicle-stock-actions .table-action {
+  min-height: 31px;
+  font-size: 12px;
+  border-radius: 7px;
+}
+
+.vehicles-command-page .vehicle-status-pill {
+  top: 8px;
+  left: 8px;
+  padding: 5px 9px;
+  font-size: 11px;
+}
