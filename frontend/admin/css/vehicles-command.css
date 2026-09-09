@@ -671,3 +671,246 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* =========================================
+   CORRECAO DOS CARDS DE VEICULOS
+   Cole no final do vehicles-command.css
+========================================= */
+
+.vehicles-command-page .vehicles-card-table tbody {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(230px, 1fr));
+  gap: 12px;
+}
+
+.vehicles-command-page .vehicles-card-table tr.vehicle-card-row {
+  display: block;
+  min-height: 0;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  overflow: visible;
+}
+
+.vehicles-command-page .vehicles-card-table td.vehicle-card-cell {
+  display: block;
+  min-height: 0;
+  padding: 0;
+  background: transparent;
+  border: 0;
+}
+
+.vehicles-command-page .vehicle-stock-card {
+  height: 100%;
+  min-height: 330px;
+  display: grid;
+  grid-template-rows: 155px 1fr auto;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  background: linear-gradient(180deg, #161b24 0%, #0f131a 100%);
+}
+
+.vehicles-command-page .vehicle-stock-image {
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(
+      circle at 50% 18%,
+      rgba(255, 255, 255, 0.16),
+      transparent 48%
+    ),
+    #11161d;
+}
+
+.vehicles-command-page .vehicle-stock-image img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.vehicles-command-page .vehicle-image-placeholder {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  color: #8f9aaa;
+  background: linear-gradient(135deg, #171d27, #0c1017);
+}
+
+.vehicles-command-page .vehicle-status-pill {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 2;
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 900;
+  backdrop-filter: blur(10px);
+}
+
+.vehicles-command-page .vehicle-status-pill.available {
+  color: #3ddc7a;
+  background: rgba(61, 220, 122, 0.16);
+  border: 1px solid rgba(61, 220, 122, 0.3);
+}
+
+.vehicles-command-page .vehicle-status-pill.reserved {
+  color: #ffd235;
+  background: rgba(255, 210, 53, 0.16);
+  border: 1px solid rgba(255, 210, 53, 0.3);
+}
+
+.vehicles-command-page .vehicle-status-pill.sold {
+  color: #ff8a80;
+  background: rgba(255, 68, 58, 0.16);
+  border: 1px solid rgba(255, 68, 58, 0.3);
+}
+
+.vehicles-command-page .vehicle-stock-body {
+  padding: 14px;
+}
+
+.vehicles-command-page .vehicle-stock-title-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.vehicles-command-page .vehicle-stock-title-row h3 {
+  margin: 0;
+  color: #fff;
+  font-size: 17px;
+  line-height: 1.15;
+}
+
+.vehicles-command-page .vehicle-stock-title-row small {
+  display: block;
+  margin-top: 4px;
+  color: #727b8b;
+}
+
+.vehicles-command-page .vehicle-favorite-button {
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  border: 0;
+  background: transparent;
+  color: #cbd5e1;
+  font-size: 22px;
+  cursor: pointer;
+}
+
+.vehicles-command-page .vehicle-stock-specs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 12px;
+  color: #aeb8c8;
+  font-size: 13px;
+}
+
+.vehicles-command-page .vehicle-stock-specs span:not(:last-child)::after {
+  content: "|";
+  margin-left: 7px;
+  color: #394150;
+}
+
+.vehicles-command-page .vehicle-stock-result {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.vehicles-command-page .vehicle-stock-result strong {
+  color: #fff;
+  font-size: 21px;
+  line-height: 1;
+}
+
+.vehicles-command-page .vehicle-stock-result span {
+  color: #ffd235;
+  font-size: 12px;
+  font-weight: 800;
+  text-align: right;
+}
+
+.vehicles-command-page .vehicle-stock-intel {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 10px;
+  color: #8f9aaa;
+  font-size: 12px;
+}
+
+.vehicles-command-page .vehicle-stock-actions {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  padding: 0 14px 14px;
+}
+
+.vehicles-command-page .vehicle-stock-actions .table-action {
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: transparent;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 800;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.vehicles-command-page .vehicle-stock-actions .sell-action {
+  color: #3ddc7a;
+  border-color: rgba(61, 220, 122, 0.35);
+}
+
+.vehicles-command-page .vehicle-stock-actions .ai-action {
+  color: #ff7a32;
+  border-color: rgba(255, 77, 18, 0.45);
+}
+
+.vehicles-command-page .vehicle-stock-actions .danger {
+  color: #ff6b60;
+  border-color: rgba(255, 68, 58, 0.45);
+}
+
+.vehicles-command-page .vehicle-message-row {
+  grid-column: 1 / -1;
+}
+
+.vehicles-command-page .vehicle-message-row .table-message {
+  min-height: 130px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  color: #aeb8c8;
+  background: #11161d;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+@media (max-width: 1180px) {
+  .vehicles-command-page .vehicles-card-table tbody {
+    grid-template-columns: repeat(2, minmax(230px, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .vehicles-command-page .vehicles-card-table tbody {
+    grid-template-columns: 1fr;
+  }
+
+  .vehicles-command-page .vehicle-stock-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

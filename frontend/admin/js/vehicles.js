@@ -16,7 +16,9 @@ requireAuth().then((user) => {
 
 async function loadVehicles() {
   try {
-    const response = await fetch(`${API_URL}/vehicles`);
+    const response = await fetch(`${API_URL}/vehicles`, {
+      credentials: "include",
+    });
 
     if (!response.ok) {
       throw new Error("Erro ao buscar veículos.");
@@ -24,7 +26,7 @@ async function loadVehicles() {
 
     const data = await response.json();
 
-    vehicles = data.vehicles;
+    vehicles = Array.isArray(data.vehicles) ? data.vehicles : [];
 
     populateBrandFilter();
     renderVehicles();
@@ -32,22 +34,26 @@ async function loadVehicles() {
   } catch (error) {
     console.error(error);
 
-    tableBody.innerHTML = `
-            <tr>
-                <td colspan="6" class="table-message error">
-                    Não foi possível carregar os veículos.
-                </td>
-            </tr>
-        `;
+    if (tableBody) {
+      tableBody.innerHTML = `
+        <tr class="vehicle-card-row vehicle-message-row">
+          <td colspan="6" class="vehicle-card-cell">
+            <div class="table-message error">Não foi possível carregar os veículos.</div>
+          </td>
+        </tr>
+      `;
+    }
   }
 }
 
 function populateBrandFilter() {
-  const brands = [...new Set(vehicles.map((vehicle) => vehicle.brand))].sort();
+  if (!brandFilter) return;
 
-  brandFilter.innerHTML = `
-        <option value="">Todas as marcas</option>
-    `;
+  const brands = [
+    ...new Set(vehicles.map((vehicle) => vehicle.brand).filter(Boolean)),
+  ].sort((a, b) => a.localeCompare(b, "pt-BR"));
+
+  brandFilter.innerHTML = `<option value="">Todas as marcas</option>`;
 
   brands.forEach((brand) => {
     const option = document.createElement("option");
@@ -60,118 +66,342 @@ function populateBrandFilter() {
 }
 
 function renderVehicles() {
-  const search = searchInput.value.toLowerCase().trim();
-  const status = statusFilter.value;
-  const brand = brandFilter.value;
+  if (!tableBody) return;
+
+  const search = (searchInput?.value || "").toLowerCase().trim();
+  const status = statusFilter?.value || "";
+  const brand = brandFilter?.value || "";
 
   const filteredVehicles = vehicles.filter((vehicle) => {
+    const vehicleBrand = String(vehicle.brand || "").toLowerCase();
+    const vehicleModel = String(vehicle.model || "").toLowerCase();
+
     const matchesSearch =
-      vehicle.brand.toLowerCase().includes(search) ||
-      vehicle.model.toLowerCase().includes(search);
+      !search || vehicleBrand.includes(search) || vehicleModel.includes(search);
 
     const matchesStatus = !status || vehicle.status === status;
-
     const matchesBrand = !brand || vehicle.brand === brand;
 
     return matchesSearch && matchesStatus && matchesBrand;
   });
 
-  vehicleCount.textContent = `${filteredVehicles.length} veículo${filteredVehicles.length !== 1 ? "s" : ""}`;
+  if (vehicleCount) {
+    vehicleCount.textContent = `${filteredVehicles.length} veículo${
+      filteredVehicles.length !== 1 ? "s" : ""
+    }`;
+  }
+
+  updateVehiclesKpis(filteredVehicles);
 
   if (filteredVehicles.length === 0) {
     tableBody.innerHTML = `
-            <tr>
-                <td colspan="6" class="table-message">
-                    Nenhum veículo encontrado.
-                </td>
-            </tr>
-        `;
+      <tr class="vehicle-card-row vehicle-message-row">
+        <td colspan="6" class="vehicle-card-cell">
+          <div class="table-message">Nenhum veículo encontrado.</div>
+        </td>
+      </tr>
+    `;
 
     return;
   }
 
   tableBody.innerHTML = filteredVehicles
-    .map((vehicle) => {
-      const price = Number(vehicle.price).toLocaleString("pt-BR", {
-        style: "currency",
-        currency: "BRL",
-      });
-
-      const mileage = vehicle.mileage
-        ? `${Number(vehicle.mileage).toLocaleString("pt-BR")} km`
-        : "-";
-
-      return `
-            <tr>
-
-                <td>
-                    <div class="table-vehicle">
-
-                        <div class="table-vehicle-image">
-                            <img
-                                src="${vehicle.image_url || "https://via.placeholder.com/80x60"}"
-                                alt="${vehicle.brand} ${vehicle.model}"
-                            >
-                        </div>
-
-                        <div>
-                            <strong>
-                                ${vehicle.brand} ${vehicle.model}
-                            </strong>
-
-                            <span>
-                                ID #${vehicle.id}
-                            </span>
-                        </div>
-
-                    </div>
-                </td>
-
-                <td>
-                    ${vehicle.year}
-                </td>
-
-                <td>
-                    ${price}
-                </td>
-
-                <td>
-                    ${mileage}
-                </td>
-
-                <td>
-                    <span class="status-badge status-${vehicle.status}">
-                        ${formatStatus(vehicle.status)}
-                    </span>
-                </td>
-
-                <td>
-
-                    <div class="table-actions">
-                        ${['available', 'reserved'].includes(vehicle.status) ? `<a href="./sales.html?vehicle=${vehicle.id}" class="table-action">Vender</a>` : ''}
-
-                        <a
-                            href="./vehicle-form.html?id=${vehicle.id}"
-                            class="table-action"
-                        >
-                            Editar
-                        </a>
-
-                        <button
-                            class="table-action danger"
-                            onclick="deleteVehicle(${vehicle.id})"
-                        >
-                            Excluir
-                        </button>
-
-                    </div>
-
-                </td>
-
-            </tr>
-        `;
-    })
+    .map((vehicle) => renderVehicleCardRow(vehicle))
     .join("");
+}
+
+function renderVehicleCardRow(vehicle) {
+  const name = getVehicleName(vehicle);
+  const price = formatCurrency(vehicle.price);
+  const mileage = formatMileage(vehicle.mileage);
+  const image = safeVehicleImage(
+    vehicle.image_url || vehicle.imageUrl || vehicle.image || "",
+  );
+
+  const status = getStatusInfo(vehicle.status);
+  const days = getVehicleDaysInStock(vehicle);
+  const margin = getVehicleMargin(vehicle);
+  const vehicleId = encodeURIComponent(vehicle.id || "");
+  const canSell = ["available", "reserved"].includes(vehicle.status);
+
+  return `
+    <tr class="vehicle-card-row">
+      <td colspan="6" class="vehicle-card-cell">
+        <article class="vehicle-stock-card ${escapeHtml(status.className)}">
+          <div class="vehicle-stock-image">
+            <span class="vehicle-status-pill ${escapeHtml(status.className)}">
+              ${escapeHtml(status.label)}
+            </span>
+
+            ${
+              image
+                ? `
+                  <img
+                    src="${escapeHtml(image)}"
+                    alt="${escapeHtml(name)}"
+                    loading="lazy"
+                    decoding="async"
+                  >
+                `
+                : `
+                  <div class="vehicle-image-placeholder">
+                    <span>Sem imagem</span>
+                  </div>
+                `
+            }
+          </div>
+
+          <div class="vehicle-stock-body">
+            <div class="vehicle-stock-title-row">
+              <div>
+                <h3>${escapeHtml(name)}</h3>
+                <small>ID #${escapeHtml(vehicle.id || "-")}</small>
+              </div>
+
+              <button
+                type="button"
+                class="vehicle-favorite-button"
+                aria-label="Favoritar veículo"
+              >
+                ♡
+              </button>
+            </div>
+
+            <div class="vehicle-stock-specs">
+              <span>${escapeHtml(vehicle.year || "Ano não informado")}</span>
+              <span>${escapeHtml(mileage)}</span>
+              <span>
+                ${escapeHtml(
+                  vehicle.fuel ||
+                    vehicle.fuel_type ||
+                    "Combustível não informado",
+                )}
+              </span>
+            </div>
+
+            <div class="vehicle-stock-result">
+              <strong>${price}</strong>
+
+              <span>
+                ${days} ${days === 1 ? "dia" : "dias"} no estoque
+              </span>
+            </div>
+
+            <div class="vehicle-stock-intel">
+              <span>
+                ${
+                  margin !== null
+                    ? `${margin.toFixed(1)}% de margem`
+                    : "Margem não informada"
+                }
+              </span>
+
+              <span>${getVehiclePriorityLabel(vehicle, days, margin)}</span>
+            </div>
+          </div>
+
+          <div class="vehicle-stock-actions">
+            ${
+              canSell
+                ? `
+                  <a
+                    href="./sales.html?vehicle=${vehicleId}"
+                    class="table-action sell-action"
+                  >
+                    Vender
+                  </a>
+                `
+                : ""
+            }
+
+            <a
+              href="./vehicle-form.html?id=${vehicleId}"
+              class="table-action"
+            >
+              Editar
+            </a>
+
+            <button
+              class="table-action ai-action"
+              type="button"
+              onclick="askVehicleAI('Analise o veículo ${escapeInlineJs(name)}')"
+            >
+              Ver IA
+            </button>
+
+            <button
+              class="table-action danger"
+              type="button"
+              onclick="deleteVehicle(${Number(vehicle.id) || 0})"
+            >
+              Excluir
+            </button>
+          </div>
+        </article>
+      </td>
+    </tr>
+  `;
+}
+
+function updateVehiclesKpis(list = vehicles) {
+  setTextById(
+    "vehiclesAvailableKpi",
+    list.filter((vehicle) => vehicle.status === "available").length,
+  );
+
+  setTextById(
+    "vehiclesAttentionKpi",
+    list.filter((vehicle) => {
+      const days = getVehicleDaysInStock(vehicle);
+
+      return vehicle.status !== "sold" && days >= 60;
+    }).length,
+  );
+
+  setTextById(
+    "vehiclesSoldKpi",
+    list.filter((vehicle) => vehicle.status === "sold").length,
+  );
+
+  const potentialMargin = list.reduce((total, vehicle) => {
+    if (vehicle.status === "sold") return total;
+
+    const purchase = Number(
+      vehicle.purchase_price || vehicle.purchasePrice || 0,
+    );
+
+    const price = Number(vehicle.price || 0);
+
+    if (!purchase || !price || price <= purchase) return total;
+
+    return total + (price - purchase);
+  }, 0);
+
+  setTextById("vehiclesMarginKpi", formatCurrency(potentialMargin));
+}
+
+function getVehicleName(vehicle) {
+  return `${vehicle.brand || ""} ${vehicle.model || ""}`.trim() || "Veículo";
+}
+
+function formatMileage(value) {
+  const mileage = Number(value || 0);
+
+  if (!Number.isFinite(mileage) || mileage <= 0) {
+    return "Km não informado";
+  }
+
+  return `${mileage.toLocaleString("pt-BR")} km`;
+}
+
+function getVehicleDaysInStock(vehicle) {
+  const rawDate = vehicle.entry_date || vehicle.entryDate || vehicle.created_at;
+
+  if (vehicle.daysInStock !== undefined && vehicle.daysInStock !== null) {
+    return Math.max(0, Number(vehicle.daysInStock) || 0);
+  }
+
+  if (!rawDate) return 0;
+
+  const entryDate = new Date(rawDate);
+  const today = new Date();
+
+  if (Number.isNaN(entryDate.getTime())) return 0;
+
+  entryDate.setHours(0, 0, 0, 0);
+  today.setHours(0, 0, 0, 0);
+
+  return Math.max(0, Math.floor((today - entryDate) / 86400000));
+}
+
+function getVehicleMargin(vehicle) {
+  const purchase = Number(vehicle.purchase_price || vehicle.purchasePrice || 0);
+  const price = Number(vehicle.price || 0);
+
+  if (!purchase || !price || purchase <= 0) return null;
+
+  return ((price - purchase) / purchase) * 100;
+}
+
+function getVehiclePriorityLabel(vehicle, days, margin) {
+  if (vehicle.status === "sold") return "Venda concluída";
+  if (days >= 90) return "Crítico";
+  if (days >= 60) return "Atenção";
+  if (margin !== null && margin < 10) return "Margem baixa";
+
+  return "Em dia";
+}
+
+function getStatusInfo(status) {
+  const statuses = {
+    available: {
+      label: "Disponível",
+      className: "available",
+    },
+
+    reserved: {
+      label: "Reservado",
+      className: "reserved",
+    },
+
+    sold: {
+      label: "Vendido",
+      className: "sold",
+    },
+  };
+
+  return (
+    statuses[status] || {
+      label: "Sem status",
+      className: "unknown",
+    }
+  );
+}
+
+function safeVehicleImage(value) {
+  if (!value) return "";
+
+  try {
+    const url = new URL(value, window.location.href);
+
+    if (!["http:", "https:"].includes(url.protocol)) {
+      return "";
+    }
+
+    return url.href;
+  } catch (error) {
+    return "";
+  }
+}
+
+function setTextById(id, value) {
+  const element = document.getElementById(id);
+
+  if (element) {
+    element.textContent = value;
+  }
+}
+
+function escapeHtml(value) {
+  return String(value ?? "").replace(
+    /[&<>"']/g,
+    (character) =>
+      ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#039;",
+      })[character],
+  );
+}
+
+function escapeInlineJs(value) {
+  return String(value ?? "")
+    .replace(/\\/g, "\\\\")
+    .replace(/'/g, "\\'")
+    .replace(/\n/g, " ")
+    .replace(/\r/g, " ");
 }
 
 /* ==========================================
@@ -180,6 +410,11 @@ function renderVehicles() {
 
 function updateVehicleAIInsights() {
   if (!vehicles || vehicles.length === 0) {
+    setTextById(
+      "aiSummaryText",
+      "Cadastre veículos para receber análises inteligentes do estoque.",
+    );
+
     return;
   }
 
@@ -195,9 +430,9 @@ function updateVehicleAIInsights() {
 
   const summaryText = document.getElementById("aiSummaryText");
 
-  /* ======================================
-       MAIOR MARGEM
-    ====================================== */
+  const fastestVehicle = document.getElementById("aiFastestVehicle");
+
+  const fastestVehicleDays = document.getElementById("aiFastestVehicleDays");
 
   const vehiclesWithMargin = vehicles
     .filter((vehicle) => {
@@ -211,19 +446,7 @@ function updateVehicleAIInsights() {
     })
     .map((vehicle) => {
       const purchasePrice = Number(vehicle.purchase_price);
-
       const salePrice = Number(vehicle.price);
-
-      /*
-                Margem sobre o custo.
-
-                Exemplo:
-                Compra = 100.000
-                Venda = 120.000
-
-                (20.000 / 100.000) * 100 = 20%
-            */
-
       const margin = ((salePrice - purchasePrice) / purchasePrice) * 100;
 
       return {
@@ -236,18 +459,24 @@ function updateVehicleAIInsights() {
   const bestMargin = vehiclesWithMargin[0];
 
   if (bestMargin) {
-    highestMarginVehicle.textContent = `${bestMargin.brand} ${bestMargin.model}`;
+    if (highestMarginVehicle) {
+      highestMarginVehicle.textContent = getVehicleName(bestMargin);
+    }
 
-    highestMarginValue.textContent = `${bestMargin.calculatedMargin.toFixed(1)}% de margem`;
+    if (highestMarginValue) {
+      highestMarginValue.textContent = `${bestMargin.calculatedMargin.toFixed(
+        1,
+      )}% de margem`;
+    }
   } else {
-    highestMarginVehicle.textContent = "Sem dados suficientes";
+    if (highestMarginVehicle) {
+      highestMarginVehicle.textContent = "Sem dados suficientes";
+    }
 
-    highestMarginValue.textContent = "Cadastre o preço de compra";
+    if (highestMarginValue) {
+      highestMarginValue.textContent = "Cadastre o preço de compra";
+    }
   }
-
-  /* ======================================
-       DIAS EM ESTOQUE
-    ====================================== */
 
   const today = new Date();
 
@@ -257,7 +486,6 @@ function updateVehicleAIInsights() {
     })
     .map((vehicle) => {
       const entryDate = new Date(vehicle.entry_date);
-
       const difference = today - entryDate;
 
       const daysInStock = Math.max(
@@ -275,18 +503,44 @@ function updateVehicleAIInsights() {
   const mostStoppedVehicle = vehiclesWithEntryDate[0];
 
   if (mostStoppedVehicle) {
-    oldestVehicle.textContent = `${mostStoppedVehicle.brand} ${mostStoppedVehicle.model}`;
+    if (oldestVehicle) {
+      oldestVehicle.textContent = getVehicleName(mostStoppedVehicle);
+    }
 
-    oldestVehicleDays.textContent = `${mostStoppedVehicle.daysInStock} dias em estoque`;
+    if (oldestVehicleDays) {
+      oldestVehicleDays.textContent = `${mostStoppedVehicle.daysInStock} dias em estoque`;
+    }
   } else {
-    oldestVehicle.textContent = "Sem dados suficientes";
+    if (oldestVehicle) {
+      oldestVehicle.textContent = "Sem dados suficientes";
+    }
 
-    oldestVehicleDays.textContent = "Cadastre a data de entrada";
+    if (oldestVehicleDays) {
+      oldestVehicleDays.textContent = "Cadastre a data de entrada";
+    }
   }
 
-  /* ======================================
-       RESUMO INTELIGENTE
-    ====================================== */
+  const fastest = vehiclesWithEntryDate
+    .filter((vehicle) => vehicle.status === "sold" || vehicle.daysInStock > 0)
+    .sort((a, b) => a.daysInStock - b.daysInStock)[0];
+
+  if (fastest) {
+    if (fastestVehicle) {
+      fastestVehicle.textContent = getVehicleName(fastest);
+    }
+
+    if (fastestVehicleDays) {
+      fastestVehicleDays.textContent = `${fastest.daysInStock} dias em estoque`;
+    }
+  } else {
+    if (fastestVehicle) {
+      fastestVehicle.textContent = "Calculando...";
+    }
+
+    if (fastestVehicleDays) {
+      fastestVehicleDays.textContent = "-";
+    }
+  }
 
   const stoppedVehicles = vehiclesWithEntryDate.filter(
     (vehicle) => vehicle.daysInStock >= 60,
@@ -294,24 +548,30 @@ function updateVehicleAIInsights() {
 
   if (mostStoppedVehicle) {
     if (stoppedVehicles.length > 0) {
-      summaryText.textContent =
-        `Você tem ${stoppedVehicles.length} veículo${
-          stoppedVehicles.length !== 1 ? "s" : ""
-        } há mais de 60 dias no estoque. ` +
-        `O ${mostStoppedVehicle.brand} ${mostStoppedVehicle.model} ` +
-        `está há ${mostStoppedVehicle.daysInStock} dias parado. ` +
-        `Considere revisar o preço ou aumentar a divulgação.`;
+      if (summaryText) {
+        summaryText.textContent =
+          `Você tem ${stoppedVehicles.length} veículo${
+            stoppedVehicles.length !== 1 ? "s" : ""
+          } há mais de 60 dias no estoque. ` +
+          `O ${mostStoppedVehicle.brand} ${mostStoppedVehicle.model} ` +
+          `está há ${mostStoppedVehicle.daysInStock} dias parado. ` +
+          `Considere revisar o preço ou aumentar a divulgação.`;
+      }
     } else {
-      summaryText.textContent =
-        `Seu estoque está com bom giro. ` +
-        `Nenhum veículo está há mais de 60 dias parado. ` +
-        `O veículo há mais tempo no estoque é o ` +
-        `${mostStoppedVehicle.brand} ${mostStoppedVehicle.model}, ` +
-        `com ${mostStoppedVehicle.daysInStock} dias.`;
+      if (summaryText) {
+        summaryText.textContent =
+          `Seu estoque está com bom giro. ` +
+          `Nenhum veículo está há mais de 60 dias parado. ` +
+          `O veículo há mais tempo no estoque é o ` +
+          `${mostStoppedVehicle.brand} ${mostStoppedVehicle.model}, ` +
+          `com ${mostStoppedVehicle.daysInStock} dias.`;
+      }
     }
   } else {
-    summaryText.textContent =
-      "Cadastre a data de entrada dos veículos para receber análises do estoque.";
+    if (summaryText) {
+      summaryText.textContent =
+        "Cadastre a data de entrada dos veículos para receber análises do estoque.";
+    }
   }
 }
 
@@ -327,21 +587,37 @@ const confirmModalConfirm = document.getElementById("confirmModalConfirm");
 const confirmModalBackdrop = document.getElementById("confirmModalBackdrop");
 
 function closeConfirmModal() {
+  if (!confirmModal) return;
+
   confirmModal.classList.remove("is-visible");
 
   setTimeout(() => {
     confirmModal.hidden = true;
-    confirmModalCancel.hidden = false;
+
+    if (confirmModalCancel) {
+      confirmModalCancel.hidden = false;
+    }
   }, 200);
 }
 
 function openConfirmModal({ title, message, confirmText = "Confirmar" }) {
   return new Promise((resolve) => {
+    if (
+      !confirmModal ||
+      !confirmModalTitle ||
+      !confirmModalMessage ||
+      !confirmModalCancel ||
+      !confirmModalConfirm ||
+      !confirmModalBackdrop
+    ) {
+      resolve(false);
+      return;
+    }
+
     confirmModalTitle.textContent = title;
     confirmModalMessage.textContent = message;
     confirmModalConfirm.textContent = confirmText;
     confirmModalCancel.hidden = false;
-
     confirmModal.hidden = false;
 
     requestAnimationFrame(() => {
@@ -382,11 +658,22 @@ function openConfirmModal({ title, message, confirmText = "Confirmar" }) {
 
 function showModalMessage({ title, message }) {
   return new Promise((resolve) => {
+    if (
+      !confirmModal ||
+      !confirmModalTitle ||
+      !confirmModalMessage ||
+      !confirmModalCancel ||
+      !confirmModalConfirm ||
+      !confirmModalBackdrop
+    ) {
+      resolve();
+      return;
+    }
+
     confirmModalTitle.textContent = title;
     confirmModalMessage.textContent = message;
     confirmModalConfirm.textContent = "Entendi";
     confirmModalCancel.hidden = true;
-
     confirmModal.hidden = false;
 
     requestAnimationFrame(() => {
@@ -420,7 +707,7 @@ function showModalMessage({ title, message }) {
 }
 
 async function deleteVehicle(id) {
-  const vehicle = vehicles.find((vehicle) => vehicle.id === id);
+  const vehicle = vehicles.find((vehicle) => Number(vehicle.id) === Number(id));
 
   if (!vehicle) {
     return;
@@ -459,24 +746,8 @@ async function deleteVehicle(id) {
   }
 }
 
-function formatStatus(status) {
-  const statuses = {
-    available: "Disponível",
-    reserved: "Reservado",
-    sold: "Vendido",
-  };
-
-  return statuses[status] || "Sem status";
-}
-
-searchInput.addEventListener("input", renderVehicles);
-
-statusFilter.addEventListener("change", renderVehicles);
-
-brandFilter.addEventListener("change", renderVehicles);
-
 /* ==========================================
-   PERGUNTAR PARA A IA
+   IA - PERGUNTAS
 ========================================== */
 
 const aiQuestion = document.getElementById("aiQuestion");
@@ -484,9 +755,13 @@ const aiSendQuestion = document.getElementById("aiSendQuestion");
 const aiSummaryText = document.getElementById("aiSummaryText");
 
 async function askVehicleAI(question) {
-  const text = question.trim();
+  const text = String(question || "").trim();
 
   if (!text) {
+    return;
+  }
+
+  if (!aiSendQuestion || !aiSummaryText || !aiQuestion) {
     return;
   }
 
@@ -516,7 +791,6 @@ async function askVehicleAI(question) {
     }
 
     aiSummaryText.textContent = data.answer;
-
     aiQuestion.value = "";
   } catch (error) {
     console.error("Erro IA:", error);
@@ -528,24 +802,67 @@ async function askVehicleAI(question) {
   }
 }
 
-aiSendQuestion.addEventListener("click", () => {
-  askVehicleAI(aiQuestion.value);
-});
-
-aiQuestion.addEventListener("keydown", (event) => {
-  if (event.key === "Enter" && !event.shiftKey) {
-    event.preventDefault();
-
+if (aiSendQuestion) {
+  aiSendQuestion.addEventListener("click", () => {
     askVehicleAI(aiQuestion.value);
-  }
-});
+  });
+}
+
+if (aiQuestion) {
+  aiQuestion.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
+
+      askVehicleAI(aiQuestion.value);
+    }
+  });
+}
 
 document.querySelectorAll(".ai-suggestions button").forEach((button) => {
   button.addEventListener("click", () => {
     const question = button.textContent.trim();
 
-    aiQuestion.value = question;
+    if (aiQuestion) {
+      aiQuestion.value = question;
+    }
 
     askVehicleAI(question);
   });
 });
+
+/* ==========================================
+   STATUS E FORMATADORES
+========================================== */
+
+function formatStatus(status) {
+  const statuses = {
+    available: "Disponível",
+    reserved: "Reservado",
+    sold: "Vendido",
+  };
+
+  return statuses[status] || "Sem status";
+}
+
+function formatCurrency(value) {
+  return Number(value || 0).toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  });
+}
+
+/* ==========================================
+   FILTROS
+========================================== */
+
+if (searchInput) {
+  searchInput.addEventListener("input", renderVehicles);
+}
+
+if (statusFilter) {
+  statusFilter.addEventListener("change", renderVehicles);
+}
+
+if (brandFilter) {
+  brandFilter.addEventListener("change", renderVehicles);
+}
