@@ -5,9 +5,14 @@
       localStorage.getItem("carDealerAdminTheme") === "light",
     );
   } catch {}
-  const $ = (id) => document.getElementById(id),
-    money = (n) =>
-      Number(n).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+
+  const $ = (id) => document.getElementById(id);
+  const money = (n) =>
+    Number(n).toLocaleString("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+    });
+
   const stages = {
     new: "Novo",
     contacting: "Em atendimento",
@@ -15,6 +20,7 @@
     lost: "Perdido",
     converted: "Convertido",
   };
+
   const sources = {
     website: "Site",
     whatsapp: "WhatsApp",
@@ -24,7 +30,12 @@
     walkin: "Visita à loja",
     other: "Outra",
   };
-  const paymentLabels = { cash: "À vista", financing: "Financiado" };
+
+  const paymentLabels = {
+    cash: "À vista",
+    financing: "Financiado",
+  };
+
   const timeframeLabels = {
     immediate: "Compra imediata",
     "7_days": "Em até 7 dias",
@@ -32,14 +43,38 @@
     "90_days": "Em até 90 dias",
     research_only: "Ainda só pesquisando",
   };
-  const triLabels = { true: "Sim", false: "Não" };
-  const triProbabilityLabels = { low: "Baixa", medium: "Média", high: "Alta" };
-  const analysisStatusLabels = { ok: "Concluída", error: "Falhou" };
-  const temperatureInfo = {
-    hot: { label: "Quente", cls: "lead-hot" },
-    warm: { label: "Morno", cls: "lead-warm" },
-    cold: { label: "Frio", cls: "lead-cold" },
+
+  const triLabels = {
+    true: "Sim",
+    false: "Não",
   };
+
+  const triProbabilityLabels = {
+    low: "Baixa",
+    medium: "Média",
+    high: "Alta",
+  };
+
+  const analysisStatusLabels = {
+    ok: "Concluída",
+    error: "Falhou",
+  };
+
+  const temperatureInfo = {
+    hot: {
+      label: "Quente",
+      cls: "lead-hot",
+    },
+    warm: {
+      label: "Morno",
+      cls: "lead-warm",
+    },
+    cold: {
+      label: "Frio",
+      cls: "lead-cold",
+    },
+  };
+
   const preferenceLabels = {
     profession: "Profissão",
     family_profile: "Perfil familiar",
@@ -51,204 +86,310 @@
     usage_purpose: "Finalidade de uso",
     preferred_contact: "Forma preferida de contato",
   };
+
+  let leads = [];
+  let editing = null;
+  let selected = null;
+  let busy = false;
+  let requestVersion = 0;
+  let users = [];
+  let usersById = {};
+
   function temperatureOf(score) {
     if (score == null) return null;
     if (score >= 70) return "hot";
     if (score >= 40) return "warm";
     return "cold";
   }
-  const date = (s) =>
-    s ? s.slice(0, 10).split("-").reverse().join("/") : "Não definido";
-  let leads = [],
-    editing = null,
-    selected = null,
-    busy = false,
-    requestVersion = 0,
-    users = [],
-    usersById = {};
+
+  function date(value) {
+    return value
+      ? value.slice(0, 10).split("-").reverse().join("/")
+      : "Não definido";
+  }
+
   function el(tag, text, cls) {
-    const n = document.createElement(tag);
-    n.textContent = text;
-    if (cls) n.className = cls;
-    return n;
+    const node = document.createElement(tag);
+    node.textContent = text;
+
+    if (cls) {
+      node.className = cls;
+    }
+
+    return node;
   }
+
   function message(id, text = "", error = false) {
-    $(id).textContent = text;
-    $(id).hidden = !text;
-    $(id).className = `sales-message ${error ? "error" : "success"}`;
+    const node = $(id);
+
+    if (!node) return;
+
+    node.textContent = text;
+    node.hidden = !text;
+    node.className = `sales-message ${error ? "error" : "success"}`;
   }
+
   async function api(path, options = {}) {
-    const r = await fetch(`${API_URL}${path}`, {
+    const response = await fetch(`${API_URL}${path}`, {
       credentials: "include",
       ...options,
     });
-    if (r.status === 401) {
+
+    if (response.status === 401) {
       location.href = "./login.html";
       throw new Error("Sua sessão expirou.");
     }
-    const data = await r.json();
-    if (!r.ok)
+
+    const data = await response.json();
+
+    if (!response.ok) {
       throw new Error(data.error || "Não foi possível carregar os leads.");
+    }
+
     return data;
   }
-  const send = (path, method, body) =>
-    api(path, {
+
+  function send(path, method, body) {
+    return api(path, {
       method,
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify(body),
     });
+  }
+
   function render() {
-    const newLeadsCount = leads.filter((l) => l.status === "new").length;
+    const newLeadsCount = leads.filter((lead) => lead.status === "new").length;
+
     $("newCount").textContent = newLeadsCount;
+
     document.dispatchEvent(
-      new CustomEvent("leads:new-count", { detail: newLeadsCount }),
+      new CustomEvent("leads:new-count", {
+        detail: newLeadsCount,
+      }),
     );
-    $("activeCount").textContent = leads.filter((l) =>
-      ["contacting", "qualified"].includes(l.status),
+
+    $("activeCount").textContent = leads.filter((lead) =>
+      ["contacting", "qualified"].includes(lead.status),
     ).length;
-    $("overdueCount").textContent = leads.filter((l) => l.overdue).length;
-    const q = $("search").value.trim().toLocaleLowerCase("pt-BR"),
-      digits = q.replace(/\D/g, ""),
-      status = $("statusFilter").value,
-      source = $("sourceFilter").value,
-      assignee = $("assigneeFilter").value;
-    const rows = leads.filter(
-      (l) =>
-        (status === "all" || l.status === status) &&
-        (source === "all" || source === l.source) &&
-        ($("returnFilter").value === "all" || l.overdue) &&
-        (assignee === "all" ||
-          (assignee === "unassigned"
-            ? l.assigned_to == null
-            : String(l.assigned_to) === assignee)) &&
-        (`${l.name} ${l.phone || ""} ${l.email || ""} ${l.vehicle_label || ""}`
-          .toLocaleLowerCase("pt-BR")
-          .includes(q) ||
-          (digits.length >= 3 &&
-            (l.phone || "").replace(/\D/g, "").includes(digits))),
-    );
+
+    $("overdueCount").textContent = leads.filter((lead) => lead.overdue).length;
+
+    updateLeadsCommandInsights();
+
+    const q = $("search").value.trim().toLocaleLowerCase("pt-BR");
+    const digits = q.replace(/\D/g, "");
+    const status = $("statusFilter").value;
+    const source = $("sourceFilter").value;
+    const assignee = $("assigneeFilter").value;
+
+    const rows = leads.filter((lead) => {
+      const matchesStatus = status === "all" || lead.status === status;
+      const matchesSource = source === "all" || source === lead.source;
+      const matchesReturn = $("returnFilter").value === "all" || lead.overdue;
+
+      const matchesAssignee =
+        assignee === "all" ||
+        (assignee === "unassigned"
+          ? lead.assigned_to == null
+          : String(lead.assigned_to) === assignee);
+
+      const searchable =
+        `${lead.name} ${lead.phone || ""} ${lead.email || ""} ${
+          lead.vehicle_label || ""
+        }`.toLocaleLowerCase("pt-BR");
+
+      const matchesSearch =
+        searchable.includes(q) ||
+        (digits.length >= 3 &&
+          (lead.phone || "").replace(/\D/g, "").includes(digits));
+
+      return (
+        matchesStatus &&
+        matchesSource &&
+        matchesReturn &&
+        matchesAssignee &&
+        matchesSearch
+      );
+    });
+
     $("recordCount").textContent = `${rows.length} lead(s)`;
     $("leadRows").replaceChildren();
+
     if (!rows.length) {
-      const row = el("tr", ""),
-        td = el(
-          "td",
-          "Nenhum lead encontrado. Cadastre um interessado ou ajuste os filtros.",
-          "sales-empty",
-        );
+      const row = el("tr", "");
+      const td = el(
+        "td",
+        "Nenhum lead encontrado. Cadastre um interessado ou ajuste os filtros.",
+        "sales-empty",
+      );
+
       td.colSpan = 5;
       row.append(td);
       $("leadRows").append(row);
       return;
     }
-    rows.forEach((l) => {
-      const row = el("tr", ""),
-        name = el("td", "");
-      name.append(el("strong", l.name), el("small", l.phone || l.email));
-      const temp = temperatureInfo[temperatureOf(l.priority_score)];
-      if (temp)
+
+    rows.forEach((lead) => {
+      const row = el("tr", "");
+      const name = el("td", "");
+
+      name.append(
+        el("strong", lead.name),
+        el("small", lead.phone || lead.email),
+      );
+
+      const temp = temperatureInfo[temperatureOf(lead.priority_score)];
+
+      if (temp) {
         name.append(
           el(
             "small",
-            `${temp.label} • ${l.priority_score}/100`,
+            `${temp.label} • ${lead.priority_score}/100`,
             `lead-score-tag ${temp.cls}`,
           ),
         );
+      }
+
       name.append(
         el(
           "small",
-          l.assigned_to != null
-            ? `Vendedor: ${usersById[l.assigned_to] || "#" + l.assigned_to}`
+          lead.assigned_to != null
+            ? `Vendedor: ${
+                usersById[lead.assigned_to] || "#" + lead.assigned_to
+              }`
             : "Sem vendedor atribuído",
           "lead-assignee-tag",
         ),
       );
+
       const interest = el("td", "");
+
       interest.append(
-        el("strong", l.vehicle_label || "Veículo não definido"),
-        el("small", sources[l.source]),
+        el("strong", lead.vehicle_label || "Veículo não definido"),
+        el("small", sources[lead.source] || "Origem não informada"),
       );
-      row.append(name, interest, el("td", stages[l.status]));
+
+      row.append(name, interest, el("td", stages[lead.status] || lead.status));
+
       const next = el(
         "td",
-        date(l.next_contact_date),
-        l.overdue ? "sales-negative" : "",
+        date(lead.next_contact_date),
+        lead.overdue ? "sales-negative" : "",
       );
-      if (l.overdue) next.append(el("small", "Retorno vencido"));
+
+      if (lead.overdue) {
+        next.append(el("small", "Retorno vencido"));
+      }
+
       row.append(next);
-      const td = el("td", ""),
-        b = el("button", "Atender", "sales-secondary");
-      b.type = "button";
-      b.addEventListener("click", () => details(l.id));
-      td.append(b);
-      row.append(td);
+
+      const actions = el("td", "");
+      const attendButton = el("button", "Atender", "sales-secondary");
+
+      attendButton.type = "button";
+      attendButton.addEventListener("click", () => details(lead.id));
+
+      actions.append(attendButton);
+      row.append(actions);
+
       $("leadRows").append(row);
     });
   }
+
   async function refresh() {
     const version = ++requestVersion;
+
     try {
       const data = await api("/leads");
+
       if (version !== requestVersion) return;
-      leads = data.leads;
+
+      leads = data.leads || [];
       render();
     } catch (error) {
       if (version !== requestVersion) return;
+
       leads = [];
       render();
-      ["newCount", "activeCount", "overdueCount"].forEach(
-        (id) => ($(id).textContent = "—"),
-      );
+
+      ["newCount", "activeCount", "overdueCount"].forEach((id) => {
+        $(id).textContent = "—";
+      });
+
       $("leadRows").firstChild.firstChild.textContent =
         "Falha ao carregar. Clique em Atualizar para tentar novamente.";
+
       throw error;
     }
   }
+
   async function loadUsers() {
     try {
       const data = await api("/users");
-      users = data.users;
-      usersById = Object.fromEntries(users.map((u) => [u.id, u.name]));
-      for (const select of [
-        $("assignedToSelect"),
-        $("assignSelect"),
-      ]) {
+
+      users = data.users || [];
+      usersById = Object.fromEntries(users.map((user) => [user.id, user.name]));
+
+      for (const select of [$("assignedToSelect"), $("assignSelect")]) {
         const current = select.value;
+
         select.replaceChildren(new Option("Não atribuído", ""));
-        users.forEach((u) => select.add(new Option(u.name, u.id)));
+
+        users.forEach((user) => {
+          select.add(new Option(user.name, user.id));
+        });
+
         select.value = current;
       }
+
       const filterCurrent = $("assigneeFilter").value;
+
       $("assigneeFilter").replaceChildren(
         new Option("Todos", "all"),
         new Option("Não atribuído", "unassigned"),
       );
-      users.forEach((u) => $("assigneeFilter").add(new Option(u.name, u.id)));
+
+      users.forEach((user) => {
+        $("assigneeFilter").add(new Option(user.name, user.id));
+      });
+
       $("assigneeFilter").value = filterCurrent || "all";
     } catch {
       // Sem lista de usuários, os seletores ficam só com "Não atribuído".
     }
   }
-  async function form(l = null) {
+
+  async function form(lead = null) {
     if (busy) return;
+
     busy = true;
     message("pageMessage");
+
     try {
       const data = await api("/vehicles");
-      editing = l;
+
+      editing = lead;
+
       $("leadForm").reset();
       message("formMessage");
-      $("leadTitle").textContent = l ? "Editar lead" : "Novo lead";
+
+      $("leadTitle").textContent = lead ? "Editar lead" : "Novo lead";
       $("vehicleSelect").replaceChildren(new Option("Ainda não definido", ""));
-      data.vehicles.forEach((v) =>
+
+      data.vehicles.forEach((vehicle) => {
         $("vehicleSelect").add(
           new Option(
-            `${v.brand} ${v.model} • ${v.year} • #${v.id}${v.status === "sold" ? " (vendido)" : ""}`,
-            v.id,
+            `${vehicle.brand} ${vehicle.model} • ${vehicle.year} • #${
+              vehicle.id
+            }${vehicle.status === "sold" ? " (vendido)" : ""}`,
+            vehicle.id,
           ),
-        ),
-      );
-      if (l) {
+        );
+      });
+
+      if (lead) {
         for (const name of [
           "name",
           "phone",
@@ -265,18 +406,30 @@
           "trade_in_estimated_value",
           "purchase_timeframe",
           "assigned_to",
-        ])
-          $("leadForm").elements[name].value = l[name] ?? "";
-        const tri = (v) => (v === true ? "yes" : v === false ? "no" : "");
-        $("leadForm").elements.has_trade_in.value = tri(l.has_trade_in);
+        ]) {
+          $("leadForm").elements[name].value = lead[name] ?? "";
+        }
+
+        const tri = (value) =>
+          value === true ? "yes" : value === false ? "no" : "";
+
+        $("leadForm").elements.has_trade_in.value = tri(lead.has_trade_in);
+
         $("leadForm").elements.financing_pre_approved.value = tri(
-          l.financing_pre_approved,
+          lead.financing_pre_approved,
         );
-        const prefs = l.declared_preferences || {};
-        for (const key of Object.keys(preferenceLabels))
+
+        const prefs = lead.declared_preferences || {};
+
+        for (const key of Object.keys(preferenceLabels)) {
           $("leadForm").elements[`pref_${key}`].value = prefs[key] ?? "";
+        }
       }
-      if ($("detailDialog").open) $("detailDialog").close();
+
+      if ($("detailDialog").open) {
+        $("detailDialog").close();
+      }
+
       $("leadDialog").showModal();
     } catch (error) {
       message("pageMessage", error.message, true);
@@ -284,233 +437,341 @@
       busy = false;
     }
   }
+
   function action(label, fn, primary = false) {
-    const b = el(
+    const button = el(
       "button",
       label,
       primary ? "sales-primary" : "sales-secondary",
     );
-    b.type = "button";
-    b.addEventListener("click", fn);
-    $("leadActions").append(b);
+
+    button.type = "button";
+    button.addEventListener("click", fn);
+
+    $("leadActions").append(button);
   }
+
   function paintDetails(data) {
     selected = data.lead;
-    const l = selected;
+
+    const lead = selected;
+
     message("detailMessage");
-    $("detailTitle").textContent = l.name;
+
+    $("detailTitle").textContent = lead.name;
     $("lossForm").hidden = true;
     $("convertForm").hidden = true;
     $("noteForm").reset();
     $("interactionForm").reset();
     $("taskForm").reset();
-    $("assignSelect").value = l.assigned_to ?? "";
+    $("assignSelect").value = lead.assigned_to ?? "";
+
     const dl = el("dl", "", "sales-details");
+
     const fields = [
-      ["Etapa", stages[l.status]],
-      ["Origem", sources[l.source]],
-      ["Telefone", l.phone || "Não informado"],
-      ["E-mail", l.email || "Não informado"],
-      ["Cidade", l.city || "Não informada"],
-      ["Veículo de interesse", l.vehicle_label || "Não definido"],
+      ["Etapa", stages[lead.status]],
+      ["Origem", sources[lead.source]],
+      ["Telefone", lead.phone || "Não informado"],
+      ["E-mail", lead.email || "Não informado"],
+      ["Cidade", lead.city || "Não informada"],
+      ["Veículo de interesse", lead.vehicle_label || "Não definido"],
       [
         "Vendedor responsável",
-        l.assigned_to != null
-          ? usersById[l.assigned_to] || `#${l.assigned_to}`
+        lead.assigned_to != null
+          ? usersById[lead.assigned_to] || `#${lead.assigned_to}`
           : "Não atribuído",
       ],
-      ["Orçamento", l.budget === null ? "Não informado" : money(l.budget)],
+      [
+        "Orçamento",
+        lead.budget === null ? "Não informado" : money(lead.budget),
+      ],
       [
         "Próximo retorno",
-        date(l.next_contact_date) + (l.overdue ? " — vencido" : ""),
+        date(lead.next_contact_date) + (lead.overdue ? " — vencido" : ""),
       ],
-      ["Observações", l.notes || "Sem observações"],
+      ["Observações", lead.notes || "Sem observações"],
     ];
-    if (l.payment_method)
-      fields.push(["Forma de pagamento", paymentLabels[l.payment_method]]);
-    if (l.down_payment != null)
-      fields.push(["Valor de entrada", money(l.down_payment)]);
-    if (l.desired_installment != null)
-      fields.push(["Parcela desejada", money(l.desired_installment)]);
-    if (l.has_trade_in != null)
+
+    if (lead.payment_method) {
+      fields.push(["Forma de pagamento", paymentLabels[lead.payment_method]]);
+    }
+
+    if (lead.down_payment != null) {
+      fields.push(["Valor de entrada", money(lead.down_payment)]);
+    }
+
+    if (lead.desired_installment != null) {
+      fields.push(["Parcela desejada", money(lead.desired_installment)]);
+    }
+
+    if (lead.has_trade_in != null) {
       fields.push([
         "Veículo na troca",
-        triLabels[l.has_trade_in] +
-          (l.has_trade_in && l.trade_in_estimated_value != null
-            ? ` (estimado em ${money(l.trade_in_estimated_value)})`
+        triLabels[lead.has_trade_in] +
+          (lead.has_trade_in && lead.trade_in_estimated_value != null
+            ? ` (estimado em ${money(lead.trade_in_estimated_value)})`
             : ""),
       ]);
-    if (l.financing_pre_approved != null)
+    }
+
+    if (lead.financing_pre_approved != null) {
       fields.push([
         "Financiamento pré-aprovado",
-        `${triLabels[l.financing_pre_approved]} (conforme informado pelo cliente, não verificado)`,
+        `${triLabels[lead.financing_pre_approved]} (conforme informado pelo cliente, não verificado)`,
       ]);
-    if (l.purchase_timeframe)
-      fields.push(["Prazo estimado de compra", timeframeLabels[l.purchase_timeframe]]);
-    const prefs = l.declared_preferences || {};
-    for (const [key, label] of Object.entries(preferenceLabels))
+    }
+
+    if (lead.purchase_timeframe) {
+      fields.push([
+        "Prazo estimado de compra",
+        timeframeLabels[lead.purchase_timeframe],
+      ]);
+    }
+
+    const prefs = lead.declared_preferences || {};
+
+    for (const [key, label] of Object.entries(preferenceLabels)) {
       if (prefs[key]) fields.push([label, prefs[key]]);
-    if (l.loss_reason) fields.push(["Motivo da perda", l.loss_reason]);
+    }
+
+    if (lead.loss_reason) {
+      fields.push(["Motivo da perda", lead.loss_reason]);
+    }
+
     fields.forEach(([label, value]) => {
-      const d = el("div", "");
-      d.append(el("dt", label), el("dd", value));
-      dl.append(d);
+      const item = el("div", "");
+
+      item.append(el("dt", label), el("dd", value));
+      dl.append(item);
     });
+
     $("leadDetails").replaceChildren(dl);
-    paintScore(data.score, l);
+
+    paintScore(data.score, lead);
     paintTasks(data.tasks || []);
+
     $("leadActions").replaceChildren();
-    if (l.ai_last_error) {
+
+    if (lead.ai_last_error) {
       message(
         "leadAiError",
-        `Última tentativa de análise falhou (${new Date(l.ai_last_error.at).toLocaleString("pt-BR")}): ${l.ai_last_error.message}`,
+        `Última tentativa de análise falhou (${new Date(
+          lead.ai_last_error.at,
+        ).toLocaleString("pt-BR")}): ${lead.ai_last_error.message}`,
         true,
       );
     } else {
       message("leadAiError");
     }
+
     const ai = $("leadAiContent");
+
     ai.replaceChildren();
-    if (l.ai_score !== null && l.ai_score !== undefined) {
+
+    if (lead.ai_score !== null && lead.ai_score !== undefined) {
       ai.append(
         el(
           "strong",
-          `Prioridade estimada pela IA: ${l.ai_score}/100 • intenção ${l.ai_intent} • urgência ${l.ai_urgency}`,
+          `Prioridade estimada pela IA: ${lead.ai_score}/100 • intenção ${lead.ai_intent} • urgência ${lead.ai_urgency}`,
         ),
       );
+
       for (const [label, value] of [
-        ["Resumo", l.ai_summary],
-        ["Por que essa pontuação (estimativa da IA)", l.ai_score_justification],
+        ["Resumo", lead.ai_summary],
         [
-          "Objeção provável",
-          l.ai_probable_objection,
+          "Por que essa pontuação (estimativa da IA)",
+          lead.ai_score_justification,
         ],
+        ["Objeção provável", lead.ai_probable_objection],
         [
           "Probabilidade de avanço",
-          `${triProbabilityLabels[l.ai_advance_probability] || l.ai_advance_probability} — estimativa, não é garantia`,
+          `${
+            triProbabilityLabels[lead.ai_advance_probability] ||
+            lead.ai_advance_probability
+          } — estimativa, não é garantia`,
         ],
-        ["Próximo passo sugerido", l.ai_next_action],
-        ["Mensagem sugerida para o cliente", l.ai_response_draft],
+        ["Próximo passo sugerido", lead.ai_next_action],
+        ["Mensagem sugerida para o cliente", lead.ai_response_draft],
       ]) {
         const box = el("div", "", "lead-ai-result");
+
         box.append(el("small", label), el("p", value));
         ai.append(box);
       }
-      const taskFromAi = el("button", "Criar tarefa a partir desta sugestão", "sales-secondary");
+
+      const taskFromAi = el(
+        "button",
+        "Criar tarefa a partir desta sugestão",
+        "sales-secondary",
+      );
+
       taskFromAi.type = "button";
       taskFromAi.addEventListener("click", createTaskFromAiSuggestion);
+
       ai.append(taskFromAi);
-    } else ai.append(el("p", "Este lead ainda não foi analisado."));
+    } else {
+      ai.append(el("p", "Este lead ainda não foi analisado."));
+    }
+
     paintAiHistory(data.analyses || []);
+
     action(
-      l.ai_score == null ? "Analisar com IA" : "Analisar novamente",
+      lead.ai_score == null ? "Analisar com IA" : "Analisar novamente",
       analyzeCurrentLead,
     );
-    if (["new", "contacting", "qualified"].includes(l.status)) {
+
+    if (["new", "contacting", "qualified"].includes(lead.status)) {
       action("Editar dados / retorno", () => form(selected));
-      if (l.status === "new")
+
+      if (lead.status === "new") {
         action("Iniciar atendimento", () => changeStage("contacting"), true);
-      if (l.status !== "qualified")
+      }
+
+      if (lead.status !== "qualified") {
         action("Qualificar lead", () => changeStage("qualified"), true);
-      else {
+      } else {
         action("Converter em cliente", prepareConversion, true);
         action("Retomar atendimento", () => changeStage("contacting"));
       }
+
       action("Marcar como perdido", () => {
         if (busy) return;
+
         $("convertForm").hidden = true;
         $("lossForm").hidden = false;
         $("lossReason").value = "";
         $("lossReason").focus();
       });
-    } else if (l.status === "lost")
+    } else if (lead.status === "lost") {
       action("Reabrir lead", () => changeStage("new"), true);
-    else {
-      const a = el("a", `Abrir cliente #${l.customer_id}`, "sales-primary");
-      a.href = `./customers.html?customer=${l.customer_id}`;
-      $("leadActions").append(a);
-    }
-    $("eventList").replaceChildren();
-    data.events.forEach((e) => {
-      const item = el("article", "", "customer-history-item");
-      item.append(
-        el("small", new Date(e.created_at).toLocaleString("pt-BR")),
-        el("p", e.content),
+    } else {
+      const customerLink = el(
+        "a",
+        `Abrir cliente #${lead.customer_id}`,
+        "sales-primary",
       );
+
+      customerLink.href = `./customers.html?customer=${lead.customer_id}`;
+
+      $("leadActions").append(customerLink);
+    }
+
+    $("eventList").replaceChildren();
+
+    data.events.forEach((event) => {
+      const item = el("article", "", "customer-history-item");
+
+      item.append(
+        el("small", new Date(event.created_at).toLocaleString("pt-BR")),
+        el("p", event.content),
+      );
+
       $("eventList").append(item);
     });
-    if (!$("detailDialog").open) $("detailDialog").showModal();
+
+    if (!$("detailDialog").open) {
+      $("detailDialog").showModal();
+    }
   }
-  function paintScore(score, l) {
+
+  function paintScore(score, lead) {
     const box = $("leadScoreContent");
+
     box.replaceChildren();
-    box.append(el("p", l.basic_summary || "", "lead-basic-summary"));
+    box.append(el("p", lead.basic_summary || "", "lead-basic-summary"));
+
     if (!score) {
       box.append(el("p", "Ainda não avaliado. Clique em Atualizar pontuação."));
       return;
     }
+
     const temp = temperatureInfo[temperatureOf(score.score)];
+
     const badge = el(
       "strong",
       `${temp.label} • ${score.score}/100`,
       `lead-score-badge ${temp.cls}`,
     );
+
     box.append(badge);
+
     if (!score.reasons.length) {
       box.append(
-        el("p", "Nenhum critério de pontuação foi atendido ainda.", "sales-footnote"),
+        el(
+          "p",
+          "Nenhum critério de pontuação foi atendido ainda.",
+          "sales-footnote",
+        ),
       );
     } else {
       const ul = el("ul", "", "lead-score-reasons");
-      score.reasons.forEach((r) => {
-        ul.append(el("li", `+${r.points} ${r.label}`));
+
+      score.reasons.forEach((reason) => {
+        ul.append(el("li", `+${reason.points} ${reason.label}`));
       });
+
       box.append(ul);
     }
   }
+
   function paintTasks(tasks) {
     const box = $("taskList");
+
     box.replaceChildren();
+
     if (!tasks.length) {
       box.append(el("p", "Nenhuma tarefa registrada.", "sales-footnote"));
       return;
     }
-    tasks.forEach((t) => {
-      const item = el("article", "", `lead-task-item lead-task-${t.status}`);
+
+    tasks.forEach((task) => {
+      const item = el("article", "", `lead-task-item lead-task-${task.status}`);
+
       const head = el("div", "", "lead-task-head");
+
       head.append(
         el(
           "span",
-          `${t.title}${t.due_date ? ` • até ${date(t.due_date)}` : ""}`,
+          `${task.title}${task.due_date ? ` • até ${date(task.due_date)}` : ""}`,
         ),
       );
-      if (t.status === "open") {
+
+      if (task.status === "open") {
         const doneBtn = el("button", "Concluir", "sales-secondary");
+
         doneBtn.type = "button";
-        doneBtn.addEventListener("click", () => setTaskStatus(t.id, "done"));
+        doneBtn.addEventListener("click", () => setTaskStatus(task.id, "done"));
+
         const cancelBtn = el("button", "Cancelar", "sales-secondary");
+
         cancelBtn.type = "button";
         cancelBtn.addEventListener("click", () =>
-          setTaskStatus(t.id, "cancelled"),
+          setTaskStatus(task.id, "cancelled"),
         );
+
         head.append(doneBtn, cancelBtn);
       } else {
         head.append(
-          el("small", t.status === "done" ? "Concluída" : "Cancelada"),
+          el("small", task.status === "done" ? "Concluída" : "Cancelada"),
         );
       }
+
       item.append(head);
       box.append(item);
     });
   }
+
   async function setTaskStatus(taskId, status) {
     if (busy) return;
+
     busy = true;
     message("detailMessage");
+
     try {
       await send(`/leads/${selected.id}/tasks/${taskId}`, "PATCH", {
         status,
       });
+
       await reloadAfterChange(
         status === "done" ? "Tarefa concluída." : "Tarefa cancelada.",
       );
@@ -520,10 +781,13 @@
       busy = false;
     }
   }
+
   async function recalculateCurrentScore() {
     if (busy) return;
+
     busy = true;
     message("detailMessage");
+
     try {
       await send(`/leads/${selected.id}/score/recalculate`, "POST", {});
       await reloadAfterChange("Pontuação atualizada.");
@@ -533,38 +797,54 @@
       busy = false;
     }
   }
+
   function paintAiHistory(analyses) {
     const box = $("aiHistoryList");
+
     box.replaceChildren();
+
     if (!analyses.length) {
       box.append(el("p", "Nenhuma análise anterior.", "sales-footnote"));
       return;
     }
-    analyses.forEach((a) => {
+
+    analyses.forEach((analysis) => {
       const item = el("article", "", "customer-history-item");
-      const when = new Date(a.created_at).toLocaleString("pt-BR");
+      const when = new Date(analysis.created_at).toLocaleString("pt-BR");
+
       item.append(
-        el("small", `${when} • ${analysisStatusLabels[a.status]} • ${a.model}`),
+        el(
+          "small",
+          `${when} • ${analysisStatusLabels[analysis.status]} • ${
+            analysis.model
+          }`,
+        ),
       );
+
       item.append(
         el(
           "p",
-          a.status === "ok"
-            ? `Prioridade ${a.score}/100 — ${a.summary}`
-            : `Erro: ${a.error_message}`,
+          analysis.status === "ok"
+            ? `Prioridade ${analysis.score}/100 — ${analysis.summary}`
+            : `Erro: ${analysis.error_message}`,
         ),
       );
+
       box.append(item);
     });
   }
+
   async function createTaskFromAiSuggestion() {
     if (busy || !selected?.ai_next_action) return;
+
     busy = true;
     message("detailMessage");
+
     try {
       await send(`/leads/${selected.id}/tasks`, "POST", {
         title: selected.ai_next_action.slice(0, 255),
       });
+
       await reloadAfterChange("Tarefa criada a partir da sugestão da IA.");
     } catch (error) {
       message("detailMessage", error.message, true);
@@ -572,13 +852,17 @@
       busy = false;
     }
   }
+
   async function analyzeCurrentLead() {
     if (busy) return;
+
     busy = true;
     message("detailMessage");
+
     try {
       await send(`/leads/${selected.id}/analyze`, "POST", {});
       paintDetails(await api(`/leads/${selected.id}`));
+
       message(
         "detailMessage",
         "Análise concluída. Revise as sugestões antes de agir.",
@@ -589,10 +873,13 @@
       busy = false;
     }
   }
+
   async function details(id) {
     if (busy) return;
+
     busy = true;
     message("pageMessage");
+
     try {
       paintDetails(await api(`/leads/${id}`));
     } catch (error) {
@@ -601,18 +888,27 @@
       busy = false;
     }
   }
+
   async function changeStage(status, reason = null) {
     if (busy) return;
-    if (status !== "lost" && !confirm(`Alterar etapa para ${stages[status]}?`))
+
+    if (
+      status !== "lost" &&
+      !confirm(`Alterar etapa para ${stages[status]}?`)
+    ) {
       return;
+    }
+
     busy = true;
     message("detailMessage");
+
     try {
       await send(`/leads/${selected.id}/status`, "PATCH", {
         status,
         reason,
         version: selected.version,
       });
+
       await reloadAfterChange("Etapa atualizada.");
     } catch (error) {
       message("detailMessage", error.message, true);
@@ -620,6 +916,7 @@
       busy = false;
     }
   }
+
   async function reloadAfterChange(text) {
     try {
       paintDetails(await api(`/leads/${selected.id}`));
@@ -627,6 +924,7 @@
       message("detailMessage", text);
     } catch {
       $("detailDialog").close();
+
       message(
         "pageMessage",
         `${text} Clique em Atualizar e reabra a ficha para carregar os dados.`,
@@ -634,30 +932,127 @@
       );
     }
   }
+
+  function updateLeadsCommandInsights() {
+    const activeLeads = leads.filter((lead) =>
+      ["new", "contacting", "qualified"].includes(lead.status),
+    );
+
+    const contactedLeads = leads.filter((lead) =>
+      ["contacting", "qualified", "converted", "lost"].includes(lead.status),
+    );
+
+    const responseRate = leads.length
+      ? Math.round((contactedLeads.length / leads.length) * 100)
+      : 0;
+
+    const hottestLead = [...activeLeads].sort(
+      (a, b) => Number(b.priority_score || 0) - Number(a.priority_score || 0),
+    )[0];
+
+    const lateLead = [...activeLeads]
+      .filter((lead) => lead.overdue)
+      .sort((a, b) =>
+        String(a.next_contact_date || "").localeCompare(
+          String(b.next_contact_date || ""),
+        ),
+      )[0];
+
+    const sourceRanking = Object.entries(
+      leads.reduce((acc, lead) => {
+        const source = lead.source || "other";
+        acc[source] = (acc[source] || 0) + 1;
+        return acc;
+      }, {}),
+    ).sort((a, b) => b[1] - a[1]);
+
+    putOptional("responseRateCount", `${responseRate}%`);
+
+    putOptional(
+      "hotLeadName",
+      hottestLead ? hottestLead.name : "Nenhum lead ativo",
+    );
+
+    putOptional(
+      "lateLeadName",
+      lateLead ? lateLead.name : "Sem retorno atrasado",
+    );
+
+    putOptional(
+      "bestLeadSource",
+      sourceRanking[0] ? sources[sourceRanking[0][0]] || "Outra" : "Sem dados",
+    );
+
+    const title = $("leadRecommendationTitle");
+    const text = $("leadRecommendationText");
+    const button = $("leadRecommendationButton");
+
+    if (!title || !text || !button) return;
+
+    if (lateLead) {
+      title.textContent = `Retome ${lateLead.name} agora`;
+      text.textContent = `${
+        lateLead.vehicle_label || "Lead sem veículo definido"
+      } está com retorno vencido. Priorize antes que a oportunidade esfrie.`;
+      button.disabled = false;
+      button.onclick = () => details(lateLead.id);
+      return;
+    }
+
+    if (hottestLead) {
+      const temp = temperatureInfo[temperatureOf(hottestLead.priority_score)];
+
+      title.textContent = `Atenda ${hottestLead.name} primeiro`;
+      text.textContent = `${
+        hottestLead.vehicle_label || "Lead sem veículo definido"
+      } • ${temp ? temp.label.toLowerCase() : "prioridade em análise"} • ${
+        hottestLead.priority_score ?? 0
+      }/100.`;
+      button.disabled = false;
+      button.onclick = () => details(hottestLead.id);
+      return;
+    }
+
+    title.textContent = "Nenhuma ação urgente agora";
+    text.textContent =
+      "Cadastre ou atualize leads para a IA sugerir a próxima melhor ação.";
+    button.disabled = true;
+  }
+
+  function putOptional(id, value) {
+    const node = $(id);
+
+    if (node) {
+      node.textContent = value;
+    }
+  }
+
   async function prepareConversion() {
     if (busy) return;
+
     busy = true;
     message("detailMessage");
+
     try {
       $("customerSelect").replaceChildren(
         new Option("Criar novo cliente com os dados do lead", ""),
       );
-      /*
-       * A listagem de clientes é restrita a administradores. Vendedores
-       * ainda podem converter criando um cliente novo — só não veem a
-       * lista de cadastros existentes para vincular.
-       */
+
       try {
         const data = await api("/customers?active=true");
-        data.customers.forEach((c) =>
+
+        data.customers.forEach((customer) => {
           $("customerSelect").add(
             new Option(
-              `${c.name} • ${c.phone || c.email || "#" + c.id}`,
-              c.id,
+              `${customer.name} • ${
+                customer.phone || customer.email || "#" + customer.id
+              }`,
+              customer.id,
             ),
-          ),
-        );
+          );
+        });
       } catch {}
+
       $("lossForm").hidden = true;
       $("convertForm").hidden = false;
       $("customerSelect").focus();
@@ -667,31 +1062,47 @@
       busy = false;
     }
   }
-  $("leadForm").addEventListener("submit", async (e) => {
-    e.preventDefault();
+
+  $("leadForm").addEventListener("submit", async (event) => {
+    event.preventDefault();
+
     if (busy) return;
+
     busy = true;
     $("saveLead").disabled = true;
     message("formMessage");
+
     try {
-      const body = Object.fromEntries(new FormData(e.target));
-      const declared_preferences = {};
+      const body = Object.fromEntries(new FormData(event.target));
+      const declaredPreferences = {};
+
       for (const key of Object.keys(body)) {
         if (key.startsWith("pref_")) {
           const value = body[key];
+
           delete body[key];
-          if (value) declared_preferences[key.slice(5)] = value;
+
+          if (value) {
+            declaredPreferences[key.slice(5)] = value;
+          }
         }
       }
-      body.declared_preferences = declared_preferences;
-      if (editing) body.version = editing.version;
+
+      body.declared_preferences = declaredPreferences;
+
+      if (editing) {
+        body.version = editing.version;
+      }
+
       await send(
         editing ? `/leads/${editing.id}` : "/leads",
         editing ? "PUT" : "POST",
         body,
       );
+
       $("leadDialog").close();
       message("pageMessage", "Lead salvo.");
+
       try {
         await refresh();
       } catch {
@@ -708,21 +1119,28 @@
       $("saveLead").disabled = false;
     }
   });
-  $("lossForm").addEventListener("submit", (e) => {
-    e.preventDefault();
+
+  $("lossForm").addEventListener("submit", (event) => {
+    event.preventDefault();
+
     changeStage("lost", $("lossReason").value);
   });
-  $("noteForm").addEventListener("submit", async (e) => {
-    e.preventDefault();
+
+  $("noteForm").addEventListener("submit", async (event) => {
+    event.preventDefault();
+
     if (busy) return;
+
     busy = true;
     $("saveNote").disabled = true;
     message("detailMessage");
+
     try {
       await send(`/leads/${selected.id}/notes`, "POST", {
         version: selected.version,
         content: $("noteContent").value,
       });
+
       await reloadAfterChange("Atendimento registrado.");
     } catch (error) {
       message("detailMessage", error.message, true);
@@ -731,18 +1149,23 @@
       $("saveNote").disabled = false;
     }
   });
-  $("interactionForm").addEventListener("submit", async (e) => {
-    e.preventDefault();
+
+  $("interactionForm").addEventListener("submit", async (event) => {
+    event.preventDefault();
+
     if (busy) return;
+
     busy = true;
     $("saveInteraction").disabled = true;
     message("detailMessage");
+
     try {
       await send(`/leads/${selected.id}/interactions`, "POST", {
         version: selected.version,
         type: $("interactionType").value,
         note: $("interactionNote").value,
       });
+
       await reloadAfterChange("Interação registrada.");
     } catch (error) {
       message("detailMessage", error.message, true);
@@ -751,16 +1174,21 @@
       $("saveInteraction").disabled = false;
     }
   });
-  $("taskForm").addEventListener("submit", async (e) => {
-    e.preventDefault();
+
+  $("taskForm").addEventListener("submit", async (event) => {
+    event.preventDefault();
+
     if (busy) return;
+
     busy = true;
     message("detailMessage");
+
     try {
       await send(`/leads/${selected.id}/tasks`, "POST", {
         title: $("taskTitle").value,
         due_date: $("taskDueDate").value || undefined,
       });
+
       await reloadAfterChange("Tarefa adicionada.");
     } catch (error) {
       message("detailMessage", error.message, true);
@@ -768,17 +1196,23 @@
       busy = false;
     }
   });
+
   $("recalcScoreBtn").addEventListener("click", recalculateCurrentScore);
-  $("assignForm").addEventListener("submit", async (e) => {
-    e.preventDefault();
+
+  $("assignForm").addEventListener("submit", async (event) => {
+    event.preventDefault();
+
     if (busy) return;
+
     busy = true;
     message("detailMessage");
+
     try {
       await send(`/leads/${selected.id}/assign`, "PATCH", {
         version: selected.version,
         assigned_to: $("assignSelect").value || null,
       });
+
       await reloadAfterChange("Atribuição atualizada.");
     } catch (error) {
       message("detailMessage", error.message, true);
@@ -786,22 +1220,29 @@
       busy = false;
     }
   });
-  $("convertForm").addEventListener("submit", async (e) => {
-    e.preventDefault();
+
+  $("convertForm").addEventListener("submit", async (event) => {
+    event.preventDefault();
+
     if (busy) return;
+
     if (
       !confirm(
         "Confirmar a conversão e vincular este lead ao cadastro selecionado?",
       )
-    )
+    ) {
       return;
+    }
+
     busy = true;
     message("detailMessage");
+
     try {
       const result = await send(`/leads/${selected.id}/convert`, "POST", {
         version: selected.version,
         customer_id: $("customerSelect").value,
       });
+
       await reloadAfterChange(
         `Lead convertido no cliente #${result.customer_id}.`,
       );
@@ -811,53 +1252,78 @@
       busy = false;
     }
   });
+
   $("newLead").addEventListener("click", () => form());
+
   for (const id of [
     "search",
     "statusFilter",
     "sourceFilter",
     "returnFilter",
     "assigneeFilter",
-  ])
+  ]) {
     $(id).addEventListener(id === "search" ? "input" : "change", render);
-  $("filters").addEventListener("submit", async (e) => {
-    e.preventDefault();
+  }
+
+  $("filters").addEventListener("submit", async (event) => {
+    event.preventDefault();
+
     message("pageMessage");
+
     try {
       const meta = await api("/integrations/meta/status");
+
       $("metaStatus").textContent = meta.configured
         ? `Credenciais configuradas • Graph API ${meta.graphVersion}`
         : "Aguardando credenciais e webhook da Meta.";
+
       await refresh();
     } catch (error) {
       message("pageMessage", error.message, true);
     }
   });
-  document.querySelectorAll("[data-close]").forEach((b) =>
-    b.addEventListener("click", () => {
-      if (!busy) $(b.dataset.close).close();
-    }),
-  );
-  for (const id of ["leadDialog", "detailDialog"])
-    $(id).addEventListener("cancel", (e) => {
-      if (busy) e.preventDefault();
+
+  document.querySelectorAll("[data-close]").forEach((button) => {
+    button.addEventListener("click", () => {
+      if (!busy) {
+        $(button.dataset.close).close();
+      }
     });
+  });
+
+  for (const id of ["leadDialog", "detailDialog"]) {
+    $(id).addEventListener("cancel", (event) => {
+      if (busy) {
+        event.preventDefault();
+      }
+    });
+  }
+
   requireAuth().then(async (user) => {
     if (!user) return;
+
     if (!["admin", "vendedor"].includes(user.role)) {
       message(
         "pageMessage",
         "A área de leads está disponível apenas para administradores e vendedores.",
         true,
       );
+
       return;
     }
+
     $("newLead").disabled = false;
+
     await loadUsers();
+
     try {
       await refresh();
+
       const id = new URLSearchParams(location.search).get("lead");
-      if (id) await details(id);
+
+      if (id) {
+        await details(id);
+      }
     } catch (error) {
       message("pageMessage", error.message, true);
     }
