@@ -50,6 +50,7 @@
     <title>Car Dealer IA | Encontre seu próximo veículo</title>
 
     <link rel="stylesheet" href="./css/style.css" />
+    <link rel="stylesheet" href="./css/sections.css" />
   </head>
 
   <body>
@@ -65,9 +66,11 @@
 
         <a href="./vehicles.html"> Veículos </a>
 
-        <a href="#"> Financiamento </a>
+        <a href="#financiamento"> Financiamento </a>
 
-        <a href="#"> Sobre nós </a>
+        <a href="#sobre"> Sobre nós </a>
+
+        <a href="#localizacao"> Localização </a>
       </nav>
 
       <div class="header-actions">
@@ -363,20 +366,27 @@
           </p>
         </div>
       </section>
-      <section class="section about" id="sobre">
-        <div class="about-image">
+      <section
+        class="cd-section cd-about"
+        id="sobre"
+        aria-labelledby="about-title"
+      >
+        <div class="cd-about__visual cd-reveal">
           <img
-            src="./Car Dealer — Extraordinário é o seu próximo destino._files/Mercedes-Benz-GLC-2023-4.jpg"
+            src="./assets/images/showroom-premium.webp"
             alt="Detalhes de um veículo da coleção premium"
             loading="lazy"
+            decoding="async"
           />
-          <div class="image-label">
+          <div class="cd-about__badge">
             PAIXÃO PELO AUTOMÓVEL.<br />RESPEITO PELA SUA ESCOLHA.
           </div>
         </div>
-        <div class="about-copy">
-          <p class="eyebrow">02 / A EXPERIÊNCIA CAR DEALER</p>
-          <h2>Mais que entregar chaves.<br /><em>Abrir possibilidades.</em></h2>
+        <div class="cd-about__copy cd-reveal">
+          <p class="cd-eyebrow">02 / A EXPERIÊNCIA CAR DEALER</p>
+          <h2 id="about-title">
+            Mais que entregar chaves.<br /><em>Abrir possibilidades.</em>
+          </h2>
           <p>
             Um carro é parte da sua rotina, dos seus planos e das histórias que
             você ainda vai viver. Acreditamos que escolher o próximo deve ser
@@ -387,7 +397,7 @@
             próximo e tecnologia para ajudar você a decidir com clareza, no seu
             tempo.
           </p>
-          <div class="values">
+          <div class="cd-values">
             <div>
               <span>◇</span><b>Curadoria de veículos</b>
               <p>Os detalhes fazem a diferença.</p>
@@ -397,17 +407,21 @@
               <p>Uma conversa sobre o que você precisa.</p>
             </div>
           </div>
-          <a
-            class="text-link"
-            href="https://car-dealer-premium.nykolasmachado.chatgpt.site/#localizacao"
+          <a class="cd-text-link" href="#localizacao"
             >Venha viver essa experiência ↗</a
           >
         </div>
       </section>
-      <section class="finance section" id="financiamento">
-        <div>
-          <p class="eyebrow">03 / SEU PRÓXIMO PASSO</p>
-          <h2>Seu próximo carro.<br /><em>Dentro dos seus planos.</em></h2>
+      <section
+        class="cd-section cd-finance"
+        id="financiamento"
+        aria-labelledby="finance-title"
+      >
+        <div class="cd-finance__copy cd-reveal">
+          <p class="cd-eyebrow">03 / SEU PRÓXIMO PASSO</p>
+          <h2 id="finance-title">
+            Seu próximo carro.<br /><em>Dentro dos seus planos.</em>
+          </h2>
           <p>
             Explore valores de entrada e prazo para ter uma primeira ideia das
             parcelas. Depois, converse com um consultor sobre as condições
@@ -419,8 +433,8 @@
             <li>✓ Avalie a possibilidade de usar seu carro na troca</li>
           </ul>
         </div>
-        <form id="finance-form" class="finance-card">
-          <div class="card-title">
+        <form id="finance-form" class="cd-finance-card cd-reveal" novalidate>
+          <div class="cd-card-title">
             <h3>Planeje sua conquista</h3>
             <span>SIMULAÇÃO</span>
           </div>
@@ -430,7 +444,7 @@
             <option value="279900">BMW 530i M Sport — R$ 279.900</option>
             <option value="389900">Mercedes-Benz GLC — R$ 389.900</option>
           </select>
-          <div class="range-label">
+          <div class="cd-range-label">
             <label for="entry">Entrada</label
             ><b id="entry-value">R$&nbsp;315.600 (40%)</b>
           </div>
@@ -442,7 +456,7 @@
             value="40"
             step="5"
           />
-          <div class="range-limits"><span>20%</span><span>80%</span></div>
+          <div class="cd-range-limits"><span>20%</span><span>80%</span></div>
           <label for="months">Em quantos meses?</label
           ><select id="months">
             <option value="24">24 meses</option>
@@ -450,58 +464,68 @@
             <option value="48" selected="">48 meses</option>
             <option value="60">60 meses</option>
           </select>
-          <div class="payment">
+          <output
+            class="cd-payment"
+            for="vehicle-price entry months"
+            aria-live="polite"
+          >
             <span
               >Parcela estimada<small id="finance-total"
                 >48 meses · saldo R$&nbsp;473.400</small
               ></span
             ><strong id="payment-value">R$&nbsp;13.876</strong>
-          </div>
-          <p class="fine">
+          </output>
+          <p class="cd-fine">
             Cálculo ilustrativo a 1,49% a.m., sem IOF, tarifas ou seguros. Não é
             proposta de crédito. Taxa real, CET e aprovação dependem da
             instituição financeira.
           </p>
-          <button type="button" class="button" id="finance-contact">
+          <button type="button" class="cd-button" id="finance-contact">
             Conversar sobre financiamento ↗
           </button>
         </form>
       </section>
-      <section class="section location" id="localizacao">
-        <div class="section-heading">
+      <section
+        class="cd-section cd-location"
+        id="localizacao"
+        aria-labelledby="location-title"
+      >
+        <div class="cd-section-heading cd-reveal">
           <div>
-            <p class="eyebrow">04 / VAMOS NOS CONHECER</p>
-            <h2>O próximo capítulo<br />começa com uma visita.</h2>
+            <p class="cd-eyebrow">04 / VAMOS NOS CONHECER</p>
+            <h2 id="location-title">
+              O próximo capítulo<br />começa com uma visita.
+            </h2>
           </div>
           <p>
             Veja de perto. Sinta os detalhes.<br />Imagine sua próxima viagem.
           </p>
         </div>
-        <div class="location-grid">
-          <div class="location-info">
-            <span class="location-icon">⌖</span>
+        <div class="cd-location__grid cd-reveal">
+          <div class="cd-location__info">
+            <span class="cd-location__icon" aria-hidden="true">⌖</span>
             <h3>Esperamos por você.</h3>
             <p>Rio Grande · Rio Grande do Sul</p>
-            <p class="fine">
+            <p class="cd-fine">
               Localização ilustrativa da cidade.<br />Endereço e horários da
               loja a definir.
             </p>
             <a
-              class="button"
+              class="cd-button"
               target="_blank"
               rel="noopener"
               href="https://www.google.com/maps/search/?api=1&amp;query=Rio+Grande+RS"
               >Abrir no Google Maps ↗</a
-            ><button class="text-link" id="visit">
+            ><button type="button" class="cd-text-link" id="visit">
               Tenho interesse em visitar ↗
             </button>
           </div>
           <iframe
             title="Google Maps — Rio Grande, RS (localização ilustrativa)"
-            src="./Car Dealer — Extraordinário é o seu próximo destino._files/maps.html"
+            src="https://www.google.com/maps?q=Rio+Grande%2C+RS&amp;output=embed"
             loading="lazy"
             referrerpolicy="no-referrer-when-downgrade"
-            allowfullscreen=""
+            allowfullscreen
           ></iframe>
         </div>
       </section>
@@ -540,18 +564,35 @@
       <span> © 2026 Car Dealer IA </span>
     </footer>
     <a
-      class="floating"
-      href="https://car-dealer-premium.nykolasmachado.chatgpt.site/#assistente"
+      class="cd-floating"
+      href="#assistente"
       aria-label="Abrir assistente de compra"
-      >✧ <span>Qual carro combina comigo?</span></a
+      ><span class="cd-floating__icon" aria-hidden="true">✦</span
+      ><span>Qual carro combina comigo?</span></a
     >
-    <dialog id="detail">
-      <button class="close" aria-label="Fechar">×</button>
-      <div id="detail-content"></div>
+    <dialog id="detail" class="cd-dialog" aria-labelledby="detail-title">
+      <button type="button" class="cd-dialog__close" aria-label="Fechar">
+        ×
+      </button>
+      <div id="detail-content">
+        <span class="cd-dialog__icon" aria-hidden="true">✦</span>
+        <p class="cd-eyebrow">ATENDIMENTO CAR DEALER IA</p>
+        <h2 id="detail-title">Vamos continuar essa conversa?</h2>
+        <p id="detail-description">
+          Conte como podemos ajudar. A mensagem será preparada para o WhatsApp.
+        </p>
+        <label for="detail-message">Mensagem</label>
+        <textarea id="detail-message" maxlength="500"></textarea>
+        <button type="button" class="cd-button" id="detail-submit">
+          Continuar no WhatsApp ↗
+        </button>
+        <p class="cd-dialog__status" id="detail-status" aria-live="polite"></p>
+      </div>
     </dialog>
 
     <script src="./js/config.js"></script>
 
     <script src="./js/app.js"></script>
+    <script src="./js/sections.js"></script>
   </body>
 </html>
