@@ -1261,3 +1261,105 @@
     width: 220px;
   }
 }
+
+/* =========================================
+   NOTIFICAÇÃO DE LEAD - AJUSTE VISUAL
+========================================= */
+
+.lead-notification {
+  position: fixed;
+  top: 22px;
+  right: 24px;
+  z-index: 9999;
+  width: min(360px, calc(100vw - 32px));
+  min-height: 76px;
+  display: grid;
+  grid-template-columns: 42px 1fr 28px;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 14px 14px 16px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: linear-gradient(
+    145deg,
+    rgba(20, 24, 33, 0.98),
+    rgba(9, 12, 17, 0.98)
+  );
+  box-shadow: 0 22px 60px rgba(0, 0, 0, 0.45);
+  color: #f8fafc;
+}
+
+.lead-notification::before {
+  content: "!";
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: rgba(255, 77, 18, 0.16);
+  color: #ff4d12;
+  font-size: 20px;
+  font-weight: 900;
+}
+
+.lead-notification strong {
+  display: block;
+  max-width: 100%;
+  color: #ffffff;
+  font-size: 15px;
+  line-height: 1.15;
+  font-weight: 900;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lead-notification small {
+  display: block;
+  margin-top: 4px;
+  color: #aeb8c8;
+  font-size: 13px;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lead-notification button {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #ffffff;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.lead-notification button:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.lead-notification.hidden,
+.lead-notification[hidden] {
+  display: none !important;
+}
+
+.lead-notification.is-visible {
+  animation: leadNotificationIn 0.22s ease-out;
+}
+
+@keyframes leadNotificationIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
