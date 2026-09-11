@@ -12,6 +12,49 @@
   const byId = (id) => document.getElementById(id);
 
   /* ==========================================
+     ESTOQUE REAL (COMPARTILHADO ENTRE
+     O SIMULADOR DE FINANCIAMENTO E O
+     ASSISTENTE DE MATCH)
+  ========================================== */
+
+  let vehiclesPromise = null;
+
+  function fetchVehicles() {
+    if (vehiclesPromise) {
+      return vehiclesPromise;
+    }
+
+    vehiclesPromise = fetch(`${API_URL}/vehicles`)
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Erro ao buscar veículos.");
+        }
+
+        return response.json();
+      })
+      .then((data) => {
+        const list = Array.isArray(data) ? data : data.vehicles || data.data || [];
+
+        return list.filter((vehicle) => vehicle.status !== "sold");
+      })
+      .catch((error) => {
+        vehiclesPromise = null;
+
+        throw error;
+      });
+
+    return vehiclesPromise;
+  }
+
+  function normalizeText(value) {
+    return String(value || "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .trim()
+      .toLowerCase();
+  }
+
+  /* ==========================================
      NAVEGAÇÃO SUAVE ENTRE AS SEÇÕES
   ========================================== */
 
@@ -169,6 +212,132 @@
     });
 
     update();
+  }
+
+  /* ==========================================
+     PREENCHE O SIMULADOR COM O ESTOQUE REAL
+  ========================================== */
+
+  function populateFinanceVehicles() {
+    const priceField = byId("vehicle-price");
+
+    if (!priceField) {
+      return;
+    }
+
+    fetchVehicles()
+      .then((vehicles) => {
+        const priced = vehicles
+          .filter(
+            (vehicle) =>
+              vehicle.status === "available" && Number(vehicle.price) > 0,
+          )
+          .sort((a, b) => Number(a.price) - Number(b.price));
+
+        if (!priced.length) {
+          return;
+        }
+
+        priceField.innerHTML = priced
+          .map((vehicle) => {
+            const label = `${vehicle.brand || ""} ${vehicle.model || ""} — ${money.format(Number(vehicle.price))}`;
+
+            return `<option value="${Number(vehicle.price)}">${label}</option>`;
+          })
+          .join("");
+
+        priceField.dispatchEvent(new Event("change"));
+      })
+      .catch((error) => {
+        console.error(
+          "Não foi possível carregar o estoque para a simulação:",
+          error,
+        );
+      });
+  }
+
+  /* ==========================================
+     ASSISTENTE DE MATCH (PERFIL + ORÇAMENTO)
+  ========================================== */
+
+  function vehicleMatchesProfile(vehicle, profile) {
+    const bodyType = normalizeText(vehicle.body_type);
+    const target = normalizeText(profile);
+
+    if (!bodyType || !target) {
+      return false;
+    }
+
+    return bodyType.includes(target) || target.includes(bodyType);
+  }
+
+  function renderMatchResult(container, vehicles) {
+    if (!vehicles.length) {
+      container.innerHTML =
+        "<p>Ainda não temos um veículo desse perfil dentro desse orçamento. Fale com a gente pelo WhatsApp para saber sobre as próximas chegadas.</p>";
+
+      return;
+    }
+
+    const items = vehicles
+      .slice(0, 3)
+      .map((vehicle) => {
+        const label = `${vehicle.brand || ""} ${vehicle.model || ""}`.trim();
+
+        return `<li><a href="./vehicle.html?id=${vehicle.id}">${label} — ${money.format(Number(vehicle.price))}</a></li>`;
+      })
+      .join("");
+
+    container.innerHTML = `<p>Encontramos ${vehicles.length === 1 ? "esta opção" : "estas opções"} no estoque para o seu perfil:</p><ul class="match-list">${items}</ul>`;
+  }
+
+  function setupMatchForm() {
+    const form = byId("match-form");
+    const result = byId("match-result");
+    const budgetField = byId("budget");
+
+    if (!form || !result || !budgetField) {
+      return;
+    }
+
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+
+      const profile =
+        form.querySelector('input[name="profile"]:checked')?.value || "";
+
+      const budget = Number(budgetField.value);
+
+      const submitButton = form.querySelector('button[type="submit"]');
+
+      if (submitButton) {
+        submitButton.disabled = true;
+      }
+
+      result.innerHTML = "<p>Buscando no estoque...</p>";
+
+      fetchVehicles()
+        .then((vehicles) => {
+          const matches = vehicles
+            .filter((vehicle) => vehicle.status === "available")
+            .filter((vehicle) => !budget || Number(vehicle.price) <= budget)
+            .filter((vehicle) => vehicleMatchesProfile(vehicle, profile))
+            .sort((a, b) => Number(b.price) - Number(a.price));
+
+          renderMatchResult(result, matches);
+        })
+        .catch((error) => {
+          console.error("Não foi possível buscar o estoque:", error);
+
+          result.innerHTML =
+            "<p>Não foi possível consultar o estoque agora. Tente novamente em instantes.</p>";
+        })
+        .finally(() => {
+          if (submitButton) {
+            submitButton.disabled = false;
+          }
+        });
+    });
   }
 
   /* ==========================================
@@ -352,6 +521,8 @@ Gostaria de conhecer as condições reais.`;
     setupReveal();
     setupAboutImageFallback();
     setupFinance();
+    populateFinanceVehicles();
+    setupMatchForm();
     setupContactDialog();
   }
 

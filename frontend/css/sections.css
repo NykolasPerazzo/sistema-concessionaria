@@ -393,6 +393,33 @@
   line-height: 1.6;
 }
 
+#match-result p {
+  margin: 0 0 8px;
+}
+
+#match-result .match-list {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+#match-result .match-list a {
+  display: block;
+  padding: 8px 10px;
+  border: 1px solid rgba(244, 180, 0, 0.25);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--cd-ink);
+  font-weight: 650;
+  transition: border-color 160ms ease;
+}
+
+#match-result .match-list a:hover {
+  border-color: var(--cd-accent-strong);
+}
+
 /* SOBRE */
 .cd-about {
   display: grid;
