@@ -88,11 +88,14 @@ app.use((req, res, next) => {
   const origin = req.get("origin");
   const fetchSite = req.get("sec-fetch-site");
 
-  if (
-    (origin && !allowedOrigins.includes(origin)) ||
-    fetchSite === "cross-site"
-  ) {
-    return res.status(403).json({ error: "Origem da requisição não permitida." });
+  const hasDisallowedOrigin = origin && !allowedOrigins.includes(origin);
+
+  const isUnidentifiedCrossSiteRequest = !origin && fetchSite === "cross-site";
+
+  if (hasDisallowedOrigin || isUnidentifiedCrossSiteRequest) {
+    return res.status(403).json({
+      error: "Origem da requisição não permitida.",
+    });
   }
 
   return next();
