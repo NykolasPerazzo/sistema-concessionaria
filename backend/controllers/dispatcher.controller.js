@@ -93,9 +93,19 @@ function optionalId(value, label) {
 
 function optionalMoney(value, label) {
   if (value == null || value === "") return null;
+  const text = String(value);
+  const parts = text.split(".");
+  const hasValidFormat =
+    parts.length <= 2 &&
+    parts[0].length > 0 &&
+    parts.every((part) =>
+      [...part].every((character) => character >= "0" && character <= "9"),
+    ) &&
+    (parts.length === 1 || (parts[1].length >= 1 && parts[1].length <= 2));
+
   if (
     !["number", "string"].includes(typeof value) ||
-    !/^\d+(\.\d{1,2})?$/.test(String(value)) ||
+    !hasValidFormat ||
     Number(value) > 100000000
   )
     throw fail(400, `${label} inválido.`);
@@ -148,7 +158,14 @@ function validateCore(body) {
   };
 }
 
-async function timelineEvent(client, processId, type, content, userId, extra = {}) {
+async function timelineEvent(
+  client,
+  processId,
+  type,
+  content,
+  userId,
+  extra = {},
+) {
   await client.query(
     `INSERT INTO dispatcher_timeline(process_id, event_type, content, previous_status, new_status, created_by)
      VALUES($1,$2,$3,$4,$5,$6)`,
@@ -250,7 +267,9 @@ async function getProcesses(req, res) {
     }
     if (q.responsible) {
       if (!validId(q.responsible)) throw fail(400, "Responsável inválido.");
-      conditions.push(`p.responsible_user_id = ${param(Number(q.responsible))}`);
+      conditions.push(
+        `p.responsible_user_id = ${param(Number(q.responsible))}`,
+      );
     }
     if (q.customer) {
       if (!validId(q.customer)) throw fail(400, "Cliente inválido.");
@@ -272,9 +291,11 @@ async function getProcesses(req, res) {
       );
     }
     const visible = visibility(req.user, params);
-    const where = ["1=1", ...conditions, visible.sql.replace(/^AND /, "")].filter(
-      Boolean,
-    );
+    const where = [
+      "1=1",
+      ...conditions,
+      visible.sql.replace(/^AND /, ""),
+    ].filter(Boolean);
     const sql = `SELECT ${PROJECTION} ${JOINS} WHERE ${where.join(" AND ")} ORDER BY p.created_at DESC, p.id DESC`;
     const result = await pool.query(sql, params);
     res.json({ processes: result.rows });
@@ -359,7 +380,13 @@ async function createProcess(req, res) {
       );
       const saved = result.rows[0];
       await seedChecklist(client, saved.id, body.service_type, req.user.sub);
-      await timelineEvent(client, saved.id, "created", "Processo criado.", req.user.sub);
+      await timelineEvent(
+        client,
+        saved.id,
+        "created",
+        "Processo criado.",
+        req.user.sub,
+      );
       return saved;
     });
     res.status(201).json({ message: "Processo criado.", process });
@@ -378,7 +405,10 @@ async function lockedProcess(client, req) {
   const process = result.rows[0];
   if (!process) throw fail(404, "Processo não encontrado.");
   if (process.version !== Number(req.body.version))
-    throw fail(409, "Este processo foi atualizado. Recarregue antes de continuar.");
+    throw fail(
+      409,
+      "Este processo foi atualizado. Recarregue antes de continuar.",
+    );
   return process;
 }
 
@@ -387,8 +417,14 @@ async function updateProcess(req, res) {
     const body = req.body || {};
     const priority = body.priority || "normal";
     if (!PRIORITIES.includes(priority)) throw fail(400, "Prioridade inválida.");
-    const responsibleUserId = optionalId(body.responsible_user_id, "Responsável");
-    const estimatedValue = optionalMoney(body.estimated_value, "Valor estimado");
+    const responsibleUserId = optionalId(
+      body.responsible_user_id,
+      "Responsável",
+    );
+    const estimatedValue = optionalMoney(
+      body.estimated_value,
+      "Valor estimado",
+    );
     const deadline = body.expected_deadline || null;
     if (deadline !== null && !validDate(deadline))
       throw fail(400, "Prazo previsto inválido.");
@@ -409,9 +445,22 @@ async function updateProcess(req, res) {
           priority=$2, responsible_user_id=$3, estimated_value=$4,
           expected_deadline=$5, notes=$6, version=version+1, updated_at=NOW()
         WHERE id=$1`,
-        [process.id, priority, responsibleUserId, estimatedValue, deadline, notes],
+        [
+          process.id,
+          priority,
+          responsibleUserId,
+          estimatedValue,
+          deadline,
+          notes,
+        ],
       );
-      await timelineEvent(client, process.id, "updated", "Dados do processo atualizados.", req.user.sub);
+      await timelineEvent(
+        client,
+        process.id,
+        "updated",
+        "Dados do processo atualizados.",
+        req.user.sub,
+      );
     });
     res.json({ message: "Processo atualizado." });
   } catch (error) {
@@ -459,10 +508,17 @@ async function changeStatus(req, res) {
       );
       const observation = note || cancellationReason;
       const description = `${STATUS_LABELS[process.status]} → ${STATUS_LABELS[target]}${observation ? `: ${observation}` : ""}`;
-      await timelineEvent(client, process.id, "status_changed", description, req.user.sub, {
-        previousStatus: process.status,
-        newStatus: target,
-      });
+      await timelineEvent(
+        client,
+        process.id,
+        "status_changed",
+        description,
+        req.user.sub,
+        {
+          previousStatus: process.status,
+          newStatus: target,
+        },
+      );
     });
     res.json({ message: "Status atualizado." });
   } catch (error) {
@@ -502,13 +558,22 @@ async function addDocument(req, res) {
       const process = processResult.rows[0];
       if (!process) throw fail(404, "Processo não encontrado.");
       if (CLOSED_STATUSES.includes(process.status))
-        throw fail(409, "Processo encerrado. Não é possível adicionar documentos.");
+        throw fail(
+          409,
+          "Processo encerrado. Não é possível adicionar documentos.",
+        );
       const inserted = await client.query(
         `INSERT INTO dispatcher_documents(process_id, name, description, is_required, created_by)
          VALUES($1,$2,$3,$4,$5) RETURNING *`,
         [process.id, name, description, isRequired, req.user.sub],
       );
-      await timelineEvent(client, process.id, "document_added", `Documento adicionado ao checklist: ${name}.`, req.user.sub);
+      await timelineEvent(
+        client,
+        process.id,
+        "document_added",
+        `Documento adicionado ao checklist: ${name}.`,
+        req.user.sub,
+      );
       return inserted.rows[0];
     });
     res.status(201).json({ document: result });
@@ -547,10 +612,15 @@ async function updateDocument(req, res) {
       );
       const process = processResult.rows[0];
       if (CLOSED_STATUSES.includes(process.status))
-        throw fail(409, "Processo encerrado. Não é possível alterar documentos.");
+        throw fail(
+          409,
+          "Processo encerrado. Não é possível alterar documentos.",
+        );
       const nextStatus = status || document.status;
-      const submittedAt = nextStatus === "enviado" ? new Date() : document.submitted_at;
-      const submittedBy = nextStatus === "enviado" ? req.user.sub : document.submitted_by;
+      const submittedAt =
+        nextStatus === "enviado" ? new Date() : document.submitted_at;
+      const submittedBy =
+        nextStatus === "enviado" ? req.user.sub : document.submitted_by;
       const reviewedAt = ["aprovado", "rejeitado"].includes(nextStatus)
         ? new Date()
         : document.reviewed_at;
@@ -574,18 +644,26 @@ async function updateDocument(req, res) {
           reviewedBy,
           hasName ? name : document.name,
           hasDescription ? description : document.description,
-          hasRequiredFlag ? req.body.is_required !== false : document.is_required,
+          hasRequiredFlag
+            ? req.body.is_required !== false
+            : document.is_required,
         ],
       );
       if (status && status !== document.status) {
         let content;
-        if (status === "rejeitado") content = `${document.name} rejeitado: ${rejectionReason}`;
+        if (status === "rejeitado")
+          content = `${document.name} rejeitado: ${rejectionReason}`;
         else if (status === "aprovado") content = `${document.name} aprovado.`;
-        else content = `${document.name} marcado como "${DOCUMENT_STATUS_LABELS[status]}".`;
+        else
+          content = `${document.name} marcado como "${DOCUMENT_STATUS_LABELS[status]}".`;
         await timelineEvent(
           client,
           document.process_id,
-          status === "aprovado" ? "document_approved" : status === "rejeitado" ? "document_rejected" : "document_updated",
+          status === "aprovado"
+            ? "document_approved"
+            : status === "rejeitado"
+              ? "document_rejected"
+              : "document_updated",
           content,
           req.user.sub,
         );
@@ -607,7 +685,13 @@ async function deleteDocument(req, res) {
       );
       const document = result.rows[0];
       if (!document) throw fail(404, "Documento não encontrado.");
-      await timelineEvent(client, document.process_id, "document_removed", `Documento removido do checklist: ${document.name}.`, req.user.sub);
+      await timelineEvent(
+        client,
+        document.process_id,
+        "document_removed",
+        `Documento removido do checklist: ${document.name}.`,
+        req.user.sub,
+      );
     });
     res.json({ message: "Documento excluído." });
   } catch (error) {
@@ -659,7 +743,8 @@ async function createFromSale(req, res) {
          ORDER BY id DESC LIMIT 1`,
         [sale.id],
       );
-      if (existing.rows[0]) return { process: existing.rows[0], created: false };
+      if (existing.rows[0])
+        return { process: existing.rows[0], created: false };
       const inserted = await client.query(
         `INSERT INTO dispatcher_processes(
           service_type, vehicle_id, vehicle_label, customer_id, sale_id, notes, created_by
@@ -674,8 +759,19 @@ async function createFromSale(req, res) {
         ],
       );
       const saved = inserted.rows[0];
-      await seedChecklist(client, saved.id, "transferencia_propriedade", req.user.sub);
-      await timelineEvent(client, saved.id, "created", `Processo criado a partir da venda #${sale.id}.`, req.user.sub);
+      await seedChecklist(
+        client,
+        saved.id,
+        "transferencia_propriedade",
+        req.user.sub,
+      );
+      await timelineEvent(
+        client,
+        saved.id,
+        "created",
+        `Processo criado a partir da venda #${sale.id}.`,
+        req.user.sub,
+      );
       return { process: saved, created: true };
     });
     res.status(result.created ? 201 : 200).json(result);

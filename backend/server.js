@@ -76,6 +76,28 @@ app.use(
 );
 app.use(cookieParser());
 
+/*
+ * As sessões usam JWT em cookie. Para requisições que alteram dados,
+ * rejeita chamadas iniciadas por outros sites antes que cheguem às rotas.
+ */
+app.use((req, res, next) => {
+  if (["GET", "HEAD", "OPTIONS"].includes(req.method)) {
+    return next();
+  }
+
+  const origin = req.get("origin");
+  const fetchSite = req.get("sec-fetch-site");
+
+  if (
+    (origin && !allowedOrigins.includes(origin)) ||
+    fetchSite === "cross-site"
+  ) {
+    return res.status(403).json({ error: "Origem da requisição não permitida." });
+  }
+
+  return next();
+});
+
 app.use("/api/vehicle-images", vehicleImagesRoutes);
 app.use("/api/auth", authRoutes);
 

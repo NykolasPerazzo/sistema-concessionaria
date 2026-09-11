@@ -117,8 +117,8 @@ async function loadGallery(id) {
     existingGalleryImages = data.images || [];
 
     renderGallery();
-  } catch (error) {
-    console.error(error);
+  } catch {
+    console.error("Não foi possível carregar a galeria do veículo.");
   }
 }
 
