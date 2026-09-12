@@ -15,11 +15,16 @@
       </div>
       <nav aria-label="Administração">
         <a href="./index.html">Dashboard</a
-        ><a href="./vehicles.html">Veículos</a><a href="./leads.html">Leads<span class="nav-badge" id="leadsNavBadge" hidden>0</span></a>
+        ><a href="./vehicles.html">Veículos</a
+        ><a href="./leads.html"
+          >Leads<span class="nav-badge" id="leadsNavBadge" hidden>0</span></a
+        >
         <a href="./customers.html">Clientes</a>
         <a href="./proposals.html">Propostas</a>
         <a href="./sales.html">Vendas</a>
-        <a href="./despachante.html" class="active" aria-current="page">Despachante</a>
+        <a href="./despachante.html" class="active" aria-current="page"
+          >Despachante</a
+        >
         <a href="./ai.html">IA</a><a href="./settings.html">Configurações</a>
       </nav>
       <a href="../index.html" class="public-site">← Ver site público</a>
@@ -46,7 +51,8 @@
           <span>Processos ativos</span><strong id="statActive">—</strong>
         </article>
         <article>
-          <span>Documentos pendentes</span><strong id="statPendingDocs">—</strong>
+          <span>Documentos pendentes</span
+          ><strong id="statPendingDocs">—</strong>
         </article>
         <article class="dispatcher-stat-danger">
           <span>Processos atrasados</span><strong id="statOverdue">—</strong>
@@ -106,8 +112,8 @@
             </select></label
           >
           <label style="flex-direction: row; align-items: center; gap: 8px"
-            ><input id="overdueFilter" type="checkbox" style="width: auto" />
-            Só atrasados</label
+            ><input id="overdueFilter" type="checkbox" style="width: auto" /> Só
+            atrasados</label
           >
           <button class="sales-secondary" type="submit">Filtrar</button>
           <button class="sales-link" id="clearFilters" type="button">
@@ -139,7 +145,11 @@
       </section>
     </main>
 
-    <dialog id="processDialog" class="sales-dialog" aria-labelledby="processTitle">
+    <dialog
+      id="processDialog"
+      class="sales-dialog"
+      aria-labelledby="processTitle"
+    >
       <div class="sales-dialog-heading">
         <div>
           <span class="eyebrow">NOVO PROCESSO</span>
@@ -180,7 +190,10 @@
             </select></label
           >
           <label
-            >Responsável (opcional)<select id="responsibleSelect" name="responsible_user_id">
+            >Responsável (opcional)<select
+              id="responsibleSelect"
+              name="responsible_user_id"
+            >
               <option value="">Sem responsável definido</option>
             </select></label
           >
