@@ -103,7 +103,7 @@ button {
     rgba(255, 90, 31, 0.05)
   );
   color: var(--text-color);
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .nav-link.active::before {
