@@ -51,6 +51,9 @@
     mixed: "Misto / com troca",
   };
 
+  const SELLER_COLORS = ["#ff5a2e", "#3d8bff", "#8b6bff", "#22c55e", "#f5a623"];
+  const SELLER_FALLBACK_COLOR = "#6b7280";
+
   let vehicles = [];
   let sellers = [];
   let sales = [];
@@ -386,45 +389,59 @@
           ? "Vendedor não informado"
           : text(sale.seller_name, `Vendedor #${sale.seller_id}`);
 
-      const current = groups.get(key) || { label, count: 0, revenue: 0, profit: 0 };
+      const current = groups.get(key) || { label, count: 0, revenue: 0 };
 
       current.count += 1;
       current.revenue += sale.sale_price;
-      current.profit += sale.profit;
 
       groups.set(key, current);
     });
 
-    const ranking = [...groups.values()]
-      .map((group) => ({
-        ...group,
-        averageTicket: group.count ? group.revenue / group.count : 0,
-      }))
-      .sort((a, b) => b.revenue - a.revenue);
+    const ranking = [...groups.values()].sort((a, b) => b.revenue - a.revenue);
 
     const maximum = Math.max(...ranking.map((group) => group.revenue), 1);
 
+    const header = createNode("div", "", "sales-performance-header");
+
+    header.append(
+      createNode("span", "Vendedor"),
+      createNode("span", "Vendas"),
+      createNode("span", "Valor vendido"),
+    );
+
+    container.append(header);
+
+    let colorIndex = 0;
+
     ranking.slice(0, 6).forEach((group) => {
+      const isUnassigned = group.label === "Vendedor não informado";
+
+      const color = isUnassigned
+        ? SELLER_FALLBACK_COLOR
+        : SELLER_COLORS[colorIndex++ % SELLER_COLORS.length];
+
       const item = createNode("div", "", "sales-performance-item");
 
-      const heading = createNode("div", "", "sales-performance-heading");
+      const info = createNode("div", "", "sales-performance-info");
 
-      heading.append(
-        createNode("strong", group.label),
-        createNode(
-          "span",
-          `${group.count} venda(s) • ${money(group.revenue)} • resultado ${money(group.profit)} • ticket médio ${money(group.averageTicket)}`,
-        ),
-      );
+      info.append(createNode("strong", group.label, "sales-performance-name"));
 
       const track = createNode("div", "", "sales-performance-track");
 
       const bar = createNode("span", "", "sales-performance-bar");
 
-      bar.style.width = `${Math.max((group.revenue / maximum) * 100, 8)}%`;
+      bar.style.width = `${Math.max((group.revenue / maximum) * 100, 6)}%`;
+      bar.style.background = color;
 
       track.append(bar);
-      item.append(heading, track);
+      info.append(track);
+
+      item.append(
+        info,
+        createNode("span", String(group.count), "sales-performance-count"),
+        createNode("span", money(group.revenue), "sales-performance-value"),
+      );
+
       container.append(item);
     });
   }
