@@ -69,9 +69,7 @@
   function showMessage(id, content = "", error = false) {
     const element = $(id);
 
-    if (!element) {
-      return;
-    }
+    if (!element) return;
 
     element.textContent = content;
     element.hidden = !content;
@@ -100,7 +98,6 @@
 
     if (response.status === 401) {
       window.location.href = "./login.html";
-
       throw new Error("Sua sessão expirou.");
     }
 
@@ -205,7 +202,6 @@
     const version = ++requestVersion;
 
     salesAbortController?.abort();
-
     salesAbortController = new AbortController();
 
     try {
@@ -213,9 +209,7 @@
         signal: salesAbortController.signal,
       });
 
-      if (version !== requestVersion) {
-        return;
-      }
+      if (version !== requestVersion) return;
 
       sales = Array.isArray(data.sales) ? data.sales.map(normalizeSale) : [];
 
@@ -226,7 +220,6 @@
       }
 
       sales = [];
-
       renderSales();
 
       [
@@ -294,7 +287,6 @@
     const formattedMargin = `${summary.margin.toFixed(1).replace(".", ",")}%`;
 
     setText("salesMargin", formattedMargin);
-
     setText("salesInsightMargin", formattedMargin);
 
     setText("historyCount", `${sales.length} registro(s)`);
@@ -313,9 +305,7 @@
   function renderPerformance(activeSales) {
     const container = $("salesPerformance");
 
-    if (!container) {
-      return;
-    }
+    if (!container) return;
 
     container.replaceChildren();
 
@@ -331,13 +321,39 @@
       return;
     }
 
+    const hasSellerData = activeSales.some((sale) =>
+      String(sale.seller_name || sale.user_name || "").trim(),
+    );
+
+    if (!hasSellerData) {
+      const totalRevenue = activeSales.reduce(
+        (sum, sale) => sum + sale.sale_price,
+        0,
+      );
+
+      const item = createNode("div", "", "sales-performance-summary");
+
+      item.append(
+        createNode("strong", "Resultado geral da loja"),
+        createNode(
+          "span",
+          `${activeSales.length} venda(s) no período • ${money(totalRevenue)}`,
+        ),
+        createNode(
+          "small",
+          "Cadastre o vendedor na venda para visualizar o ranking individual.",
+        ),
+      );
+
+      container.append(item);
+
+      return;
+    }
+
     const groups = new Map();
 
     activeSales.forEach((sale) => {
-      const seller = text(
-        sale.seller_name || sale.user_name,
-        "Equipe comercial",
-      );
+      const seller = text(sale.seller_name || sale.user_name, "Não informado");
 
       const current = groups.get(seller) || {
         count: 0,
@@ -373,20 +389,30 @@
       bar.style.width = `${Math.max((value.revenue / maximum) * 100, 8)}%`;
 
       track.append(bar);
-
       item.append(heading, track);
-
       container.append(item);
     });
   }
 
   function renderIntelligence(summary) {
-    const lowMarginSales = summary.active.filter((sale) => {
+    const criticalMarginSales = summary.active.filter((sale) => {
       if (!sale.sale_price) {
         return false;
       }
 
-      return (sale.profit / sale.sale_price) * 100 < 8;
+      const margin = (sale.profit / sale.sale_price) * 100;
+
+      return margin >= 0 && margin < 5;
+    });
+
+    const attentionMarginSales = summary.active.filter((sale) => {
+      if (!sale.sale_price) {
+        return false;
+      }
+
+      const margin = (sale.profit / sale.sale_price) * 100;
+
+      return margin >= 5 && margin < 12;
     });
 
     const negativeSales = summary.active.filter((sale) => sale.profit < 0);
@@ -412,11 +438,18 @@
         "Revise os custos cadastrados e a estratégia de preço desses negócios.";
 
       level = "critical";
-    } else if (lowMarginSales.length) {
-      title = `${lowMarginSales.length} venda(s) com margem abaixo do ideal`;
+    } else if (criticalMarginSales.length) {
+      title = `${criticalMarginSales.length} venda(s) com margem crítica`;
 
       description =
-        "A IA recomenda revisar descontos e despesas antes da próxima negociação.";
+        "Revise descontos, custo de compra e despesas antes de repetir esse tipo de negociação.";
+
+      level = "critical";
+    } else if (attentionMarginSales.length) {
+      title = `${attentionMarginSales.length} venda(s) com margem que exige atenção`;
+
+      description =
+        "A margem está positiva, mas abaixo da referência inicial de 12%.";
 
       level = "attention";
     }
@@ -602,7 +635,6 @@
       showMessage("formMessage");
 
       $("saleDate").value = localToday;
-
       $("saleDate").max = localToday;
 
       if (vehicleId) {
@@ -704,7 +736,6 @@
 
       if (response.status === 401) {
         location.href = "./login.html";
-
         return;
       }
 
@@ -733,9 +764,7 @@
   async function submitSale(event) {
     event.preventDefault();
 
-    if (submitting) {
-      return;
-    }
+    if (submitting) return;
 
     submitting = true;
 
@@ -794,9 +823,7 @@
       "Confirmar o cancelamento e devolver o veículo ao estoque?",
     );
 
-    if (!confirmed) {
-      return;
-    }
+    if (!confirmed) return;
 
     submitting = true;
 
@@ -868,7 +895,7 @@
       const summary = calculateSummary();
 
       const messageText = summary.active.length
-        ? `No período, foram realizadas ${summary.active.length} venda(s), com ${money(summary.revenue)} em receita e ${money(summary.profit)} de resultado.`
+        ? `Resumo automático: ${summary.active.length} venda(s), ${money(summary.revenue)} em receita, ${money(summary.profit)} de resultado e margem de ${summary.margin.toFixed(1).replace(".", ",")}%.`
         : "Ainda não há vendas no período selecionado para uma análise completa.";
 
       showMessage("pageMessage", messageText, false);
@@ -923,9 +950,7 @@
 
     const user = await requireAuth();
 
-    if (!user) {
-      return;
-    }
+    if (!user) return;
 
     if (user.role !== "admin") {
       showMessage(
