@@ -102,7 +102,7 @@ button {
     rgba(255, 90, 31, 0.2),
     rgba(255, 90, 31, 0.05)
   );
-  color: var(--accent);
+  color: var(--text-color);
   font-weight: 800;
 }
 

@@ -15,6 +15,7 @@
   --lead-green: #3ddc7a;
   --lead-red: #ff443a;
   --lead-blue: #4895ff;
+  --lead-purple: #8b6bff;
 }
 
 .leads-command-page {
@@ -205,19 +206,218 @@
 }
 .leads-filters .sales-secondary { min-height: 42px; border-radius: 8px; border: 1px solid var(--lead-border); background: #121722; color: #fff; font-weight: 800; }
 
-.lead-card-table { width: 100%; border-collapse: separate; border-spacing: 0; }
-.lead-card-table thead { display: none; }
-.lead-card-table tbody { display: grid; grid-template-columns: repeat(4, minmax(190px, 1fr)); gap: 10px; }
-.lead-card-table tr { display: block; min-height: 92px; border: 1px solid var(--lead-border); border-radius: 10px; background: rgba(255,255,255,0.025); overflow: hidden; }
-.lead-card-table td { display: block; padding: 8px 12px; border: 0; color: #cbd5e1; font-size: 13px; }
-.lead-card-table td:first-child { padding-top: 12px; color: #fff; font-weight: 900; }
-.lead-card-table td:nth-child(2) { color: #aeb8c8; }
-.lead-card-table td:nth-child(3) { display: inline-block; margin-left: 12px; border-radius: 999px; padding: 5px 9px; background: rgba(255, 77, 18, 0.14); color: #ff8a50; font-weight: 900; }
-.lead-card-table td:nth-child(4) { color: var(--lead-yellow); font-weight: 800; }
-.lead-card-table td:nth-child(5) { display: flex; flex-wrap: wrap; gap: 6px; padding-bottom: 12px; }
-.lead-card-table td:nth-child(5) button,
-.lead-card-table td:nth-child(5) a { min-height: 30px; border-radius: 7px; border: 1px solid var(--lead-border); background: transparent; color: #fff; padding: 0 9px; font-size: 12px; font-weight: 800; }
-.lead-card-table .sales-empty { grid-column: 1 / -1; min-height: 120px; display: grid; place-items: center; color: #aeb8c8; }
+.leads-board {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(228px, 1fr);
+  gap: 12px;
+  align-items: start;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.lead-column {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid var(--lead-border);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.lead-column-head {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.lead-column-dot {
+  width: 9px;
+  height: 9px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--lead-blue);
+}
+
+.lead-column[data-status="contacting"] .lead-column-dot {
+  background: var(--lead-yellow);
+}
+
+.lead-column[data-status="qualified"] .lead-column-dot {
+  background: var(--lead-purple);
+}
+
+.lead-column[data-status="converted"] .lead-column-dot {
+  background: var(--lead-green);
+}
+
+.lead-column[data-status="lost"] .lead-column-dot {
+  background: var(--lead-red);
+}
+
+.lead-column-head h3 {
+  margin: 0;
+  overflow: hidden;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 800;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.lead-column-count {
+  flex: none;
+  min-width: 20px;
+  height: 20px;
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #cbd5e1;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.lead-column-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 30px;
+}
+
+.lead-card {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr);
+  gap: 10px;
+  padding: 11px;
+  border: 1px solid var(--lead-border);
+  border-radius: 9px;
+  background: linear-gradient(
+    145deg,
+    rgba(255, 255, 255, 0.035),
+    rgba(255, 255, 255, 0.01)
+  );
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.lead-card:hover {
+  border-color: rgba(255, 77, 18, 0.55);
+}
+
+.lead-card-avatar {
+  width: 32px;
+  height: 32px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.lead-card-body {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.lead-card-name {
+  overflow: hidden;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 800;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.lead-card-interest {
+  overflow: hidden;
+  color: #9aa5b5;
+  font-size: 12px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.lead-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
+  margin-top: 2px;
+}
+
+.lead-card-channel {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #8f9aaa;
+  font-size: 11px;
+}
+
+.lead-card-time {
+  color: #6b7684;
+  font-size: 11px;
+}
+
+.lead-card-overdue {
+  color: var(--lead-red);
+  font-weight: 800;
+}
+
+.lead-card-tag {
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.lead-card-tag.lead-hot {
+  background: rgba(255, 68, 58, 0.16);
+  color: #ff6b61;
+}
+
+.lead-card-tag.lead-warm {
+  background: rgba(255, 210, 53, 0.16);
+  color: var(--lead-yellow);
+}
+
+.lead-card-tag.lead-cold {
+  background: rgba(72, 149, 255, 0.16);
+  color: var(--lead-blue);
+}
+
+.lead-column-add {
+  min-height: 38px;
+  border: 1px dashed var(--lead-border);
+  border-radius: 8px;
+  background: transparent;
+  color: #9aa5b5;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.lead-column-add:hover {
+  border-color: var(--lead-orange);
+  color: #fff;
+}
+
+.lead-column-empty {
+  padding: 10px 4px;
+  color: #6b7684;
+  font-size: 12px;
+  text-align: center;
+}
+
 .leads-command-page .sales-footnote { color: #8f9aaa; font-size: 12px; }
 
 .leads-ai-sidebar {
@@ -268,7 +468,6 @@
   .leads-ai-sidebar { position: relative; height: auto; border-left: 0; border-top: 1px solid var(--lead-border); }
   .leads-kpi-grid { grid-template-columns: repeat(2, 1fr); }
   .leads-filters { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .lead-card-table tbody { grid-template-columns: repeat(2, minmax(210px, 1fr)); }
 }
 
 @media (max-width: 760px) {
@@ -279,5 +478,6 @@
   .leads-content { padding: 16px; }
   .leads-hero, .leads-hero-actions, .lead-ai-recommendation, .command-meta-card { display: grid; grid-template-columns: 1fr; }
   .leads-hero h1 { font-size: 31px; }
-  .leads-kpi-grid, .leads-filters, .lead-card-table tbody { grid-template-columns: 1fr; }
+  .leads-kpi-grid, .leads-filters { grid-template-columns: 1fr; }
+  .leads-board { grid-auto-columns: minmax(200px, 82vw); }
 }

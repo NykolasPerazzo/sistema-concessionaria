@@ -29,7 +29,10 @@
         <a class="nav-link" href="./vehicles.html"
           ><i class="fa-solid fa-car-side"></i><span>Veículos</span></a
         >
-        <a class="nav-link nav-link-with-badge active" href="./leads.html" aria-current="page"
+        <a
+          class="nav-link nav-link-with-badge active"
+          href="./leads.html"
+          aria-current="page"
           ><i class="fa-solid fa-users"></i><span>Leads</span
           ><span id="leadsNavBadge" class="nav-badge" hidden>0</span></a
         >
@@ -211,23 +214,88 @@
             <button class="sales-secondary" type="submit">Atualizar</button>
           </form>
 
-          <div class="sales-table-scroll lead-card-scroll">
-            <table class="sales-table lead-card-table">
-              <thead>
-                <tr>
-                  <th>Interessado</th>
-                  <th>Interesse / origem</th>
-                  <th>Etapa</th>
-                  <th>Próximo retorno</th>
-                  <th>Ações</th>
-                </tr>
-              </thead>
-              <tbody id="leadRows">
-                <tr>
-                  <td colspan="5" class="sales-empty">Carregando leads...</td>
-                </tr>
-              </tbody>
-            </table>
+          <div class="leads-board" id="leadsBoard">
+            <div class="lead-column" data-status="new">
+              <div class="lead-column-head">
+                <span class="lead-column-dot"></span>
+                <h3>Novo</h3>
+                <span class="lead-column-count" id="colCount-new">0</span>
+              </div>
+              <div class="lead-column-cards" id="colCards-new"></div>
+              <button
+                type="button"
+                class="lead-column-add"
+                data-add-status="new"
+              >
+                + Adicionar lead
+              </button>
+            </div>
+            <div class="lead-column" data-status="contacting">
+              <div class="lead-column-head">
+                <span class="lead-column-dot"></span>
+                <h3>Em atendimento</h3>
+                <span class="lead-column-count" id="colCount-contacting"
+                  >0</span
+                >
+              </div>
+              <div class="lead-column-cards" id="colCards-contacting"></div>
+              <button
+                type="button"
+                class="lead-column-add"
+                data-add-status="contacting"
+              >
+                + Adicionar lead
+              </button>
+            </div>
+            <div class="lead-column" data-status="qualified">
+              <div class="lead-column-head">
+                <span class="lead-column-dot"></span>
+                <h3>Qualificado</h3>
+                <span class="lead-column-count" id="colCount-qualified"
+                  >0</span
+                >
+              </div>
+              <div class="lead-column-cards" id="colCards-qualified"></div>
+              <button
+                type="button"
+                class="lead-column-add"
+                data-add-status="qualified"
+              >
+                + Adicionar lead
+              </button>
+            </div>
+            <div class="lead-column" data-status="converted">
+              <div class="lead-column-head">
+                <span class="lead-column-dot"></span>
+                <h3>Convertido</h3>
+                <span class="lead-column-count" id="colCount-converted"
+                  >0</span
+                >
+              </div>
+              <div class="lead-column-cards" id="colCards-converted"></div>
+              <button
+                type="button"
+                class="lead-column-add"
+                data-add-status="converted"
+              >
+                + Adicionar lead
+              </button>
+            </div>
+            <div class="lead-column" data-status="lost">
+              <div class="lead-column-head">
+                <span class="lead-column-dot"></span>
+                <h3>Perdido</h3>
+                <span class="lead-column-count" id="colCount-lost">0</span>
+              </div>
+              <div class="lead-column-cards" id="colCards-lost"></div>
+              <button
+                type="button"
+                class="lead-column-add"
+                data-add-status="lost"
+              >
+                + Adicionar lead
+              </button>
+            </div>
           </div>
 
           <p class="sales-footnote">

@@ -108,6 +108,63 @@
       : "Não definido";
   }
 
+  const sourceIcons = {
+    website: "fa-solid fa-globe",
+    whatsapp: "fa-brands fa-whatsapp",
+    instagram: "fa-brands fa-instagram",
+    facebook: "fa-brands fa-facebook",
+    referral: "fa-solid fa-share-nodes",
+    walkin: "fa-solid fa-store",
+    other: "fa-solid fa-ellipsis",
+  };
+
+  const avatarColors = [
+    "#ff5a2e",
+    "#3d8bff",
+    "#8b6bff",
+    "#22c55e",
+    "#f5a623",
+    "#ec4899",
+  ];
+
+  function avatarColor(name) {
+    const sum = String(name || "")
+      .split("")
+      .reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
+
+    return avatarColors[sum % avatarColors.length];
+  }
+
+  function initials(name) {
+    const parts = String(name || "")
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean);
+
+    if (!parts.length) return "?";
+
+    return (parts[0][0] + (parts[1]?.[0] || "")).toUpperCase();
+  }
+
+  function timeAgo(value) {
+    if (!value) return "";
+
+    const diffMs = Date.now() - new Date(value).getTime();
+
+    if (!Number.isFinite(diffMs) || diffMs < 0) return "";
+
+    const minutes = Math.floor(diffMs / 60000);
+
+    if (minutes < 1) return "agora";
+    if (minutes < 60) return `${minutes}min`;
+
+    const hours = Math.floor(minutes / 60);
+
+    if (hours < 24) return `${hours}h`;
+
+    return `${Math.floor(hours / 24)}d`;
+  }
+
   function el(tag, text, cls) {
     const node = document.createElement(tag);
     node.textContent = text;
@@ -215,87 +272,88 @@
     });
 
     $("recordCount").textContent = `${rows.length} lead(s)`;
-    $("leadRows").replaceChildren();
 
-    if (!rows.length) {
-      const row = el("tr", "");
-      const td = el(
-        "td",
-        "Nenhum lead encontrado. Cadastre um interessado ou ajuste os filtros.",
-        "sales-empty",
-      );
+    const emptyColumnLabels = {
+      new: "Nenhum lead novo.",
+      contacting: "Nenhum lead em atendimento.",
+      qualified: "Nenhum lead qualificado.",
+      converted: "Nenhum lead convertido.",
+      lost: "Nenhum lead perdido.",
+    };
 
-      td.colSpan = 5;
-      row.append(td);
-      $("leadRows").append(row);
-      return;
+    Object.keys(emptyColumnLabels).forEach((status) => {
+      const container = $(`colCards-${status}`);
+
+      if (!container) return;
+
+      const columnLeads = rows.filter((lead) => lead.status === status);
+
+      $(`colCount-${status}`).textContent = String(columnLeads.length);
+      container.replaceChildren();
+
+      if (!columnLeads.length) {
+        container.append(
+          el("p", emptyColumnLabels[status], "lead-column-empty"),
+        );
+
+        return;
+      }
+
+      columnLeads.forEach((lead) => container.append(buildLeadCard(lead)));
+    });
+  }
+
+  function buildLeadCard(lead) {
+    const card = el("button", "", "lead-card");
+
+    card.type = "button";
+
+    const avatar = el("span", initials(lead.name), "lead-card-avatar");
+
+    avatar.style.background = avatarColor(lead.name);
+
+    const body = el("div", "", "lead-card-body");
+
+    body.append(
+      el("strong", lead.name, "lead-card-name"),
+      el(
+        "span",
+        lead.vehicle_label || "Veículo não definido",
+        "lead-card-interest",
+      ),
+    );
+
+    const meta = el("div", "", "lead-card-meta");
+    const temp = temperatureInfo[temperatureOf(lead.priority_score)];
+
+    if (temp) {
+      meta.append(el("span", temp.label, `lead-card-tag ${temp.cls}`));
     }
 
-    rows.forEach((lead) => {
-      const row = el("tr", "");
-      const name = el("td", "");
+    const channel = el("span", "", "lead-card-channel");
 
-      name.append(
-        el("strong", lead.name),
-        el("small", lead.phone || lead.email),
-      );
+    channel.append(
+      el("i", "", sourceIcons[lead.source] || "fa-solid fa-circle-question"),
+      document.createTextNode(sources[lead.source] || "Origem não informada"),
+    );
 
-      const temp = temperatureInfo[temperatureOf(lead.priority_score)];
+    meta.append(channel);
 
-      if (temp) {
-        name.append(
-          el(
-            "small",
-            `${temp.label} • ${lead.priority_score}/100`,
-            `lead-score-tag ${temp.cls}`,
-          ),
-        );
-      }
+    const ago = timeAgo(lead.created_at);
 
-      name.append(
-        el(
-          "small",
-          lead.assigned_to != null
-            ? `Vendedor: ${
-                usersById[lead.assigned_to] || "#" + lead.assigned_to
-              }`
-            : "Sem vendedor atribuído",
-          "lead-assignee-tag",
-        ),
-      );
+    if (ago) {
+      meta.append(el("span", ago, "lead-card-time"));
+    }
 
-      const interest = el("td", "");
+    if (lead.overdue) {
+      meta.append(el("span", "Retorno vencido", "lead-card-tag lead-card-overdue"));
+    }
 
-      interest.append(
-        el("strong", lead.vehicle_label || "Veículo não definido"),
-        el("small", sources[lead.source] || "Origem não informada"),
-      );
+    body.append(meta);
+    card.append(avatar, body);
+    card.addEventListener("click", () => details(lead.id));
 
-      row.append(name, interest, el("td", stages[lead.status] || lead.status));
-
-      const next = el(
-        "td",
-        date(lead.next_contact_date),
-        lead.overdue ? "sales-negative" : "",
-      );
-
-      if (lead.overdue) {
-        next.append(el("small", "Retorno vencido"));
-      }
-
-      row.append(next);
-
-      const actions = el("td", "");
-      const attendButton = el("button", "Atender", "sales-secondary");
-
-      attendButton.type = "button";
-      attendButton.addEventListener("click", () => details(lead.id));
-
-      actions.append(attendButton);
-      row.append(actions);
-
-      $("leadRows").append(row);
-    });
+    return card;
   }
 
   async function refresh() {
@@ -317,9 +375,6 @@
       ["newCount", "activeCount", "overdueCount"].forEach((id) => {
         $(id).textContent = "—";
       });
-
-      $("leadRows").firstChild.firstChild.textContent =
-        "Falha ao carregar. Clique em Atualizar para tentar novamente.";
 
       throw error;
     }
@@ -1254,6 +1309,12 @@
   });
 
   $("newLead").addEventListener("click", () => form());
+
+  $("leadsBoard").addEventListener("click", (event) => {
+    if (event.target.closest("[data-add-status]")) {
+      form();
+    }
+  });
 
   for (const id of [
     "search",

@@ -1221,7 +1221,7 @@
 
 .recent-vehicle-card img,
 .recent-vehicle-placeholder {
-  height: 92px;
+  height: 125px;
 }
 
 @media (max-width: 1180px) {
