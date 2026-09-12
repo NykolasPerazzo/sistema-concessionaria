@@ -52,11 +52,13 @@
   };
 
   let vehicles = [];
+  let sellers = [];
   let sales = [];
   let selectedSale = null;
   let submitting = false;
   let requestVersion = 0;
   let salesAbortController = null;
+  let currentUser = null;
 
   const now = new Date();
 
@@ -180,6 +182,59 @@
         ),
       );
     });
+  }
+
+  async function loadSellers() {
+    const select = $("sellerSelect");
+
+    if (!select) return;
+
+    select.disabled = true;
+    select.replaceChildren(new Option("Carregando vendedores...", ""));
+
+    try {
+      const data = await api("/sellers");
+
+      sellers = Array.isArray(data.sellers) ? data.sellers : [];
+
+      if (!sellers.length) {
+        select.replaceChildren(
+          new Option("Nenhum vendedor disponível", ""),
+        );
+
+        select.disabled = true;
+        $("confirmSale").disabled = true;
+
+        return;
+      }
+
+      select.replaceChildren(new Option("Selecione um vendedor", ""));
+
+      sellers.forEach((seller) => {
+        select.add(new Option(seller.name, seller.id));
+      });
+
+      select.disabled = false;
+    } catch {
+      select.replaceChildren(
+        new Option("Não foi possível carregar vendedores", ""),
+      );
+
+      select.disabled = true;
+    }
+  }
+
+  // Precisa rodar depois de saleForm.reset(): o reset devolve o select ao
+  // primeiro option, o que desfaria a trava do vendedor se aplicada antes.
+  function applySellerLock() {
+    if (currentUser?.role !== "vendedor") return;
+
+    const select = $("sellerSelect");
+
+    if (!select || !sellers.length) return;
+
+    select.value = String(currentUser.id);
+    select.disabled = true;
   }
 
   function buildSalesQuery() {
@@ -321,72 +376,52 @@
       return;
     }
 
-    const hasSellerData = activeSales.some((sale) =>
-      String(sale.seller_name || sale.user_name || "").trim(),
-    );
-
-    if (!hasSellerData) {
-      const totalRevenue = activeSales.reduce(
-        (sum, sale) => sum + sale.sale_price,
-        0,
-      );
-
-      const item = createNode("div", "", "sales-performance-summary");
-
-      item.append(
-        createNode("strong", "Resultado geral da loja"),
-        createNode(
-          "span",
-          `${activeSales.length} venda(s) no período • ${money(totalRevenue)}`,
-        ),
-        createNode(
-          "small",
-          "Cadastre o vendedor na venda para visualizar o ranking individual.",
-        ),
-      );
-
-      container.append(item);
-
-      return;
-    }
-
     const groups = new Map();
 
     activeSales.forEach((sale) => {
-      const seller = text(sale.seller_name || sale.user_name, "Não informado");
+      const key = sale.seller_id == null ? "unassigned" : String(sale.seller_id);
 
-      const current = groups.get(seller) || {
-        count: 0,
-        revenue: 0,
-      };
+      const label =
+        sale.seller_id == null
+          ? "Vendedor não informado"
+          : text(sale.seller_name, `Vendedor #${sale.seller_id}`);
+
+      const current = groups.get(key) || { label, count: 0, revenue: 0, profit: 0 };
 
       current.count += 1;
       current.revenue += sale.sale_price;
+      current.profit += sale.profit;
 
-      groups.set(seller, current);
+      groups.set(key, current);
     });
 
-    const ranking = [...groups.entries()].sort(
-      (a, b) => b[1].revenue - a[1].revenue,
-    );
+    const ranking = [...groups.values()]
+      .map((group) => ({
+        ...group,
+        averageTicket: group.count ? group.revenue / group.count : 0,
+      }))
+      .sort((a, b) => b.revenue - a.revenue);
 
-    const maximum = Math.max(...ranking.map(([, value]) => value.revenue), 1);
+    const maximum = Math.max(...ranking.map((group) => group.revenue), 1);
 
-    ranking.slice(0, 4).forEach(([seller, value]) => {
+    ranking.slice(0, 6).forEach((group) => {
       const item = createNode("div", "", "sales-performance-item");
 
       const heading = createNode("div", "", "sales-performance-heading");
 
       heading.append(
-        createNode("strong", seller),
-        createNode("span", `${value.count} venda(s) • ${money(value.revenue)}`),
+        createNode("strong", group.label),
+        createNode(
+          "span",
+          `${group.count} venda(s) • ${money(group.revenue)} • resultado ${money(group.profit)} • ticket médio ${money(group.averageTicket)}`,
+        ),
       );
 
       const track = createNode("div", "", "sales-performance-track");
 
       const bar = createNode("span", "", "sales-performance-bar");
 
-      bar.style.width = `${Math.max((value.revenue / maximum) * 100, 8)}%`;
+      bar.style.width = `${Math.max((group.revenue / maximum) * 100, 8)}%`;
 
       track.append(bar);
       item.append(heading, track);
@@ -511,6 +546,11 @@
       info.append(
         createNode("strong", sale.vehicle_label),
         createNode("small", sale.buyer_name),
+        createNode(
+          "small",
+          `Vendedor: ${text(sale.seller_name, "não informado")}`,
+          "sales-seller-tag",
+        ),
       );
 
       addCell(row, formatDate(sale.sale_date));
@@ -621,9 +661,11 @@
     $("newSaleButton").disabled = true;
 
     try {
-      await loadVehicles();
+      await Promise.all([loadVehicles(), loadSellers()]);
 
       $("saleForm").reset();
+
+      applySellerLock();
 
       if (window.CustomerPicker?.load) {
         await CustomerPicker.load(
@@ -680,6 +722,7 @@
 
     const fields = [
       ["Veículo", sale.vehicle_label],
+      ["Vendedor", text(sale.seller_name, "Não informado")],
       ["Comprador", sale.buyer_name],
       ["Telefone", text(sale.buyer_phone)],
       ["Data", formatDate(sale.sale_date)],
@@ -952,15 +995,17 @@
 
     if (!user) return;
 
-    if (user.role !== "admin") {
+    if (!["admin", "vendedor"].includes(user.role)) {
       showMessage(
         "pageMessage",
-        "A área de vendas está disponível apenas para administradores.",
+        "A área de vendas está disponível apenas para administradores e vendedores.",
         true,
       );
 
       return;
     }
+
+    currentUser = user;
 
     $("newSaleButton").disabled = false;
 

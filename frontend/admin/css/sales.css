@@ -426,6 +426,16 @@
   resize: vertical;
 }
 
+.sales-page select:disabled,
+.sales-page input:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.sales-table td small.sales-seller-tag {
+  color: var(--sales-accent);
+}
+
 .sales-table-scroll {
   position: relative;
   overflow-x: auto;

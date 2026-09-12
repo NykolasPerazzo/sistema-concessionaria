@@ -217,6 +217,9 @@ async function convertProposal(req, res) {
       payment_method: p.payment_method,
       notes: p.notes,
       sale_date: req.body?.sale_date,
+      // Sem escolha explícita no convite de conversão, o vendedor responsável
+      // é quem criou a proposta.
+      seller_id: req.body?.seller_id ?? p.created_by,
     };
     return createSale(req, res);
   } catch (error) {

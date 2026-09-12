@@ -158,6 +158,7 @@ test("clientes: cadastro, vínculos, histórico, snapshots e arquivamento", asyn
         payment_method: "pix",
         sale_date: today,
         customer_id: c.id,
+        seller_id: 1,
       };
       assert.equal(
         (await f.request("/api/sales", { method: "POST", body: saleBody }))

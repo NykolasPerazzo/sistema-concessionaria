@@ -167,6 +167,7 @@ test("propostas: negociação, validade e conversão atômica", async (t) => {
           sale_price: 90000,
           sale_date: today,
           payment_method: "pix",
+          seller_id: 1,
         },
       });
       assert.equal((await convert(sold.id)).status, 409);

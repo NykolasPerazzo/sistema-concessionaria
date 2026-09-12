@@ -79,6 +79,12 @@ async function fixture() {
   );
   await db.exec(vehicleSpecsMigration);
   await db.exec(vehicleSpecsMigration);
+  const salesSellerMigration = fs.readFileSync(
+    path.join(__dirname, "../../database/migrations/012_sales_seller.sql"),
+    "utf8",
+  );
+  await db.exec(salesSellerMigration);
+  await db.exec(salesSellerMigration);
   // PGlite possui uma conexão. A fila impede intercalar transações HTTP no teste.
   let queue = Promise.resolve();
   async function acquire() {
@@ -140,11 +146,18 @@ async function fixture() {
     const server = app.listen(0, "127.0.0.1", () => resolve(server));
   });
   const url = `http://127.0.0.1:${server.address().port}`;
-  const token = (role) =>
-    require("jsonwebtoken").sign({ sub: 1, role }, process.env.JWT_SECRET);
-  async function request(route, { role = "admin", method = "GET", body } = {}) {
+  const defaultSubByRole = { admin: 1, vendedor: 2, despachante: 3 };
+  const token = (role, sub) =>
+    require("jsonwebtoken").sign(
+      { sub: sub ?? defaultSubByRole[role] ?? 1, role },
+      process.env.JWT_SECRET,
+    );
+  async function request(
+    route,
+    { role = "admin", sub, method = "GET", body } = {},
+  ) {
     const headers = { "Content-Type": "application/json" };
-    if (role) headers.Cookie = `token=${token(role)}`;
+    if (role) headers.Cookie = `token=${token(role, sub)}`;
     const response = await fetch(url + route, {
       method,
       headers,

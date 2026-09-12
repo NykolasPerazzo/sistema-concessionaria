@@ -1,5 +1,6 @@
 const pool = require("../database/connection");
 const METHODS = ["pix", "transfer", "cash", "financing", "mixed"];
+const SELLER_ROLES = ["admin", "vendedor"];
 const fail = (status, message) => Object.assign(new Error(message), { status });
 const validId = (value) =>
   ["number", "string"].includes(typeof value) &&
@@ -74,6 +75,17 @@ async function getSaleVehicles(req, res) {
     respondError(res, error);
   }
 }
+async function getSellers(req, res) {
+  try {
+    const result = await pool.query(
+      `SELECT id, name, email, role FROM users WHERE role = ANY($1) ORDER BY name`,
+      [SELLER_ROLES],
+    );
+    res.json({ sellers: result.rows });
+  } catch (error) {
+    respondError(res, error);
+  }
+}
 async function getSales(req, res) {
   try {
     const { start, end, status = "active" } = req.query;
@@ -85,14 +97,17 @@ async function getSales(req, res) {
       throw fail(400, "Período inválido.");
     if (!["active", "cancelled", "all"].includes(status))
       throw fail(400, "Filtro de vendas inválido.");
+    const ownSellerId = req.user.role === "vendedor" ? req.user.sub : null;
     const result = await pool.query(
-      `SELECT s.*, s.sale_date::text AS sale_date,
+      `SELECT s.*, s.sale_date::text AS sale_date, u.name AS seller_name,
       s.sale_price - s.purchase_price - s.expenses_total AS profit
-      FROM sales s WHERE ($1::date IS NULL OR sale_date >= $1)
+      FROM sales s LEFT JOIN users u ON u.id = s.seller_id
+      WHERE ($1::date IS NULL OR sale_date >= $1)
       AND ($2::date IS NULL OR sale_date <= $2)
       AND ($3 = 'all' OR ($3 = 'active' AND cancelled_at IS NULL) OR ($3 = 'cancelled' AND cancelled_at IS NOT NULL))
+      AND ($4::integer IS NULL OR s.seller_id = $4)
       ORDER BY s.sale_date DESC, s.id DESC`,
-      [start || null, end || null, status],
+      [start || null, end || null, status, ownSellerId],
     );
     res.json({ sales: result.rows });
   } catch (error) {
@@ -124,7 +139,23 @@ async function createSale(req, res) {
       throw fail(400, "Cliente inválido.");
     if (body.proposal_id !== undefined && !validId(body.proposal_id))
       throw fail(400, "Proposta inválida.");
+    // Vendedor sempre vende em nome próprio: o valor enviado no payload é
+    // ignorado para esse papel, evitando que registre a venda para outra pessoa.
+    let sellerId;
+    if (req.user.role === "vendedor") {
+      sellerId = req.user.sub;
+    } else {
+      if (!validId(body.seller_id))
+        throw fail(400, "Selecione o vendedor responsável pela venda.");
+      sellerId = Number(body.seller_id);
+    }
     const sale = await transaction(async (client) => {
+      const sellerCheck = await client.query(
+        "SELECT id FROM users WHERE id=$1 AND role = ANY($2)",
+        [sellerId, SELLER_ROLES],
+      );
+      if (!sellerCheck.rows[0])
+        throw fail(400, "Vendedor inválido ou sem permissão para vendas.");
       const found = await client.query(
         `SELECT *, entry_date::text AS entry_day, CURRENT_DATE::text AS today FROM vehicles WHERE id=$1 FOR UPDATE`,
         [body.vehicle_id],
@@ -193,8 +224,8 @@ async function createSale(req, res) {
       );
       const result = await client.query(
         `INSERT INTO sales
-        (vehicle_id,vehicle_label,buyer_name,buyer_phone,sale_date,sale_price,purchase_price,expenses_total,payment_method,notes,previous_status,previous_sale_price,created_by,customer_id)
-        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) RETURNING *`,
+        (vehicle_id,vehicle_label,buyer_name,buyer_phone,sale_date,sale_price,purchase_price,expenses_total,payment_method,notes,previous_status,previous_sale_price,created_by,customer_id,seller_id)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15) RETURNING *`,
         [
           vehicle.id,
           `${vehicle.brand} ${vehicle.model} • ${vehicle.year}`,
@@ -210,6 +241,7 @@ async function createSale(req, res) {
           vehicle.sale_price,
           req.user.sub,
           customerId,
+          sellerId,
         ],
       );
       await client.query(
@@ -238,10 +270,15 @@ async function cancelSale(req, res) {
     await transaction(async (client) => {
       // Sempre bloquear o veículo antes da venda, na mesma ordem do cadastro.
       const found = await client.query(
-        "SELECT vehicle_id FROM sales WHERE id=$1",
+        "SELECT vehicle_id, seller_id FROM sales WHERE id=$1",
         [req.params.id],
       );
       if (!found.rows[0]) throw fail(404, "Venda não encontrada.");
+      if (
+        req.user.role === "vendedor" &&
+        found.rows[0].seller_id !== req.user.sub
+      )
+        throw fail(403, "Você só pode cancelar vendas registradas por você.");
       await client.query("SELECT id FROM vehicles WHERE id=$1 FOR UPDATE", [
         found.rows[0].vehicle_id,
       ]);
@@ -270,6 +307,7 @@ async function cancelSale(req, res) {
 module.exports = {
   getSales,
   getSaleVehicles,
+  getSellers,
   createSale,
   cancelSale,
   transaction,

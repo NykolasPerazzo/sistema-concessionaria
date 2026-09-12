@@ -19,20 +19,40 @@ test("vendas: autenticação, validação, valores, estoque, histórico e cancel
     sale_price: "82000.50",
     sale_date: today,
     payment_method: "pix",
+    seller_id: 1,
   };
   await t.test(
-    "rotas administrativas recusam visitantes e vendedores",
+    "rotas de vendas exigem autenticação e papel autorizado (admin ou vendedor)",
     async () => {
-      for (const role of [null, "vendedor"])
-        for (const route of ["/api/sales", "/api/sales/vehicles"])
-          assert.equal(
-            (await f.request(route, { role })).status,
-            role ? 403 : 401,
-          );
+      for (const route of [
+        "/api/sales",
+        "/api/sales/vehicles",
+        "/api/sales/sellers",
+      ]) {
+        assert.equal((await f.request(route, { role: null })).status, 401);
+        assert.equal(
+          (await f.request(route, { role: "despachante" })).status,
+          403,
+        );
+        assert.equal(
+          (await f.request(route, { role: "vendedor" })).status,
+          200,
+        );
+      }
       assert.equal(
         (await f.request("/api/sales", { role: null, method: "POST", body }))
           .status,
         401,
+      );
+      assert.equal(
+        (
+          await f.request("/api/sales", {
+            role: "despachante",
+            method: "POST",
+            body,
+          })
+        ).status,
+        403,
       );
     },
   );
@@ -77,6 +97,26 @@ test("vendas: autenticação, validação, valores, estoque, histórico e cancel
       409,
     );
     assert.equal(
+      (
+        await f.request("/api/sales", {
+          method: "POST",
+          body: { ...body, seller_id: undefined },
+        })
+      ).status,
+      400,
+      "vendedor é obrigatório para o administrador",
+    );
+    assert.equal(
+      (
+        await f.request("/api/sales", {
+          method: "POST",
+          body: { ...body, seller_id: 999 },
+        })
+      ).status,
+      400,
+      "vendedor inexistente deve ser recusado",
+    );
+    assert.equal(
       (await f.db.query("SELECT count(*) FROM sales")).rows[0].count,
       0,
     );
@@ -90,6 +130,8 @@ test("vendas: autenticação, validação, valores, estoque, histórico e cancel
       saleId = sale.data.sale.id;
       const history = await f.request("/api/sales");
       assert.equal(history.data.sales[0].profit, "10000.50");
+      assert.equal(history.data.sales[0].seller_id, 1);
+      assert.equal(history.data.sales[0].seller_name, "Admin Teste");
       const vehicle = (
         await f.db.query("SELECT status,sale_price FROM vehicles WHERE id=1")
       ).rows[0];
@@ -248,6 +290,98 @@ test("vendas: autenticação, validação, valores, estoque, histórico e cancel
           .status,
         "reserved",
       );
+    },
+  );
+  await t.test(
+    "GET /api/sales/sellers retorna só quem pode vender, sem dados sensíveis",
+    async () => {
+      const result = await f.request("/api/sales/sellers");
+      assert.equal(result.status, 200);
+      const roles = result.data.sellers.map((s) => s.role).sort();
+      assert.deepEqual(roles, ["admin", "vendedor"]);
+      result.data.sellers.forEach((seller) => {
+        assert.ok(!("password_hash" in seller));
+        assert.ok(!("password" in seller));
+      });
+    },
+  );
+  await t.test(
+    "venda antiga sem vendedor continua aparecendo com seller_id/seller_name nulos",
+    async () => {
+      await f.db.exec(`
+        INSERT INTO vehicles(brand,model,year,price,purchase_price,entry_date,status)
+        VALUES ('Renault','Kwid',2019,45000,38000,CURRENT_DATE-30,'sold');
+        INSERT INTO sales(vehicle_id,vehicle_label,buyer_name,sale_date,sale_price,purchase_price,expenses_total,payment_method,previous_status,created_by)
+        VALUES ((SELECT max(id) FROM vehicles),'Renault Kwid • 2019','Comprador Antigo',CURRENT_DATE-20,44000,38000,0,'cash','available',1);
+      `);
+      const legacy = (
+        await f.request("/api/sales?status=all")
+      ).data.sales.find((sale) => sale.buyer_name === "Comprador Antigo");
+      assert.ok(legacy, "venda antiga deve continuar aparecendo no histórico");
+      assert.equal(legacy.seller_id, null);
+      assert.equal(legacy.seller_name, null);
+    },
+  );
+  await t.test(
+    "vendedor vende em nome próprio, ignora seller_id do payload e só gerencia as próprias vendas",
+    async () => {
+      await f.db.exec(`
+        INSERT INTO vehicles(brand,model,year,price,purchase_price,entry_date,status)
+        VALUES ('Fiat','Argo',2023,75000,60000,CURRENT_DATE-5,'available');
+      `);
+      const vehicleId = (
+        await f.db.query("SELECT max(id) AS id FROM vehicles")
+      ).rows[0].id;
+      const sellerAttempt = await f.request("/api/sales", {
+        role: "vendedor",
+        method: "POST",
+        body: { ...body, vehicle_id: vehicleId, seller_id: 1 },
+      });
+      assert.equal(sellerAttempt.status, 201);
+      assert.equal(
+        sellerAttempt.data.sale.seller_id,
+        2,
+        "seller_id enviado no payload deve ser ignorado para o papel vendedor",
+      );
+      const vendorView = await f.request("/api/sales?status=all", {
+        role: "vendedor",
+      });
+      assert.ok(
+        vendorView.data.sales.every((sale) => sale.seller_id === 2),
+        "vendedor não deve enxergar vendas de outros vendedores",
+      );
+      assert.ok(
+        vendorView.data.sales.some((sale) => sale.vehicle_id === vehicleId),
+      );
+      const adminView = await f.request("/api/sales?status=all");
+      assert.ok(
+        adminView.data.sales.some(
+          (sale) => sale.vehicle_id === vehicleId && sale.seller_id === 2,
+        ),
+        "admin deve enxergar as vendas de todos os vendedores",
+      );
+      const otherSale = adminView.data.sales.find(
+        (sale) => sale.seller_id === 1 && !sale.cancelled_at,
+      );
+      assert.ok(
+        otherSale,
+        "precisa existir venda ativa do admin para testar o bloqueio de cancelamento",
+      );
+      const blocked = await f.request(`/api/sales/${otherSale.id}/cancel`, {
+        role: "vendedor",
+        method: "POST",
+        body: { reason: "Tentativa indevida" },
+      });
+      assert.equal(blocked.status, 403);
+      const ownCancel = await f.request(
+        `/api/sales/${sellerAttempt.data.sale.id}/cancel`,
+        {
+          role: "vendedor",
+          method: "POST",
+          body: { reason: "Desistiu" },
+        },
+      );
+      assert.equal(ownCancel.status, 200);
     },
   );
 });

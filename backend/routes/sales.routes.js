@@ -6,11 +6,13 @@ const {
 const {
   getSales,
   getSaleVehicles,
+  getSellers,
   createSale,
   cancelSale,
 } = require("../controllers/sales.controller");
-router.use(authenticate, authorizeRoles("admin"));
+router.use(authenticate, authorizeRoles("admin", "vendedor"));
 router.get("/vehicles", getSaleVehicles);
+router.get("/sellers", getSellers);
 router.get("/", getSales);
 router.post("/", createSale);
 router.post("/:id/cancel", cancelSale);
