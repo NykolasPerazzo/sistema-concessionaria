@@ -29,60 +29,95 @@ button {
   left: 0;
   width: 250px;
   height: 100vh;
-  padding: 30px 20px;
+  padding: 24px 14px;
   background: var(--sidebar-bg);
   border-right: 1px solid var(--border-color);
   display: flex;
   flex-direction: column;
+  overflow-y: auto;
 }
 
-.sidebar nav a.active {
-  background: var(--card-bg-secondary);
-  border-left: 3px solid var(--accent);
-}
-
-.admin-logo {
+.brand {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 0 10px 35px;
-  letter-spacing: 1.5px;
-  font-size: 14px;
+  padding: 0 10px 26px;
+  color: var(--text-color);
+  font-size: 15px;
+  font-weight: 900;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
 }
 
-.admin-logo span,
-.admin-logo i {
-  font-size: 20px;
+.brand i {
+  font-size: 26px;
+  color: var(--accent);
 }
 
-.sidebar nav {
-  display: flex;
-  flex-direction: column;
+.brand strong {
+  color: var(--accent);
+}
+
+.nav-section {
+  display: grid;
   gap: 6px;
 }
 
-.sidebar nav a {
+.sidebar-footer {
+  margin-top: auto;
+  padding-top: 14px;
+}
+
+.nav-link {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 13px 14px;
+  width: 100%;
+  gap: 12px;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 0;
   border-radius: 8px;
+  background: transparent;
   color: var(--text-secondary);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
   transition: 0.2s;
 }
 
-.sidebar nav a i {
+.nav-link i {
   width: 18px;
   text-align: center;
   font-size: 16px;
 }
 
-.sidebar nav a:hover,
-.sidebar nav a.active {
+.nav-link:hover {
   color: var(--text-color);
 }
 
-.sidebar nav a.active i {
+.nav-link.active {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 90, 31, 0.2),
+    rgba(255, 90, 31, 0.05)
+  );
+  color: var(--accent);
+  font-weight: 800;
+}
+
+.nav-link.active::before {
+  content: "";
+  position: absolute;
+  top: 8px;
+  bottom: 8px;
+  left: -14px;
+  width: 3px;
+  border-radius: 8px;
+  background: var(--accent);
+}
+
+.nav-link.active i {
   color: var(--accent);
 }
 
@@ -100,12 +135,6 @@ button {
   font-size: 11px;
   font-weight: 700;
   line-height: 1;
-}
-
-.public-site {
-  margin-top: auto;
-  padding: 14px;
-  color: #777;
 }
 
 .admin-main {
@@ -350,13 +379,19 @@ strong {
     height: auto;
   }
 
-  .sidebar nav {
+  .nav-section {
+    display: flex;
     flex-direction: row;
     overflow-x: auto;
   }
 
-  .public-site {
-    margin-top: 20px;
+  .nav-link {
+    white-space: nowrap;
+  }
+
+  .sidebar-footer {
+    margin-top: 10px;
+    padding-top: 0;
   }
 
   .admin-main {
@@ -1012,42 +1047,6 @@ strong {
 .expenses-list {
   padding: 10px 0;
   gap: 12px;
-}
-
-.sidebar-footer {
-  margin-top: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.sidebar-footer .public-site {
-  margin-top: 0;
-}
-
-.logout-button {
-  width: 100%;
-  padding: 13px 14px;
-
-  display: flex;
-  align-items: center;
-  gap: 10px;
-
-  background: transparent;
-  border: 1px solid transparent;
-  border-radius: 8px;
-
-  color: #777;
-  text-align: left;
-
-  cursor: pointer;
-  transition: 0.2s;
-}
-
-.logout-button:hover {
-  background: rgba(239, 68, 68, 0.08);
-  border-color: rgba(239, 68, 68, 0.15);
-  color: #ef6b6b;
 }
 
 /* =========================================
@@ -2751,42 +2750,6 @@ body:has(.vehicles-ai-sidebar) .admin-main {
   .cover-ai-choice {
     grid-template-columns: 1fr;
   }
-}
-
-/* =========================================
-   BOTÃO DE TEMA
-========================================= */
-
-.admin-header-actions {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.theme-toggle {
-  width: 42px;
-  height: 42px;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  border: 1px solid var(--border-color);
-  border-radius: 10px;
-
-  background: var(--card-bg);
-  color: var(--text-color);
-
-  font-size: 16px;
-
-  cursor: pointer;
-
-  transition: 0.2s ease;
-}
-
-.theme-toggle:hover {
-  color: #ff5a1f;
-  border-color: #ff5a1f;
 }
 
 /* =========================================

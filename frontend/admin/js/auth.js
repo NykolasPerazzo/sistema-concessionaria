@@ -48,3 +48,34 @@ const logoutButton = document.getElementById("logoutButton");
 if (logoutButton) {
   logoutButton.addEventListener("click", logout);
 }
+
+// ==========================
+// TEMA CLARO / ESCURO
+// ==========================
+
+function setTheme(theme) {
+  const isLight = theme === "light";
+
+  document.body.classList.toggle("light-theme", isLight);
+
+  const themeIcon = document.getElementById("themeIcon");
+
+  if (themeIcon) {
+    themeIcon.className = isLight ? "fa-regular fa-sun" : "fa-regular fa-moon";
+  }
+}
+
+setTheme(localStorage.getItem("carDealerAdminTheme") || "dark");
+
+const themeToggle = document.getElementById("themeToggle");
+
+if (themeToggle) {
+  themeToggle.addEventListener("click", () => {
+    const newTheme = document.body.classList.contains("light-theme")
+      ? "dark"
+      : "light";
+
+    localStorage.setItem("carDealerAdminTheme", newTheme);
+    setTheme(newTheme);
+  });
+}

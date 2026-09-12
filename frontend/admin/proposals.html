@@ -14,28 +14,61 @@
     <link rel="stylesheet" href="./css/sales.css" />
   </head>
   <body class="sales-page">
-    <aside class="sidebar">
-      <div class="admin-logo">
-        <i class="fa-solid fa-bolt"></i><strong>CAR DEALER IA</strong>
-      </div>
-      <nav aria-label="Administração">
-        <a href="./index.html"><i class="fa-solid fa-house"></i>Dashboard</a
-        ><a href="./vehicles.html"><i class="fa-solid fa-car-side"></i>Veículos</a
-        ><a href="./leads.html"
-          ><i class="fa-solid fa-users"></i>Leads<span class="nav-badge" id="leadsNavBadge" hidden>0</span></a
+    <nav class="sidebar">
+      <a class="brand" href="./index.html" aria-label="Car Dealer IA">
+        <i class="fa-solid fa-bolt"></i>
+        <span>Car Dealer <strong>IA</strong></span>
+      </a>
+
+      <div class="nav-section">
+        <a class="nav-link" href="./index.html"
+          ><i class="fa-solid fa-house"></i><span>Central de comando</span></a
         >
-        <a href="./customers.html"><i class="fa-regular fa-user"></i>Clientes</a
-        ><a href="./proposals.html" class="active" aria-current="page"
-          ><i class="fa-regular fa-file-lines"></i>Propostas</a
-        ><a href="./sales.html"><i class="fa-solid fa-chart-simple"></i>Vendas</a>
-        <a href="./despachante.html"><i class="fa-solid fa-truck"></i>Despachante</a>
-        <a href="./ai.html"><i class="fa-solid fa-wand-magic-sparkles"></i>IA</a><a href="./settings.html"><i class="fa-solid fa-gear"></i>Configurações</a>
-      </nav>
-      <a href="../index.html" class="public-site">← Ver site público</a>
-      <button id="logoutButton" class="sales-secondary" type="button">
-        Sair
-      </button>
-    </aside>
+        <a class="nav-link" href="./vehicles.html"
+          ><i class="fa-solid fa-car-side"></i><span>Veículos</span></a
+        >
+        <a class="nav-link nav-link-with-badge" href="./leads.html"
+          ><i class="fa-solid fa-users"></i><span>Leads</span
+          ><span id="leadsNavBadge" class="nav-badge" hidden>0</span></a
+        >
+        <a class="nav-link" href="./customers.html"
+          ><i class="fa-regular fa-user"></i><span>Clientes</span></a
+        >
+        <a class="nav-link active" href="./proposals.html" aria-current="page"
+          ><i class="fa-regular fa-file-lines"></i><span>Propostas</span></a
+        >
+        <a class="nav-link" href="./sales.html"
+          ><i class="fa-solid fa-chart-simple"></i><span>Vendas</span></a
+        >
+        <a class="nav-link" href="./despachante.html"
+          ><i class="fa-solid fa-truck"></i><span>Despachante</span></a
+        >
+        <a class="nav-link" href="./ai.html"
+          ><i class="fa-solid fa-wand-magic-sparkles"></i><span>IA</span></a
+        >
+        <a class="nav-link" href="./settings.html"
+          ><i class="fa-solid fa-gear"></i><span>Configurações</span></a
+        >
+      </div>
+
+      <div class="nav-section sidebar-footer">
+        <a class="nav-link" href="../index.html" target="_blank" rel="noopener"
+          ><i class="fa-solid fa-arrow-up-right-from-square"></i
+          ><span>Ver site público</span></a
+        >
+        <button id="logoutButton" class="nav-link nav-button" type="button">
+          <i class="fa-solid fa-arrow-right-from-bracket"></i><span>Sair</span>
+        </button>
+        <button
+          id="themeToggle"
+          class="nav-link nav-button"
+          type="button"
+          aria-label="Alternar tema"
+        >
+          <i id="themeIcon" class="fa-regular fa-moon"></i><span>Tema</span>
+        </button>
+      </div>
+    </nav>
     <main class="admin-main">
       <header class="admin-header">
         <div>

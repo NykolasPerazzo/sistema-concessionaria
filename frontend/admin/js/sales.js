@@ -944,14 +944,7 @@
 
     $("newSaleButton").addEventListener("click", () => openSale());
 
-    $("salesAiButton")?.addEventListener("click", () => {
-      $("salesAiRecommendation")?.scrollIntoView({
-        behavior: "smooth",
-        block: "center",
-      });
-    });
-
-    $("salesAiRecommendationButton")?.addEventListener("click", () => {
+    function showAiSummary() {
       const summary = calculateSummary();
 
       const messageText = summary.active.length
@@ -964,7 +957,12 @@
         top: 0,
         behavior: "smooth",
       });
-    });
+    }
+
+    // Mesma ação nos dois botões: o de cima precisa produzir um resultado
+    // visível por si só, sem depender de rolar até o cartão para "funcionar".
+    $("salesAiButton")?.addEventListener("click", showAiSummary);
+    $("salesAiRecommendationButton")?.addEventListener("click", showAiSummary);
 
     document.querySelectorAll("[data-close]").forEach((button) => {
       button.addEventListener("click", () => {

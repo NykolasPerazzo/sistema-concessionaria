@@ -764,37 +764,7 @@ function sourceLabel(source) {
   return sources[source] || "Aguardando informações...";
 }
 
-/* =========================================
-   TEMA CLARO / ESCURO
-========================================= */
-
-const themeToggle = document.getElementById("themeToggle");
-const themeIcon = document.getElementById("themeIcon");
-
-function setTheme(theme) {
-  const isLight = theme === "light";
-
-  document.body.classList.toggle("light-theme", isLight);
-
-  if (themeIcon) {
-    themeIcon.className = isLight ? "fa-solid fa-sun" : "fa-solid fa-moon";
-  }
-}
-
-const savedTheme = localStorage.getItem("carDealerAdminTheme") || "dark";
-
-setTheme(savedTheme);
-
-if (themeToggle) {
-  themeToggle.addEventListener("click", () => {
-    const isLight = document.body.classList.contains("light-theme");
-    const newTheme = isLight ? "dark" : "light";
-
-    localStorage.setItem("carDealerAdminTheme", newTheme);
-
-    setTheme(newTheme);
-  });
-}
+// Tema claro/escuro: aplicado por auth.js em todas as páginas.
 
 /* =========================================
    FORMATADORES

@@ -36,69 +36,23 @@
   overflow-y: auto;
 }
 
-.leads-command-page .admin-logo {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 0 14px 22px;
-  color: #fff;
-  font-size: 15px;
-  font-weight: 900;
-  letter-spacing: 0.3px;
+.leads-command-page .brand i {
+  color: var(--lead-orange);
 }
 
-.leads-command-page .admin-logo span,
-.leads-command-page .admin-logo i { color: var(--lead-orange); font-size: 28px; }
-.leads-command-page .sidebar nav { display: grid; gap: 8px; }
-
-.leads-command-page .sidebar nav a,
-.leads-command-page .public-site,
-.leads-command-page #logoutButton {
-  position: relative;
-  min-height: 42px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 0 14px;
-  border-radius: 8px;
-  color: #c9d2df;
-  background: transparent;
-  border: 0;
-  font: inherit;
-  font-size: 14px;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.leads-command-page .sidebar nav a i {
-  width: 18px;
-  text-align: center;
-  font-size: 16px;
-}
-
-.leads-command-page .sidebar nav a.active {
+.leads-command-page .nav-link.active {
   background: linear-gradient(90deg, rgba(255, 77, 18, 0.24), rgba(255, 77, 18, 0.06));
   color: #fff;
   font-weight: 900;
 }
 
-.leads-command-page .sidebar nav a.active i {
+.leads-command-page .nav-link.active i {
   color: var(--lead-orange);
 }
 
-.leads-command-page .sidebar nav a.active::before {
-  content: "";
-  position: absolute;
-  left: -10px;
-  top: 8px;
-  bottom: 8px;
-  width: 4px;
-  border-radius: 8px;
+.leads-command-page .nav-link.active::before {
   background: var(--lead-orange);
 }
-
-.leads-command-page .public-site { margin-top: 130px; color: #9ca3af; }
-.leads-command-page #logoutButton { width: 100%; margin-top: 8px; justify-content: center; border: 1px solid var(--lead-border); }
 
 .leads-shell {
   margin-left: 220px;
@@ -319,8 +273,8 @@
 
 @media (max-width: 760px) {
   .leads-command-page .sidebar { position: sticky; top: 0; width: auto; padding: 12px; }
-  .leads-command-page .sidebar nav { display: flex; overflow-x: auto; }
-  .leads-command-page .public-site, .leads-command-page #logoutButton { display: none; }
+  .leads-command-page .nav-section { display: flex; overflow-x: auto; }
+  .leads-command-page .sidebar-footer { margin-top: 10px; }
   .leads-shell { margin-left: 0; display: block; }
   .leads-content { padding: 16px; }
   .leads-hero, .leads-hero-actions, .lead-ai-recommendation, .command-meta-card { display: grid; grid-template-columns: 1fr; }

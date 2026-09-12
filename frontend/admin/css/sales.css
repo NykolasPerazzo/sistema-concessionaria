@@ -35,11 +35,6 @@
   font-size: 14px;
 }
 
-.sales-page .sidebar nav a.active {
-  border-left: 3px solid var(--sales-accent);
-  background: var(--card-bg-secondary);
-}
-
 .sales-header-actions,
 .sales-dialog-actions {
   display: flex;
@@ -673,10 +668,6 @@
   .sales-header-actions {
     align-items: stretch;
     flex-direction: column-reverse;
-  }
-
-  .sales-header-actions .sales-secondary {
-    display: none;
   }
 
   .sales-stats,

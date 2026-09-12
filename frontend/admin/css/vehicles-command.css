@@ -45,49 +45,11 @@
   overflow-y: auto;
 }
 
-.vehicles-command-page .admin-logo {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 0 14px 22px;
-  color: #fff;
-  font-size: 15px;
-  font-weight: 900;
-  letter-spacing: 0.3px;
-}
-
-.vehicles-command-page .admin-logo span,
-.vehicles-command-page .admin-logo i {
+.vehicles-command-page .brand i {
   color: var(--vehicles-orange);
-  font-size: 28px;
 }
 
-.vehicles-command-page .sidebar nav {
-  display: grid;
-  gap: 8px;
-}
-
-.vehicles-command-page .sidebar nav a,
-.vehicles-command-page .public-site {
-  position: relative;
-  min-height: 42px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 0 14px;
-  border-radius: 8px;
-  color: #c9d2df;
-  font-size: 14px;
-  font-weight: 600;
-}
-
-.vehicles-command-page .sidebar nav a i {
-  width: 18px;
-  text-align: center;
-  font-size: 16px;
-}
-
-.vehicles-command-page .sidebar nav a.active {
+.vehicles-command-page .nav-link.active {
   background: linear-gradient(
     90deg,
     rgba(255, 77, 18, 0.24),
@@ -97,24 +59,12 @@
   font-weight: 900;
 }
 
-.vehicles-command-page .sidebar nav a.active i {
+.vehicles-command-page .nav-link.active i {
   color: var(--vehicles-orange);
 }
 
-.vehicles-command-page .sidebar nav a.active::before {
-  content: "";
-  position: absolute;
-  left: -10px;
-  top: 8px;
-  bottom: 8px;
-  width: 4px;
-  border-radius: 8px;
+.vehicles-command-page .nav-link.active::before {
   background: var(--vehicles-orange);
-}
-
-.vehicles-command-page .public-site {
-  margin-top: 130px;
-  color: #9ca3af;
 }
 
 .vehicles-shell {
@@ -654,12 +604,12 @@
     width: auto;
     padding: 12px;
   }
-  .vehicles-command-page .sidebar nav {
+  .vehicles-command-page .nav-section {
     display: flex;
     overflow-x: auto;
   }
-  .vehicles-command-page .public-site {
-    display: none;
+  .vehicles-command-page .sidebar-footer {
+    margin-top: 10px;
   }
   .vehicles-shell {
     margin-left: 0;
