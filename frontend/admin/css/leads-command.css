@@ -47,7 +47,8 @@
   letter-spacing: 0.3px;
 }
 
-.leads-command-page .admin-logo span { color: var(--lead-orange); font-size: 28px; }
+.leads-command-page .admin-logo span,
+.leads-command-page .admin-logo i { color: var(--lead-orange); font-size: 28px; }
 .leads-command-page .sidebar nav { display: grid; gap: 8px; }
 
 .leads-command-page .sidebar nav a,
@@ -69,10 +70,20 @@
   cursor: pointer;
 }
 
+.leads-command-page .sidebar nav a i {
+  width: 18px;
+  text-align: center;
+  font-size: 16px;
+}
+
 .leads-command-page .sidebar nav a.active {
   background: linear-gradient(90deg, rgba(255, 77, 18, 0.24), rgba(255, 77, 18, 0.06));
   color: #fff;
   font-weight: 900;
+}
+
+.leads-command-page .sidebar nav a.active i {
+  color: var(--lead-orange);
 }
 
 .leads-command-page .sidebar nav a.active::before {

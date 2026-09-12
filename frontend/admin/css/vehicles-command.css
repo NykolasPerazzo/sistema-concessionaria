@@ -56,7 +56,8 @@
   letter-spacing: 0.3px;
 }
 
-.vehicles-command-page .admin-logo span {
+.vehicles-command-page .admin-logo span,
+.vehicles-command-page .admin-logo i {
   color: var(--vehicles-orange);
   font-size: 28px;
 }
@@ -80,6 +81,12 @@
   font-weight: 600;
 }
 
+.vehicles-command-page .sidebar nav a i {
+  width: 18px;
+  text-align: center;
+  font-size: 16px;
+}
+
 .vehicles-command-page .sidebar nav a.active {
   background: linear-gradient(
     90deg,
@@ -88,6 +95,10 @@
   );
   color: #fff;
   font-weight: 900;
+}
+
+.vehicles-command-page .sidebar nav a.active i {
+  color: var(--vehicles-orange);
 }
 
 .vehicles-command-page .sidebar nav a.active::before {

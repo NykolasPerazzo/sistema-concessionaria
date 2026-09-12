@@ -36,26 +36,104 @@
           <h1>Vendas</h1>
           <p class="sales-subtitle">Cada negócio, do estoque ao resultado.</p>
         </div>
-        <button class="sales-primary" id="newSaleButton" disabled>
-          + Registrar venda
-        </button>
+        <div class="sales-header-actions">
+          <button class="sales-secondary" id="salesAiButton" type="button">
+            ✦ Análise da IA
+          </button>
+          <button class="sales-primary" id="newSaleButton" disabled>
+            + Registrar venda
+          </button>
+        </div>
       </header>
       <p id="pageMessage" class="sales-message" role="status" hidden></p>
-      <section
-        class="sales-stats"
-        aria-label="Resumo das vendas ativas no filtro"
-      >
+      <section class="sales-stats" aria-label="Resumo das vendas no filtro">
         <article>
-          <span>Vendas realizadas</span><strong id="salesCount">—</strong
-          ><small>No período selecionado</small>
+          <div class="sales-stat-icon">✓</div>
+          <div>
+            <span>Vendas realizadas</span><strong id="salesCount">—</strong
+            ><small>No período selecionado</small>
+          </div>
         </article>
         <article>
-          <span>Total vendido</span><strong id="salesRevenue">—</strong
-          ><small>Valor dos negócios registrados</small>
+          <div class="sales-stat-icon">R$</div>
+          <div>
+            <span>Total vendido</span><strong id="salesRevenue">—</strong
+            ><small>Valor dos negócios registrados</small>
+          </div>
         </article>
         <article class="sales-result-card">
-          <span>Resultado das vendas</span><strong id="salesProfit">—</strong
-          ><small>Venda − compra − despesas registradas</small>
+          <div class="sales-stat-icon">↗</div>
+          <div>
+            <span>Resultado das vendas</span><strong id="salesProfit">—</strong
+            ><small>Venda − compra − despesas</small>
+          </div>
+        </article>
+        <article>
+          <div class="sales-stat-icon">◈</div>
+          <div>
+            <span>Ticket médio</span><strong id="salesAverageTicket">—</strong
+            ><small>Margem de <b id="salesMargin">—</b></small>
+          </div>
+        </article>
+      </section>
+
+      <section
+        id="salesAiRecommendation"
+        class="sales-ai-recommendation"
+        data-level="neutral"
+      >
+        <div class="sales-ai-symbol">✦</div>
+        <div class="sales-ai-copy">
+          <span>RECOMENDAÇÃO DA IA</span>
+          <h2 id="salesAiTitle">Analisando seu resultado comercial</h2>
+          <p id="salesAiDescription">
+            Aguarde enquanto os dados das vendas são processados.
+          </p>
+        </div>
+        <button
+          class="sales-primary"
+          id="salesAiRecommendationButton"
+          type="button"
+        >
+          Ver análise completa →
+        </button>
+      </section>
+
+      <section class="sales-command-grid">
+        <article class="sales-command-panel">
+          <div class="sales-section-heading compact">
+            <div>
+              <h2>Performance comercial</h2>
+              <p>Resultado dos vendedores no período.</p>
+            </div>
+          </div>
+          <div id="salesPerformance" class="sales-performance"></div>
+        </article>
+        <article class="sales-command-panel">
+          <div class="sales-section-heading compact">
+            <div>
+              <h2>Insights rápidos</h2>
+              <p>Pontos que merecem atenção.</p>
+            </div>
+          </div>
+          <div class="sales-insight-list">
+            <div>
+              <span class="sales-insight-icon positive">↗</span>
+              <p>
+                <small>Melhor resultado</small
+                ><strong id="bestSaleVehicle">Carregando...</strong
+                ><span id="bestSaleProfit">—</span>
+              </p>
+            </div>
+            <div>
+              <span class="sales-insight-icon attention">%</span>
+              <p>
+                <small>Margem do período</small
+                ><strong id="salesInsightMargin">—</strong
+                ><span>Sobre o total vendido</span>
+              </p>
+            </div>
+          </div>
         </article>
       </section>
       <section class="sales-history">

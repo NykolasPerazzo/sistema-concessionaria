@@ -50,7 +50,8 @@ button {
   font-size: 14px;
 }
 
-.admin-logo span {
+.admin-logo span,
+.admin-logo i {
   font-size: 20px;
 }
 
@@ -63,17 +64,26 @@ button {
 .sidebar nav a {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
+  gap: 10px;
   padding: 13px 14px;
   border-radius: 8px;
   color: var(--text-secondary);
   transition: 0.2s;
 }
 
+.sidebar nav a i {
+  width: 18px;
+  text-align: center;
+  font-size: 16px;
+}
+
 .sidebar nav a:hover,
 .sidebar nav a.active {
   color: var(--text-color);
+}
+
+.sidebar nav a.active i {
+  color: var(--accent);
 }
 
 .nav-badge {
@@ -83,6 +93,7 @@ button {
   min-width: 20px;
   height: 20px;
   padding: 0 6px;
+  margin-left: auto;
   border-radius: 999px;
   background: #e5484d;
   color: #fff;
