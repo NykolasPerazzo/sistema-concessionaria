@@ -4,6 +4,7 @@ const rateLimit = require("express-rate-limit");
 const router = express.Router();
 
 const {
+  getAiStatus,
   askVehicleAI,
   recommendVehicle,
   generateVehicleDescription,
@@ -42,6 +43,17 @@ const interestedLimiter = rateLimit({
   },
 });
 
+// Assistente da área administrativa: uso autenticado, limita abuso
+const assistantLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    error: "Muitas perguntas em pouco tempo. Aguarde alguns minutos.",
+  },
+});
+
 // Busca especificações técnicas do veículo com IA: uso autenticado, limita abuso
 const specsLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -64,7 +76,15 @@ const coverLimiter = rateLimit({
   },
 });
 
-router.post("/vehicles", askVehicleAI);
+router.get("/status", authenticate, getAiStatus);
+
+router.post(
+  "/vehicles",
+  authenticate,
+  authorizeRoles("admin", "vendedor"),
+  assistantLimiter,
+  askVehicleAI,
+);
 
 router.post("/recommend", recommendLimiter, recommendVehicle);
 

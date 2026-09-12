@@ -5,128 +5,191 @@ const cloudinaryService = require("../services/cloudinary.service");
 const lumaService = require("../services/luma.service");
 
 /* ==========================================
-   IA - PERGUNTAS SOBRE O ESTOQUE
+   IA - STATUS (config validada, sem custo de API)
 ========================================== */
+
+const getAiStatus = (req, res) => {
+  res.json({
+    available: Boolean(process.env.GEMINI_API_KEY),
+  });
+};
+
+/* ==========================================
+   IA - CONTEXTO DA OPERAÇÃO (estoque, leads, vendas)
+========================================== */
+
+const MAX_CONTEXT_VEHICLES = 60;
+
+async function buildOperationContext() {
+  const today = new Date();
+
+  const vehiclesResult = await pool.query(
+    `SELECT id, brand, model, year, price, purchase_price, entry_date, mileage, status
+     FROM vehicles
+     WHERE status != 'sold'
+     ORDER BY entry_date ASC NULLS LAST
+     LIMIT $1`,
+    [MAX_CONTEXT_VEHICLES],
+  );
+
+  const stockData = vehiclesResult.rows.map((vehicle) => {
+    let daysInStock = null;
+
+    if (vehicle.entry_date) {
+      daysInStock = Math.max(
+        0,
+        Math.floor((today - new Date(vehicle.entry_date)) / 86400000),
+      );
+    }
+
+    let margin = null;
+
+    if (Number(vehicle.purchase_price) > 0 && Number(vehicle.price) > 0) {
+      margin =
+        ((Number(vehicle.price) - Number(vehicle.purchase_price)) /
+          Number(vehicle.purchase_price)) *
+        100;
+    }
+
+    return {
+      id: vehicle.id,
+      vehicle: `${vehicle.brand} ${vehicle.model}`,
+      year: vehicle.year,
+      price: Number(vehicle.price),
+      purchasePrice: vehicle.purchase_price
+        ? Number(vehicle.purchase_price)
+        : null,
+      mileage: vehicle.mileage ? Number(vehicle.mileage) : null,
+      status: vehicle.status,
+      daysInStock,
+      margin: margin !== null ? Number(margin.toFixed(2)) : null,
+    };
+  });
+
+  // Leads: só contagens agregadas por etapa — nome/telefone/e-mail dos
+  // clientes nunca são enviados a um serviço de terceiros (Gemini).
+  const leadsByStageResult = await pool.query(
+    `SELECT status, COUNT(*)::int AS total FROM leads GROUP BY status`,
+  );
+
+  const leadsByStage = Object.fromEntries(
+    leadsByStageResult.rows.map((row) => [row.status, row.total]),
+  );
+
+  const leadsOverdueResult = await pool.query(
+    `SELECT COUNT(*)::int AS total FROM leads
+     WHERE next_contact_date < CURRENT_DATE
+     AND status IN ('new','contacting','qualified')`,
+  );
+
+  // Vendas: agregado do mês corrente — sem nome/telefone de comprador.
+  const salesResult = await pool.query(
+    `SELECT
+       COUNT(*)::int AS count,
+       COALESCE(SUM(sale_price), 0) AS revenue,
+       COALESCE(SUM(sale_price - purchase_price - expenses_total), 0) AS profit
+     FROM sales
+     WHERE cancelled_at IS NULL
+     AND sale_date >= date_trunc('month', CURRENT_DATE)::date`,
+  );
+
+  const salesRow = salesResult.rows[0];
+  const salesRevenue = Number(salesRow.revenue);
+  const salesProfit = Number(salesRow.profit);
+
+  return {
+    estoqueDisponivel: stockData,
+    leadsPorEtapa: leadsByStage,
+    leadsComRetornoVencido: leadsOverdueResult.rows[0].total,
+    vendasDoMes: {
+      quantidade: salesRow.count,
+      receita: Number(salesRevenue.toFixed(2)),
+      resultado: Number(salesProfit.toFixed(2)),
+      margemPercentual:
+        salesRevenue > 0
+          ? Number(((salesProfit / salesRevenue) * 100).toFixed(2))
+          : null,
+    },
+  };
+}
+
+/* ==========================================
+   IA - PERGUNTAS SOBRE A OPERAÇÃO
+========================================== */
+
+const MAX_QUESTION_LENGTH = 2000;
 
 const askVehicleAI = async (req, res) => {
   try {
-    const { question } = req.body;
+    if (!process.env.GEMINI_API_KEY) {
+      return res.status(503).json({
+        error: "IA indisponível: integração com o Gemini não configurada.",
+      });
+    }
 
-    if (!question || !question.trim()) {
+    const { question } = req.body || {};
+
+    if (typeof question !== "string" || !question.trim()) {
       return res.status(400).json({
         error: "Digite uma pergunta.",
       });
     }
 
-    /* ======================================
-           BUSCAR ESTOQUE
-        ====================================== */
+    if (question.length > MAX_QUESTION_LENGTH) {
+      return res.status(400).json({
+        error: `A pergunta deve ter no máximo ${MAX_QUESTION_LENGTH} caracteres.`,
+      });
+    }
 
-    const result = await pool.query(`
-            SELECT
-                id,
-                brand,
-                model,
-                year,
-                price,
-                purchase_price,
-                entry_date,
-                mileage,
-                status
-            FROM vehicles
-            ORDER BY id DESC
-        `);
-
-    const vehicles = result.rows;
-
-    /* ======================================
-           PREPARAR DADOS
-        ====================================== */
-
-    const today = new Date();
-
-    const stockData = vehicles.map((vehicle) => {
-      let daysInStock = null;
-
-      if (vehicle.entry_date) {
-        const entryDate = new Date(vehicle.entry_date);
-
-        daysInStock = Math.max(
-          0,
-          Math.floor((today - entryDate) / (1000 * 60 * 60 * 24)),
-        );
-      }
-
-      let margin = null;
-
-      if (Number(vehicle.purchase_price) > 0 && Number(vehicle.price) > 0) {
-        margin =
-          ((Number(vehicle.price) - Number(vehicle.purchase_price)) /
-            Number(vehicle.purchase_price)) *
-          100;
-      }
-
-      return {
-        id: vehicle.id,
-
-        vehicle: `${vehicle.brand} ${vehicle.model}`,
-
-        year: vehicle.year,
-
-        price: Number(vehicle.price),
-
-        purchasePrice: vehicle.purchase_price
-          ? Number(vehicle.purchase_price)
-          : null,
-
-        mileage: vehicle.mileage ? Number(vehicle.mileage) : null,
-
-        status: vehicle.status,
-
-        daysInStock,
-
-        margin: margin !== null ? Number(margin.toFixed(2)) : null,
-      };
-    });
+    const context = await buildOperationContext();
 
     /* ======================================
            PROMPT
         ====================================== */
 
     const prompt = `
-Você é o assistente de gestão do sistema Car Dealer IA.
+Você é o assistente de gestão do sistema Car Dealer IA, usado pela equipe interna de uma revenda de veículos.
 
-Sua função é ajudar uma concessionária ou revenda de veículos
-a interpretar os dados do estoque.
+Sua função é ajudar essa equipe a interpretar estoque, leads e vendas.
 
 REGRAS:
 
-- Responda somente com base nos dados fornecidos.
-- Não invente veículos, valores ou informações.
+- Responda somente com base nos dados fornecidos abaixo.
+- Não invente veículos, leads, valores ou informações.
 - Responda em português do Brasil.
 - Seja direto e profissional.
 - Use valores em reais quando necessário.
 - Quando houver margem, explique de forma simples.
 - Considere veículos com muitos dias em estoque como possível atenção.
-- Não diga que uma venda irá acontecer com certeza.
+- Não diga que uma venda ou conversão de lead irá acontecer com certeza.
+- Toda sugestão de preço, status ou ação é uma RECOMENDAÇÃO: quem decide e aplica é a equipe, não você.
 - Se não houver dados suficientes, informe isso claramente.
 - Prefira respostas curtas, entre 2 e 5 parágrafos.
 
-DADOS DO ESTOQUE:
+ESTOQUE DISPONÍVEL (não vendido):
+${JSON.stringify(context.estoqueDisponivel, null, 2)}
 
-${JSON.stringify(stockData, null, 2)}
+LEADS POR ETAPA (contagem, sem dados pessoais):
+${JSON.stringify(context.leadsPorEtapa, null, 2)}
 
-PERGUNTA DO USUÁRIO:
+LEADS COM RETORNO VENCIDO: ${context.leadsComRetornoVencido}
 
-${question}
+VENDAS DO MÊS ATUAL (sem dados do comprador):
+${JSON.stringify(context.vendasDoMes, null, 2)}
+
+PERGUNTA DA EQUIPE:
+
+${question.trim()}
         `;
 
     /* ======================================
            GEMINI
         ====================================== */
 
+    const model = process.env.GEMINI_MODEL || "gemini-3.5-flash-lite";
+
     const geminiResponse = await fetch(
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent",
+      `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,
       {
         method: "POST",
 
@@ -154,7 +217,7 @@ ${question}
     if (!geminiResponse.ok) {
       console.error("Erro Gemini:", geminiData);
 
-      return res.status(500).json({
+      return res.status(502).json({
         error: "Não foi possível consultar a IA.",
       });
     }
@@ -162,7 +225,7 @@ ${question}
     const answer = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text;
 
     if (!answer) {
-      return res.status(500).json({
+      return res.status(502).json({
         error: "A IA não retornou uma resposta.",
       });
     }
@@ -837,6 +900,7 @@ const generateVehicleCover = async (req, res) => {
 };
 
 module.exports = {
+  getAiStatus,
   askVehicleAI,
   recommendVehicle,
   generateVehicleDescription,

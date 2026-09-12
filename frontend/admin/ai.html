@@ -13,6 +13,7 @@
       crossorigin="anonymous"
     />
     <link rel="stylesheet" href="./css/admin.css" />
+    <link rel="stylesheet" href="./css/ai.css" />
   </head>
 
   <body>
@@ -73,163 +74,255 @@
     </nav>
 
     <main class="admin-main ai-page">
-      <header class="ai-page-header">
+      <header class="ai-header">
         <div>
-          <span class="page-eyebrow"> INTELIGÊNCIA ARTIFICIAL </span>
-
-          <h1>Assistente Car Dealer</h1>
-
-          <p>Converse com a IA e analise seu estoque em tempo real.</p>
+          <span class="eyebrow">INTELIGÊNCIA</span>
+          <h1>IA Assistente</h1>
+          <p>Pergunte sobre estoque, leads, preços ou vendas.</p>
         </div>
 
-        <div class="ai-status">
-          <span class="ai-status-dot"></span>
-          IA online
+        <div class="ai-header-actions">
+          <span class="ai-status" id="aiStatus" data-state="checking">
+            <span class="ai-status-dot"></span>
+            <span id="aiStatusText">Verificando IA...</span>
+          </span>
+          <button type="button" class="ai-new-chat" id="aiNewChat">
+            <i class="fa-solid fa-plus"></i> Nova conversa
+          </button>
         </div>
       </header>
 
-      <section class="ai-dashboard-grid">
-        <!-- =====================================
-           CONVERSA
-      ====================================== -->
+      <p id="aiPageMessage" class="ai-page-message" role="status" hidden></p>
 
-        <div class="ai-chat-panel">
-          <div class="ai-chat-header">
-            <div class="ai-chat-avatar">✦</div>
-
-            <div>
-              <strong> Car Dealer IA </strong>
-
-              <span> Assistente de gestão </span>
-            </div>
+      <section class="ai-main-grid">
+        <div class="ai-panel ai-chat-panel">
+          <div class="ai-chat-panel-head">
+            <h2>Converse com sua operação</h2>
           </div>
 
-          <div class="ai-chat-messages" id="aiChatMessages">
-            <div class="ai-message assistant">
-              <div class="ai-message-avatar">✦</div>
+          <div class="ai-chat-messages" id="aiMessages">
+            <div class="ai-chat-empty" id="aiEmptyState">
+              <div class="ai-chat-empty-icon"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+              <h3>Como posso ajudar sua revenda hoje?</h3>
+              <p>
+                Eu analiso os dados do sistema e preparo sugestões para sua
+                aprovação.
+              </p>
 
-              <div class="ai-message-content">
-                <strong> Car Dealer IA </strong>
-
-                <p>
-                  Olá! Posso analisar seu estoque, margens, tempo dos veículos
-                  em estoque e ajudar você a encontrar oportunidades.
-                </p>
+              <div class="ai-quick-questions" id="aiQuickQuestions">
+                <button type="button" data-question="Quais veículos precisam de atenção?">
+                  <i class="fa-solid fa-car-side"></i>
+                  Quais veículos precisam de atenção?
+                </button>
+                <button type="button" data-question="Como estão meus leads?">
+                  <i class="fa-solid fa-users"></i>
+                  Como estão meus leads?
+                </button>
+                <button type="button" data-question="Analise as vendas do mês">
+                  <i class="fa-solid fa-chart-simple"></i>
+                  Analise as vendas do mês
+                </button>
+                <button type="button" data-question="Sugira ajustes de preço">
+                  <i class="fa-solid fa-tag"></i>
+                  Sugira ajustes de preço
+                </button>
               </div>
             </div>
+
+            <div id="aiMessageList" class="ai-message-list"></div>
           </div>
 
-          <div class="ai-chat-suggestions">
-            <button type="button">Qual veículo tem maior margem?</button>
+          <p id="aiChatError" class="ai-chat-error" role="alert" hidden></p>
 
-            <button type="button">Quais carros estão há mais tempo?</button>
-
-            <button type="button">Qual o valor total do estoque?</button>
-
-            <button type="button">O que devo priorizar para venda?</button>
-          </div>
-
-          <div class="ai-chat-input">
+          <form id="aiForm" class="ai-chat-form">
             <textarea
-              id="aiPageQuestion"
+              id="aiInput"
               rows="1"
-              placeholder="Pergunte algo sobre sua concessionária..."
+              maxlength="2000"
+              placeholder="Pergunte qualquer coisa sobre sua revenda..."
             ></textarea>
-
-            <button type="button" id="aiPageSend" aria-label="Enviar pergunta">
-              ➤
+            <button type="submit" id="aiSend" aria-label="Enviar pergunta">
+              <i class="fa-solid fa-paper-plane"></i>
             </button>
-          </div>
+          </form>
         </div>
 
-        <!-- =====================================
-           PAINEL DIREITO
-      ====================================== -->
+        <aside class="ai-side-col">
+          <section class="ai-panel">
+            <h2>Visão da operação</h2>
+            <p>Resumo em tempo real da sua revenda.</p>
 
-        <aside class="ai-page-sidebar">
-          <section class="ai-info-card">
-            <div class="ai-info-card-header">
-              <span class="ai-info-icon"> ✦ </span>
+            <div class="ai-metric-list">
+              <div class="ai-metric" id="aiMetricStock" data-state="">
+                <i class="fa-solid fa-car-side"></i>
+                <div class="ai-metric-info">
+                  <span>Estoque</span>
+                  <strong id="aiMetricStockValue">—</strong>
+                </div>
+                <span class="ai-metric-badge"></span>
+              </div>
 
-              <div>
-                <strong> Assistente inteligente </strong>
+              <div class="ai-metric" id="aiMetricLeads" data-state="">
+                <i class="fa-solid fa-users"></i>
+                <div class="ai-metric-info">
+                  <span>Leads aguardando</span>
+                  <strong id="aiMetricLeadsValue">—</strong>
+                </div>
+                <span class="ai-metric-badge"></span>
+              </div>
 
-                <span> Dados em tempo real </span>
+              <div class="ai-metric" id="aiMetricSales" data-state="">
+                <i class="fa-solid fa-chart-simple"></i>
+                <div class="ai-metric-info">
+                  <span>Vendas no mês</span>
+                  <strong id="aiMetricSalesValue">—</strong>
+                </div>
+                <span class="ai-metric-badge"></span>
+              </div>
+
+              <div class="ai-metric" id="aiMetricMargin" data-state="">
+                <i class="fa-solid fa-percent"></i>
+                <div class="ai-metric-info">
+                  <span>Margem média das vendas</span>
+                  <strong id="aiMetricMarginValue">—</strong>
+                </div>
+                <span class="ai-metric-badge"></span>
               </div>
             </div>
-
-            <p>
-              A IA utiliza os dados cadastrados no Car Dealer para responder
-              suas perguntas.
-            </p>
           </section>
 
-          <section class="ai-page-insights">
-            <h2>Insights rápidos</h2>
-
-            <article class="ai-page-insight-card">
-              <span class="ai-page-insight-icon"> ↗ </span>
-
+          <section class="ai-panel">
+            <div class="ai-panel-head">
               <div>
-                <small> Maior margem </small>
-
-                <strong id="aiPageHighestMargin"> Calculando... </strong>
-
-                <span id="aiPageHighestMarginValue"> - </span>
+                <h2>Histórico recente</h2>
+                <p>Suas últimas conversas com a IA.</p>
               </div>
-            </article>
-
-            <article class="ai-page-insight-card">
-              <span class="ai-page-insight-icon"> ◷ </span>
-
-              <div>
-                <small> Mais tempo em estoque </small>
-
-                <strong id="aiPageOldestVehicle"> Calculando... </strong>
-
-                <span id="aiPageOldestDays"> - </span>
-              </div>
-            </article>
-
-            <article class="ai-page-insight-card">
-              <span class="ai-page-insight-icon"> $ </span>
-
-              <div>
-                <small> Valor do estoque </small>
-
-                <strong id="aiPageStockValue"> Calculando... </strong>
-
-                <span> Veículos disponíveis </span>
-              </div>
-            </article>
-          </section>
-
-          <section class="ai-capabilities">
-            <h2>O que posso analisar</h2>
-
-            <div class="ai-capability">
-              <span>✓</span>
-              Margem dos veículos
             </div>
 
-            <div class="ai-capability">
-              <span>✓</span>
-              Tempo em estoque
+            <div class="ai-history-list" id="aiHistoryList">
+              <p class="ai-history-empty">Nenhuma conversa nesta sessão ainda.</p>
             </div>
 
-            <div class="ai-capability">
-              <span>✓</span>
-              Valor total do estoque
-            </div>
-
-            <div class="ai-capability">
-              <span>✓</span>
-              Prioridade de venda
-            </div>
+            <button type="button" class="ai-see-all" id="aiSeeAll" hidden>
+              Ver todas →
+            </button>
           </section>
         </aside>
       </section>
+
+      <section class="ai-bottom-grid">
+        <section class="ai-panel">
+          <h2>Automações</h2>
+          <p>A IA pode monitorar sua operação e te avisar automaticamente.</p>
+
+          <div class="ai-automation-list">
+            <div class="ai-automation-row">
+              <i class="fa-solid fa-file-lines"></i>
+              <div class="ai-automation-info">
+                <strong>Resumo diário</strong>
+                <span>Receba um resumo da operação por e-mail.</span>
+              </div>
+              <label class="ai-toggle">
+                <input
+                  type="checkbox"
+                  id="autoDailySummary"
+                  data-setting-key="ai_automation_daily_summary"
+                  disabled
+                />
+                <span class="ai-toggle-track"></span>
+              </label>
+            </div>
+
+            <div class="ai-automation-row">
+              <i class="fa-solid fa-bell"></i>
+              <div class="ai-automation-info">
+                <strong>Alerta de lead parado</strong>
+                <span>Notifica quando um lead ficar sem resposta por 48h.</span>
+              </div>
+              <label class="ai-toggle">
+                <input
+                  type="checkbox"
+                  id="autoStaleLead"
+                  data-setting-key="ai_automation_stale_lead_alert"
+                  disabled
+                />
+                <span class="ai-toggle-track"></span>
+              </label>
+            </div>
+
+            <div class="ai-automation-row">
+              <i class="fa-solid fa-gauge-high"></i>
+              <div class="ai-automation-info">
+                <strong>Monitoramento de margem</strong>
+                <span>Avisa se a margem de um veículo estiver abaixo do ideal.</span>
+              </div>
+              <label class="ai-toggle">
+                <input
+                  type="checkbox"
+                  id="autoMarginWatch"
+                  data-setting-key="ai_automation_margin_watch"
+                  disabled
+                />
+                <span class="ai-toggle-track"></span>
+              </label>
+            </div>
+          </div>
+
+          <p class="ai-automation-hint" id="aiAutomationHint" hidden></p>
+        </section>
+
+        <section class="ai-panel ai-security-panel">
+          <div class="ai-security-head">
+            <i class="fa-solid fa-shield-halved"></i>
+            <div>
+              <h2>Controle e segurança</h2>
+              <p>Você mantém o controle. A IA apenas sugere, você aprova.</p>
+            </div>
+          </div>
+
+          <p class="ai-security-message">
+            <i class="fa-solid fa-circle-check"></i>
+            A IA nunca altera dados sem sua aprovação
+          </p>
+
+          <div class="ai-security-items">
+            <span><i class="fa-solid fa-circle-check"></i> Preços — apenas sugere</span>
+            <span><i class="fa-solid fa-circle-check"></i> Veículos — apenas sugere</span>
+            <span><i class="fa-solid fa-circle-check"></i> Clientes — apenas sugere</span>
+          </div>
+        </section>
+      </section>
     </main>
+
+    <dialog id="aiHistoryDialog" class="ai-history-dialog">
+      <div class="ai-history-dialog-head">
+        <h2>Histórico da sessão</h2>
+        <button
+          type="button"
+          class="ai-history-dialog-close"
+          id="aiHistoryDialogClose"
+          aria-label="Fechar"
+        >
+          ×
+        </button>
+      </div>
+      <div class="ai-history-list" id="aiHistoryDialogList"></div>
+    </dialog>
+
+    <dialog id="aiConversationDialog" class="ai-history-dialog">
+      <div class="ai-history-dialog-head">
+        <h2 id="aiConversationDialogTitle">Conversa</h2>
+        <button
+          type="button"
+          class="ai-history-dialog-close"
+          id="aiConversationDialogClose"
+          aria-label="Fechar"
+        >
+          ×
+        </button>
+      </div>
+      <div class="ai-chat-messages" id="aiConversationDialogMessages"></div>
+    </dialog>
 
     <script src="../js/config.js"></script>
     <script src="./js/auth.js"></script>
