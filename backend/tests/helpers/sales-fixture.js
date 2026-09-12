@@ -73,6 +73,12 @@ async function fixture() {
   );
   await db.exec(leadAssignmentMigration);
   await db.exec(leadAssignmentMigration);
+  const vehicleSpecsMigration = fs.readFileSync(
+    path.join(__dirname, "../../database/migrations/011_vehicle_specs.sql"),
+    "utf8",
+  );
+  await db.exec(vehicleSpecsMigration);
+  await db.exec(vehicleSpecsMigration);
   // PGlite possui uma conexão. A fila impede intercalar transações HTTP no teste.
   let queue = Promise.resolve();
   async function acquire() {

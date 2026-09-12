@@ -24,7 +24,8 @@
     "migrate:lead-assignment": "npm run migrate:lead-ai-history && node backend/scripts/migrate-lead-assignment.js",
     "test:lead-assignment": "node --test backend/tests/lead-assignment.test.js",
     "migrate:dispatcher": "npm run migrate:lead-assignment && node backend/scripts/migrate-dispatcher.js",
-    "test:dispatcher": "node --test backend/tests/dispatcher.test.js"
+    "test:dispatcher": "node --test backend/tests/dispatcher.test.js",
+    "migrate:vehicle-specs": "npm run migrate:dispatcher && node backend/scripts/migrate-vehicle-specs.js"
   },
   "repository": {
     "type": "git",

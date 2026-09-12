@@ -2654,6 +2654,10 @@ body:has(.vehicles-ai-sidebar) .admin-main {
   color: #f87171;
 }
 
+.description-ai-status.warning {
+  color: #fbbf24;
+}
+
 /* =========================================
    CAPA PROFISSIONAL COM IA
 ========================================= */

@@ -433,6 +433,278 @@ const generateVehicleDescription = async (req, res) => {
 };
 
 /* ==========================================
+   IA - ESPECIFICAÇÕES TÉCNICAS DO VEÍCULO
+========================================== */
+
+const SPECS_CONFIDENCE_LEVELS = ["alta", "media", "baixa"];
+
+function nullOrFiniteNumber(value, { min, max, integer = true } = {}) {
+  if (value === null || value === undefined) {
+    return null;
+  }
+
+  const number = Number(value);
+
+  if (!Number.isFinite(number)) {
+    return null;
+  }
+
+  if (integer && !Number.isInteger(number)) {
+    return null;
+  }
+
+  if (min !== undefined && number < min) {
+    return null;
+  }
+
+  if (max !== undefined && number > max) {
+    return null;
+  }
+
+  return number;
+}
+
+function nullOrTrimmedString(value, maxLength) {
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const trimmed = value.trim();
+
+  if (!trimmed) {
+    return null;
+  }
+
+  return trimmed.slice(0, maxLength);
+}
+
+/*
+  A IA às vezes responde envolvendo o JSON em blocos de código
+  Markdown mesmo quando instruída a não fazer isso. Extraímos o
+  JSON de forma tolerante antes de validar o formato.
+*/
+function extractJsonPayload(text) {
+  const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/i);
+
+  const candidate = fenced ? fenced[1] : text;
+
+  return JSON.parse(candidate.trim());
+}
+
+/*
+  Nunca confiamos cegamente no que a IA devolve: cada campo é
+  revalidado aqui. Qualquer valor fora do formato esperado vira
+  null em vez de ser repassado para o formulário do admin.
+*/
+function sanitizeSpecsPayload(raw) {
+  if (!raw || typeof raw !== "object") {
+    return null;
+  }
+
+  const confianca = SPECS_CONFIDENCE_LEVELS.includes(raw.confianca)
+    ? raw.confianca
+    : "baixa";
+
+  return {
+    velocidade_maxima_kmh: nullOrFiniteNumber(raw.velocidade_maxima_kmh, {
+      min: 1,
+      max: 500,
+    }),
+
+    capacidade_passageiros: nullOrFiniteNumber(raw.capacidade_passageiros, {
+      min: 1,
+      max: 9,
+    }),
+
+    capacidade_porta_malas_litros: nullOrFiniteNumber(
+      raw.capacidade_porta_malas_litros,
+      { min: 0, max: 3000 },
+    ),
+
+    combustivel: nullOrTrimmedString(raw.combustivel, 40),
+
+    cambio: nullOrTrimmedString(raw.cambio, 40),
+
+    motorizacao: nullOrTrimmedString(raw.motorizacao, 80),
+
+    potencia_cv: nullOrFiniteNumber(raw.potencia_cv, { min: 1, max: 2000 }),
+
+    confianca,
+
+    observacao: nullOrTrimmedString(raw.observacao, 500),
+  };
+}
+
+const generateVehicleSpecs = async (req, res) => {
+  try {
+    const { brand, model, year, version, engine } = req.body || {};
+
+    const brandText = typeof brand === "string" ? brand.trim() : "";
+    const modelText = typeof model === "string" ? model.trim() : "";
+    const versionText = typeof version === "string" ? version.trim() : "";
+    const engineText = typeof engine === "string" ? engine.trim() : "";
+
+    const yearNumber = Number(year);
+
+    const currentYear = new Date().getFullYear();
+
+    if (!brandText || !modelText) {
+      return res.status(400).json({
+        error: "Informe marca e modelo do veículo.",
+      });
+    }
+
+    if (
+      !Number.isInteger(yearNumber) ||
+      yearNumber < 1886 ||
+      yearNumber > currentYear + 2
+    ) {
+      return res.status(400).json({
+        error: "Informe um ano de fabricação válido.",
+      });
+    }
+
+    const vehicleData = {
+      marca: brandText,
+      modelo: modelText,
+      ano: yearNumber,
+      versao: versionText || null,
+      motorizacao_informada: engineText || null,
+    };
+
+    const prompt = `
+Você é um especialista técnico em veículos automotores vendidos no Brasil.
+
+Sua tarefa é preencher especificações técnicas de um veículo com base
+SOMENTE no que você sabe com segurança sobre a marca, modelo, ano e
+versão/motorização informados abaixo.
+
+DADOS DO VEÍCULO:
+${JSON.stringify(vehicleData, null, 2)}
+
+REGRAS OBRIGATÓRIAS:
+
+- Nunca invente especificações. Se não tiver certeza, use null.
+- Se existir mais de uma versão/motorização para esse modelo/ano e não for
+  possível identificar qual delas com segurança a partir dos dados
+  informados, retorne null nos campos afetados e explique em "observacao"
+  quais dados adicionais (versão, motorização, etc.) resolveriam a dúvida.
+- "velocidade_maxima_kmh" deve ser um número inteiro em km/h, sem texto,
+  sem unidade. Nunca estime; use somente se for um dado técnico conhecido.
+- "capacidade_passageiros" é a quantidade de PESSOAS que o veículo
+  transporta (geralmente 5), nunca a capacidade do porta-malas.
+- "capacidade_porta_malas_litros" só deve ser preenchido se você tiver
+  certeza da capacidade em litros do porta-malas dessa versão.
+- "combustivel" e "cambio" devem refletir o padrão dessa versão/motorização.
+- "potencia_cv" é a potência em cavalos (CV), apenas se for um dado
+  técnico confiável para essa versão específica.
+- "confianca" só pode ser "alta", "media" ou "baixa":
+  * "alta": você tem certeza dos dados preenchidos para essa versão exata.
+  * "media": os dados são prováveis, mas a versão/motorização não foi
+    identificada com total precisão.
+  * "baixa": pouca certeza; a maioria dos campos deve ser null.
+- Se não houver certeza suficiente para um campo, use null nele e explique
+  o motivo em "observacao" (ex.: "Não é possível confirmar sem saber a
+  motorização exata: 1.0, 1.6 ou 2.0").
+- Não use dados fictícios como fallback.
+- Responda em português do Brasil.
+
+FORMATO DE RESPOSTA (responda SOMENTE este JSON, sem texto antes ou depois,
+sem Markdown):
+
+{
+  "velocidade_maxima_kmh": 0,
+  "capacidade_passageiros": 0,
+  "capacidade_porta_malas_litros": null,
+  "combustivel": null,
+  "cambio": null,
+  "motorizacao": null,
+  "potencia_cv": null,
+  "confianca": "alta",
+  "observacao": null
+}
+    `;
+
+    const geminiResponse = await fetch(
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent",
+      {
+        method: "POST",
+
+        headers: {
+          "Content-Type": "application/json",
+          "x-goog-api-key": process.env.GEMINI_API_KEY,
+        },
+
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [
+                {
+                  text: prompt,
+                },
+              ],
+            },
+          ],
+
+          generationConfig: {
+            temperature: 0.1,
+            responseMimeType: "application/json",
+          },
+        }),
+      },
+    );
+
+    const geminiData = await geminiResponse.json();
+
+    if (!geminiResponse.ok) {
+      console.error("Erro Gemini especificações:", geminiData);
+
+      return res.status(500).json({
+        error: "Não foi possível consultar a IA.",
+      });
+    }
+
+    const rawText = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text;
+
+    if (!rawText) {
+      return res.status(500).json({
+        error: "A IA não retornou especificações.",
+      });
+    }
+
+    let parsed;
+
+    try {
+      parsed = extractJsonPayload(rawText);
+    } catch (error) {
+      console.error("Resposta da IA fora do formato JSON esperado:", rawText);
+
+      return res.status(502).json({
+        error:
+          "A IA retornou um formato inesperado. Tente novamente em instantes.",
+      });
+    }
+
+    const specs = sanitizeSpecsPayload(parsed);
+
+    if (!specs) {
+      return res.status(502).json({
+        error:
+          "A IA retornou um formato inesperado. Tente novamente em instantes.",
+      });
+    }
+
+    return res.json(specs);
+  } catch (error) {
+    console.error("Erro ao buscar especificações com IA:", error);
+
+    return res.status(500).json({
+      error: "Erro interno do servidor.",
+    });
+  }
+};
+
+/* ==========================================
    IA - CAPA PROFISSIONAL DO VEÍCULO
 ========================================== */
 
@@ -568,5 +840,6 @@ module.exports = {
   askVehicleAI,
   recommendVehicle,
   generateVehicleDescription,
+  generateVehicleSpecs,
   generateVehicleCover,
 };

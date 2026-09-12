@@ -31,6 +31,7 @@ async function fixture() {
     "008_lead_ai_history.sql",
     "009_lead_assignment.sql",
     "010_dispatcher.sql",
+    "011_vehicle_specs.sql",
   ];
   for (const file of migrations) {
     const sql = fs.readFileSync(

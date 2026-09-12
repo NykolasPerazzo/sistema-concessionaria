@@ -7,6 +7,7 @@ const {
   askVehicleAI,
   recommendVehicle,
   generateVehicleDescription,
+  generateVehicleSpecs,
   generateVehicleCover,
 } = require("../controllers/ai.controller");
 
@@ -41,6 +42,17 @@ const interestedLimiter = rateLimit({
   },
 });
 
+// Busca especificações técnicas do veículo com IA: uso autenticado, limita abuso
+const specsLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    error: "Muitas tentativas. Tente novamente em alguns minutos.",
+  },
+});
+
 // Gera a capa profissional do veículo com IA: uso autenticado e caro (IA de imagem), limita abuso
 const coverLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -57,6 +69,14 @@ router.post("/vehicles", askVehicleAI);
 router.post("/recommend", recommendLimiter, recommendVehicle);
 
 router.post("/vehicle-description", generateVehicleDescription);
+
+router.post(
+  "/vehicle-specs",
+  authenticate,
+  authorizeRoles("admin"),
+  specsLimiter,
+  generateVehicleSpecs,
+);
 
 router.post(
   "/vehicle-cover",

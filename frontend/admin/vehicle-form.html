@@ -301,6 +301,121 @@
           </div>
 
           <!-- ================================
+             ESPECIFICAÇÕES TÉCNICAS (IA)
+        ================================= -->
+
+          <div class="form-section">
+            <div class="form-section-title">
+              <span class="eyebrow"> ESPECIFICAÇÕES TÉCNICAS </span>
+
+              <h2>Dados técnicos</h2>
+            </div>
+
+            <div class="form-group">
+              <label for="specsVersion">
+                Versão (opcional, ajuda a IA a identificar a motorização
+                correta)
+              </label>
+
+              <input
+                id="specsVersion"
+                type="text"
+                placeholder="Ex.: XEi 2.0 Flex Aut."
+              />
+            </div>
+
+            <div class="description-ai-header">
+              <button
+                type="button"
+                id="generateSpecsAI"
+                class="generate-description-ai"
+              >
+                <span>✦</span>
+                Buscar especificações com IA
+              </button>
+            </div>
+
+            <p id="specsAIStatus" class="description-ai-status"></p>
+
+            <div class="form-grid">
+              <!-- VELOCIDADE MÁXIMA -->
+
+              <div class="form-group">
+                <label for="top_speed"> Velocidade máxima (km/h) </label>
+
+                <input
+                  id="top_speed"
+                  name="top_speed"
+                  type="number"
+                  min="1"
+                  max="500"
+                  placeholder="Ex.: 200"
+                />
+              </div>
+
+              <!-- CAPACIDADE DE PASSAGEIROS -->
+
+              <div class="form-group">
+                <label for="seats"> Capacidade de passageiros </label>
+
+                <input
+                  id="seats"
+                  name="seats"
+                  type="number"
+                  min="1"
+                  max="9"
+                  placeholder="Ex.: 5"
+                />
+              </div>
+
+              <!-- PORTA-MALAS -->
+
+              <div class="form-group">
+                <label for="trunk_capacity">
+                  Capacidade do porta-malas (litros)
+                </label>
+
+                <input
+                  id="trunk_capacity"
+                  name="trunk_capacity"
+                  type="number"
+                  min="0"
+                  max="3000"
+                  placeholder="Ex.: 470"
+                />
+              </div>
+
+              <!-- MOTORIZAÇÃO -->
+
+              <div class="form-group">
+                <label for="engine"> Motorização </label>
+
+                <input
+                  id="engine"
+                  name="engine"
+                  type="text"
+                  placeholder="Ex.: 2.0 16V Flex"
+                />
+              </div>
+
+              <!-- POTÊNCIA -->
+
+              <div class="form-group">
+                <label for="horsepower"> Potência (cv) </label>
+
+                <input
+                  id="horsepower"
+                  name="horsepower"
+                  type="number"
+                  min="1"
+                  max="2000"
+                  placeholder="Ex.: 145"
+                />
+              </div>
+            </div>
+          </div>
+
+          <!-- ================================
              ANÚNCIO
         ================================= -->
 

@@ -9,6 +9,10 @@ const ALLOWED_STATUS = ["available", "reserved", "sold"];
 
 const MAX_PRICE = 100000000;
 const MAX_MILEAGE = 10000000;
+const MAX_TOP_SPEED = 500;
+const MAX_SEATS = 9;
+const MAX_TRUNK_CAPACITY = 3000;
+const MAX_HORSEPOWER = 2000;
 
 /* ==========================================
    AUXILIARES
@@ -141,6 +145,11 @@ function validateVehicleData(data) {
     color,
     description,
     status,
+    top_speed,
+    seats,
+    trunk_capacity,
+    engine,
+    horsepower,
   } = data;
 
   /* ======================================
@@ -289,6 +298,61 @@ function validateVehicleData(data) {
   }
 
   /* ======================================
+     VELOCIDADE MÁXIMA
+  ====================================== */
+
+  if (!validOptionalNumber(top_speed, 1, MAX_TOP_SPEED)) {
+    return {
+      valid: false,
+      error: "Velocidade máxima inválida.",
+    };
+  }
+
+  /* ======================================
+     CAPACIDADE DE PASSAGEIROS
+  ====================================== */
+
+  if (!validOptionalNumber(seats, 1, MAX_SEATS)) {
+    return {
+      valid: false,
+      error: "Capacidade de passageiros inválida.",
+    };
+  }
+
+  /* ======================================
+     CAPACIDADE DO PORTA-MALAS
+  ====================================== */
+
+  if (!validOptionalNumber(trunk_capacity, 0, MAX_TRUNK_CAPACITY)) {
+    return {
+      valid: false,
+      error: "Capacidade do porta-malas inválida.",
+    };
+  }
+
+  /* ======================================
+     MOTORIZAÇÃO
+  ====================================== */
+
+  if (!validOptionalString(engine, 80)) {
+    return {
+      valid: false,
+      error: "Motorização inválida.",
+    };
+  }
+
+  /* ======================================
+     POTÊNCIA
+  ====================================== */
+
+  if (!validOptionalNumber(horsepower, 1, MAX_HORSEPOWER)) {
+    return {
+      valid: false,
+      error: "Potência inválida.",
+    };
+  }
+
+  /* ======================================
      STATUS
   ====================================== */
 
@@ -343,6 +407,16 @@ function normalizeVehicleData(data) {
     description: nullable(normalizeString(data.description)),
 
     status: data.status ? data.status.trim().toLowerCase() : "available",
+
+    top_speed: nullableNumber(data.top_speed),
+
+    seats: nullableNumber(data.seats),
+
+    trunk_capacity: nullableNumber(data.trunk_capacity),
+
+    engine: nullable(normalizeString(data.engine)),
+
+    horsepower: nullableNumber(data.horsepower),
   };
 }
 
@@ -494,6 +568,11 @@ const createVehicle = async (req, res) => {
           color,
           description,
           status,
+          top_speed,
+          seats,
+          trunk_capacity,
+          engine,
+          horsepower,
           image_url
         )
 
@@ -512,6 +591,11 @@ const createVehicle = async (req, res) => {
           $12,
           $13,
           $14,
+          $15,
+          $16,
+          $17,
+          $18,
+          $19,
           NULL
         )
 
@@ -537,6 +621,12 @@ const createVehicle = async (req, res) => {
         vehicleData.description,
 
         vehicleData.status,
+
+        vehicleData.top_speed,
+        vehicleData.seats,
+        vehicleData.trunk_capacity,
+        vehicleData.engine,
+        vehicleData.horsepower,
       ],
     );
 
@@ -838,9 +928,14 @@ const updateVehicle = async (req, res) => {
           description = $13,
           status = $14,
           image_url = $15,
-          image_public_id = $16
+          image_public_id = $16,
+          top_speed = $17,
+          seats = $18,
+          trunk_capacity = $19,
+          engine = $20,
+          horsepower = $21
 
-        WHERE id = $17
+        WHERE id = $22
 
         RETURNING *
         `,
@@ -867,6 +962,12 @@ const updateVehicle = async (req, res) => {
 
         imageUrl,
         imagePublicId,
+
+        vehicleData.top_speed,
+        vehicleData.seats,
+        vehicleData.trunk_capacity,
+        vehicleData.engine,
+        vehicleData.horsepower,
 
         id,
       ],

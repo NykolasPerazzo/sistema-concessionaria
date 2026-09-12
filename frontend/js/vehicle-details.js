@@ -261,6 +261,91 @@ function renderVehicle(vehicle, galleryImages) {
 
 
 
+          ${
+            vehicle.top_speed
+              ? `
+          <!-- VELOCIDADE MÁXIMA -->
+
+            <div class="vehicle-spec-info">
+              <i class="fa-solid fa-gauge vehicle-spec-icon"></i>
+              <span>Velocidade máxima</span>
+
+              <strong>
+                ${vehicle.top_speed} km/h
+              </strong>
+            </div>
+          `
+              : ""
+          }
+
+          ${
+            vehicle.seats
+              ? `
+          <!-- CAPACIDADE DE PASSAGEIROS -->
+
+            <div class="vehicle-spec-info">
+              <i class="fa-solid fa-users vehicle-spec-icon"></i>
+              <span>Capacidade</span>
+
+              <strong>
+                ${vehicle.seats} lugares
+              </strong>
+            </div>
+          `
+              : ""
+          }
+
+          ${
+            vehicle.trunk_capacity
+              ? `
+          <!-- PORTA-MALAS -->
+
+            <div class="vehicle-spec-info">
+              <i class="fa-solid fa-suitcase vehicle-spec-icon"></i>
+              <span>Porta-malas</span>
+
+              <strong>
+                ${vehicle.trunk_capacity} litros
+              </strong>
+            </div>
+          `
+              : ""
+          }
+
+          ${
+            vehicle.engine
+              ? `
+          <!-- MOTORIZAÇÃO -->
+
+            <div class="vehicle-spec-info">
+              <i class="fa-solid fa-car-battery vehicle-spec-icon"></i>
+              <span>Motorização</span>
+
+              <strong>
+                ${vehicle.engine}
+              </strong>
+            </div>
+          `
+              : ""
+          }
+
+          ${
+            vehicle.horsepower
+              ? `
+          <!-- POTÊNCIA -->
+
+            <div class="vehicle-spec-info">
+              <i class="fa-solid fa-bolt vehicle-spec-icon"></i>
+              <span>Potência</span>
+
+              <strong>
+                ${vehicle.horsepower} cv
+              </strong>
+            </div>
+          `
+              : ""
+          }
+
 
           <!-- STATUS -->
 

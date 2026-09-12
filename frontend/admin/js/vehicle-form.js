@@ -154,6 +154,17 @@ function fillForm(vehicle) {
 
   document.getElementById("color").value = vehicle.color || "";
 
+  document.getElementById("top_speed").value = vehicle.top_speed || "";
+
+  document.getElementById("seats").value = vehicle.seats || "";
+
+  document.getElementById("trunk_capacity").value =
+    vehicle.trunk_capacity || "";
+
+  document.getElementById("engine").value = vehicle.engine || "";
+
+  document.getElementById("horsepower").value = vehicle.horsepower || "";
+
   document.getElementById("description").value = vehicle.description || "";
 
   document.getElementById("status").value = vehicle.status || "available";
@@ -548,6 +559,36 @@ form.addEventListener("submit", async (event) => {
 
   if (color) {
     formData.append("color", color);
+  }
+
+  const topSpeed = document.getElementById("top_speed").value;
+
+  if (topSpeed) {
+    formData.append("top_speed", topSpeed);
+  }
+
+  const seats = document.getElementById("seats").value;
+
+  if (seats) {
+    formData.append("seats", seats);
+  }
+
+  const trunkCapacity = document.getElementById("trunk_capacity").value;
+
+  if (trunkCapacity) {
+    formData.append("trunk_capacity", trunkCapacity);
+  }
+
+  const engine = document.getElementById("engine").value.trim();
+
+  if (engine) {
+    formData.append("engine", engine);
+  }
+
+  const horsepower = document.getElementById("horsepower").value;
+
+  if (horsepower) {
+    formData.append("horsepower", horsepower);
   }
 
   const description = document.getElementById("description").value.trim();
@@ -1015,5 +1056,142 @@ async function generateVehicleDescription() {
     generateDescriptionAI.disabled = false;
 
     generateDescriptionAI.innerHTML = "<span>✦</span> Gerar novamente";
+  }
+}
+
+/* ==========================================
+   BUSCAR ESPECIFICAÇÕES TÉCNICAS COM IA
+========================================== */
+
+const generateSpecsAI = document.getElementById("generateSpecsAI");
+
+const specsAIStatus = document.getElementById("specsAIStatus");
+
+generateSpecsAI?.addEventListener("click", generateVehicleSpecs);
+
+async function generateVehicleSpecs() {
+  const brand = document.getElementById("brand")?.value.trim();
+
+  const model = document.getElementById("model")?.value.trim();
+
+  const year = document.getElementById("year")?.value;
+
+  const version = document.getElementById("specsVersion")?.value.trim();
+
+  const engine = document.getElementById("engine")?.value.trim();
+
+  if (!brand || !model || !year) {
+    specsAIStatus.textContent = "Preencha marca, modelo e ano do veículo.";
+
+    specsAIStatus.className = "description-ai-status error";
+
+    return;
+  }
+
+  try {
+    generateSpecsAI.disabled = true;
+
+    generateSpecsAI.innerHTML = "<span>✦</span> Buscando...";
+
+    specsAIStatus.textContent =
+      "A IA está buscando as especificações do veículo...";
+
+    specsAIStatus.className = "description-ai-status";
+
+    const response = await fetch(`${API_URL}/ai/vehicle-specs`, {
+      method: "POST",
+
+      credentials: "include",
+
+      headers: {
+        "Content-Type": "application/json",
+      },
+
+      body: JSON.stringify({
+        brand,
+        model,
+        year,
+        version,
+        engine,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        data.error || "Não foi possível buscar as especificações.",
+      );
+    }
+
+    /*
+      Preenchemos somente os campos que a IA devolveu com segurança
+      (diferentes de null). Campos já preenchidos manualmente podem
+      ser sobrescritos aqui — é uma ação explícita do admin, que ainda
+      pode editar tudo antes de salvar.
+    */
+
+    const fieldMap = {
+      velocidade_maxima_kmh: "top_speed",
+      capacidade_passageiros: "seats",
+      capacidade_porta_malas_litros: "trunk_capacity",
+      combustivel: "fuel",
+      cambio: "transmission",
+      motorizacao: "engine",
+      potencia_cv: "horsepower",
+    };
+
+    let filledCount = 0;
+
+    Object.entries(fieldMap).forEach(([aiField, formFieldId]) => {
+      const value = data[aiField];
+
+      if (value === null || value === undefined || value === "") {
+        return;
+      }
+
+      const input = document.getElementById(formFieldId);
+
+      if (!input) {
+        return;
+      }
+
+      input.value = value;
+
+      filledCount += 1;
+    });
+
+    const messageParts = [];
+
+    if (filledCount > 0) {
+      messageParts.push(
+        `${filledCount} campo(s) preenchido(s) (confiança: ${data.confianca}).`,
+      );
+    } else {
+      messageParts.push(
+        "A IA não encontrou dados confiáveis para preencher automaticamente.",
+      );
+    }
+
+    if (data.observacao) {
+      messageParts.push(data.observacao);
+    }
+
+    specsAIStatus.textContent = messageParts.join(" ");
+
+    specsAIStatus.className =
+      filledCount > 0 && data.confianca === "alta"
+        ? "description-ai-status success"
+        : "description-ai-status warning";
+  } catch (error) {
+    console.error("Erro ao buscar especificações:", error);
+
+    specsAIStatus.textContent = error.message;
+
+    specsAIStatus.className = "description-ai-status error";
+  } finally {
+    generateSpecsAI.disabled = false;
+
+    generateSpecsAI.innerHTML = "<span>✦</span> Buscar novamente";
   }
 }

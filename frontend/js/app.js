@@ -759,6 +759,20 @@ if (searchButton && searchInput) {
 }
 
 /* =========================================
+   BOTÃO HERO - ENCONTRAR COM IA
+========================================= */
+
+const heroAiScrollButton = document.getElementById("heroAiButton");
+
+const aiFinderSectionScrollTarget = document.getElementById("aiFinderSection");
+
+if (heroAiScrollButton && aiFinderSectionScrollTarget) {
+  heroAiScrollButton.addEventListener("click", () => {
+    aiFinderSectionScrollTarget.scrollIntoView({ behavior: "smooth" });
+  });
+}
+
+/* =========================================
    INICIAR
 ========================================= */
 
