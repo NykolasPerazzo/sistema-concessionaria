@@ -637,6 +637,13 @@ strong {
   border-color: #555;
 }
 
+.form-hint {
+  margin: -12px 0 18px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
 .form-message {
   min-height: 20px;
   margin-bottom: 20px;

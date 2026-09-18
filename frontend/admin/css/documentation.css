@@ -1,0 +1,950 @@
+/* =========================================
+   DOCUMENTAÇÃO — estilos isolados desta página
+   (segue as variáveis de tema definidas em admin.css)
+========================================= */
+
+.documentation-page {
+  --doc-accent: #ff5a1f;
+  --doc-success: #43cf88;
+  --doc-warning: #ffc928;
+  --doc-danger: #ff5e57;
+  --doc-muted: #6d6d72;
+}
+
+.documentation-page .admin-main {
+  width: auto;
+  max-width: none;
+  margin-right: 0;
+  padding: 28px 40px 40px;
+}
+
+.doc-subtitle {
+  margin-top: 8px;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.doc-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.doc-primary,
+.doc-secondary,
+.doc-link,
+.doc-close {
+  border-radius: 8px;
+  font: inherit;
+  cursor: pointer;
+  transition:
+    filter 0.15s,
+    border-color 0.15s,
+    background 0.15s;
+}
+
+.doc-primary,
+.doc-secondary {
+  min-height: 42px;
+  padding: 10px 16px;
+}
+
+.doc-primary {
+  border: 1px solid var(--doc-accent);
+  background: var(--doc-accent);
+  color: #fff;
+  font-weight: 800;
+}
+
+.doc-secondary {
+  border: 1px solid var(--border-color);
+  background: var(--card-bg);
+  color: var(--text-color);
+}
+
+.doc-link,
+.doc-close {
+  border: 0;
+  background: transparent;
+  color: var(--text-secondary);
+}
+
+.doc-link {
+  padding: 10px 8px;
+}
+
+.doc-close {
+  padding: 4px 10px;
+  font-size: 26px;
+}
+
+.documentation-page button:hover:not(:disabled) {
+  filter: brightness(1.1);
+}
+
+.documentation-page button:disabled {
+  cursor: wait;
+  opacity: 0.55;
+}
+
+.documentation-page [hidden] {
+  display: none !important;
+}
+
+.doc-message {
+  margin-bottom: 16px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+}
+
+.doc-message.success {
+  border: 1px solid rgba(67, 207, 136, 0.35);
+  background: rgba(67, 207, 136, 0.1);
+  color: var(--doc-success);
+}
+
+.doc-message.error {
+  border: 1px solid rgba(255, 94, 87, 0.35);
+  background: rgba(255, 94, 87, 0.1);
+  color: var(--doc-danger);
+}
+
+/* =========================================
+   INDICADORES
+========================================= */
+
+.doc-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.doc-stat-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr);
+  align-items: center;
+  gap: 13px;
+  min-height: 96px;
+  padding: 16px 18px;
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  background: var(--card-bg);
+}
+
+.doc-stat-icon {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: rgba(255, 90, 31, 0.12);
+  color: var(--doc-accent);
+  font-size: 17px;
+}
+
+.doc-stat-body span {
+  display: block;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.doc-stat-body strong {
+  display: block;
+  margin-top: 6px;
+  font-size: 26px;
+}
+
+.doc-stat-dot {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+}
+
+.doc-stat-dot.is-neutral {
+  background: #3d8bff;
+}
+
+.doc-stat-dot.is-warning {
+  background: var(--doc-warning);
+}
+
+.doc-stat-dot.is-success {
+  background: var(--doc-success);
+}
+
+.doc-stat-dot.is-danger {
+  background: var(--doc-danger);
+}
+
+/* =========================================
+   GERADOR + PRÉVIA
+========================================= */
+
+.doc-generator-grid {
+  display: grid;
+  grid-template-columns: 1.35fr 1fr;
+  gap: 18px;
+  align-items: start;
+  margin-bottom: 26px;
+}
+
+.doc-panel {
+  padding: 22px;
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  background: var(--card-bg);
+}
+
+.doc-panel-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.doc-panel-heading h2 {
+  font-size: 19px;
+}
+
+.doc-panel-heading p {
+  margin-top: 4px;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.doc-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 18px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.doc-tab {
+  padding: 9px 14px;
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  background: var(--card-bg-secondary);
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.doc-tab i {
+  margin-right: 6px;
+}
+
+.doc-tab.is-active {
+  border-color: var(--doc-accent);
+  background: rgba(255, 90, 31, 0.14);
+  color: var(--text-color);
+}
+
+.doc-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.doc-form-grid label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.doc-form-grid input,
+.doc-form-grid select,
+.doc-form-grid textarea {
+  padding: 11px 13px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--card-bg-secondary);
+  color: var(--text-color);
+  font: inherit;
+  outline: none;
+}
+
+.doc-form-grid input:read-only {
+  opacity: 0.7;
+}
+
+.doc-form-grid textarea {
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.doc-form-grid input:focus,
+.doc-form-grid select:focus,
+.doc-form-grid textarea:focus {
+  border-color: var(--doc-accent);
+}
+
+.doc-full {
+  grid-column: 1 / -1;
+}
+
+.doc-vehicle-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px 18px;
+  padding: 12px 14px;
+  border: 1px dashed var(--border-color);
+  border-radius: 10px;
+  background: var(--card-bg-secondary);
+  font-size: 12px;
+}
+
+.doc-vehicle-summary div span {
+  display: block;
+  color: var(--text-secondary);
+}
+
+.doc-vehicle-summary div strong {
+  display: block;
+  margin-top: 2px;
+  font-size: 13px;
+}
+
+/* =========================================
+   VALIDAÇÃO INTELIGENTE
+========================================= */
+
+.doc-validation-card {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 14px;
+  margin-top: 20px;
+  padding: 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  background: var(--card-bg-secondary);
+}
+
+.doc-validation-icon {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: rgba(255, 90, 31, 0.14);
+  color: var(--doc-accent);
+}
+
+.doc-validation-body strong {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 14px;
+}
+
+.doc-validation-body p {
+  color: var(--text-secondary);
+  font-size: 12.5px;
+  line-height: 1.6;
+}
+
+.doc-validation-issues {
+  margin-top: 8px;
+  padding-left: 18px;
+  color: var(--doc-warning);
+  font-size: 12.5px;
+  line-height: 1.7;
+}
+
+.doc-validation-badge {
+  align-self: center;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.doc-validation-card[data-level="ok"] .doc-validation-badge {
+  background: rgba(67, 207, 136, 0.16);
+  color: var(--doc-success);
+}
+
+.doc-validation-card[data-level="incomplete"] .doc-validation-badge {
+  background: rgba(255, 201, 40, 0.16);
+  color: var(--doc-warning);
+}
+
+.doc-validation-card[data-level="review"] .doc-validation-badge {
+  background: rgba(255, 94, 87, 0.16);
+  color: var(--doc-danger);
+}
+
+.doc-footnote {
+  margin-top: 10px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.doc-footnote-icon {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.doc-form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+/* =========================================
+   PRÉVIA (FOLHA A4)
+========================================= */
+
+.doc-live-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: rgba(67, 207, 136, 0.14);
+  color: var(--doc-success);
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.doc-live-badge i {
+  font-size: 7px;
+}
+
+.doc-sheet-wrapper {
+  display: flex;
+  justify-content: center;
+  padding: 14px;
+  border-radius: 12px;
+  background: var(--card-bg-secondary);
+  overflow: auto;
+}
+
+.doc-sheet {
+  width: 100%;
+  max-width: 480px;
+  aspect-ratio: 210 / 297;
+  padding: 34px 30px;
+  background: #ffffff;
+  color: #1a1a1a;
+  font-size: 11.5px;
+  line-height: 1.6;
+  overflow-y: auto;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+}
+
+.doc-sheet-brand {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #1a1a1a;
+  margin-bottom: 16px;
+}
+
+.doc-sheet-brand strong {
+  font-size: 14px;
+  letter-spacing: 0.02em;
+  color: #1a1a1a;
+}
+
+.doc-sheet-brand span {
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  color: #666;
+  text-transform: uppercase;
+}
+
+.doc-sheet-title {
+  margin-bottom: 16px;
+  font-size: 16px;
+  font-weight: 800;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #1a1a1a;
+}
+
+.doc-sheet-section {
+  margin-bottom: 14px;
+}
+
+.doc-sheet-section h4 {
+  margin-bottom: 4px;
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #888;
+}
+
+.doc-sheet-section p {
+  color: #1a1a1a;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.doc-sheet-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.doc-sheet-signatures {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-top: 40px;
+}
+
+.doc-sheet-signature {
+  text-align: center;
+  border-top: 1px solid #333;
+  padding-top: 6px;
+  font-size: 10px;
+  color: #444;
+}
+
+.doc-sheet-footer {
+  margin-top: 26px;
+  font-size: 10px;
+  color: #444;
+}
+
+.doc-sheet-placeholder {
+  display: grid;
+  place-items: center;
+  height: 100%;
+  color: #999;
+  font-size: 12px;
+  text-align: center;
+}
+
+.doc-preview-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+/* =========================================
+   HISTÓRICO
+========================================= */
+
+.doc-history {
+  padding: 22px;
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  background: var(--card-bg);
+}
+
+.doc-section-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.doc-section-heading h2 {
+  font-size: 19px;
+}
+
+.doc-section-heading span {
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.doc-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.doc-filters label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.doc-filters input,
+.doc-filters select {
+  padding: 10px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--card-bg-secondary);
+  color: var(--text-color);
+  font: inherit;
+}
+
+.doc-filter-search {
+  flex: 1 1 220px;
+  min-width: 180px;
+}
+
+.doc-table-scroll {
+  overflow-x: auto;
+}
+
+.doc-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.doc-table th,
+.doc-table td {
+  padding: 12px 10px;
+  border-bottom: 1px solid var(--border-color);
+  text-align: left;
+  vertical-align: top;
+}
+
+.doc-table th {
+  color: var(--text-secondary);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.doc-table td strong {
+  display: block;
+}
+
+.doc-table td small {
+  display: block;
+  margin-top: 2px;
+  color: var(--text-secondary);
+}
+
+.doc-empty {
+  padding: 30px 10px;
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+.doc-row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.doc-row-actions button {
+  padding: 6px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--card-bg-secondary);
+  color: var(--text-color);
+  font-size: 11.5px;
+  cursor: pointer;
+}
+
+.doc-row-actions button:hover {
+  border-color: var(--doc-accent);
+}
+
+.doc-row-actions button.is-danger {
+  color: var(--doc-danger);
+}
+
+.doc-badge {
+  display: inline-block;
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.doc-badge.status-draft {
+  background: rgba(157, 157, 165, 0.18);
+  color: #9d9da5;
+}
+
+.doc-badge.status-awaiting_signature {
+  background: rgba(255, 201, 40, 0.16);
+  color: var(--doc-warning);
+}
+
+.doc-badge.status-completed {
+  background: rgba(67, 207, 136, 0.16);
+  color: var(--doc-success);
+}
+
+.doc-badge.status-issue {
+  background: rgba(255, 94, 87, 0.16);
+  color: var(--doc-danger);
+}
+
+.doc-badge.status-cancelled {
+  background: rgba(90, 90, 95, 0.25);
+  color: var(--doc-muted);
+}
+
+.doc-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 16px;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.doc-pagination-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+/* =========================================
+   MODAIS (dialog nativo)
+========================================= */
+
+.doc-dialog {
+  width: min(560px, calc(100% - 28px));
+  max-height: 90dvh;
+  margin: auto;
+  overflow-y: auto;
+  padding: 26px;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  background: var(--card-bg);
+  color: var(--text-color);
+}
+
+.doc-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.76);
+}
+
+.doc-dialog-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.doc-dialog h2 {
+  font-size: 20px;
+}
+
+.doc-dialog form {
+  display: grid;
+  gap: 16px;
+}
+
+.doc-dialog label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.doc-dialog input,
+.doc-dialog select,
+.doc-dialog textarea {
+  padding: 11px 13px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--card-bg-secondary);
+  color: var(--text-color);
+  font: inherit;
+}
+
+.doc-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.doc-view-dialog {
+  width: min(620px, calc(100% - 28px));
+}
+
+/* =========================================
+   TOASTS
+========================================= */
+
+.doc-toast-container {
+  position: fixed;
+  z-index: 3000;
+  top: 20px;
+  right: 20px;
+  display: grid;
+  gap: 10px;
+  width: min(360px, calc(100vw - 32px));
+}
+
+.doc-toast {
+  padding: 13px 16px;
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+  background: var(--card-bg);
+  color: var(--text-color);
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.3);
+  font-size: 13px;
+  opacity: 0;
+  transform: translateY(-8px);
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease;
+}
+
+.doc-toast.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.doc-toast.is-success {
+  border-color: rgba(67, 207, 136, 0.4);
+}
+
+.doc-toast.is-error {
+  border-color: rgba(255, 94, 87, 0.4);
+}
+
+/* =========================================
+   RESPONSIVO
+========================================= */
+
+@media (max-width: 1250px) {
+  .doc-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 1100px) {
+  .doc-generator-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .doc-sheet {
+    max-width: 420px;
+  }
+}
+
+@media (max-width: 900px) {
+  .doc-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .doc-vehicle-summary {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 750px) {
+  .documentation-page .admin-main {
+    margin-left: 0;
+    padding: 20px 15px 30px;
+  }
+
+  .doc-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .doc-tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 10px;
+  }
+
+  .doc-filters {
+    gap: 10px;
+  }
+
+  .doc-filters label {
+    flex: 1 1 45%;
+  }
+
+  .doc-form-actions {
+    justify-content: stretch;
+  }
+
+  .doc-form-actions button {
+    flex: 1 1 auto;
+  }
+
+  .doc-pagination {
+    flex-direction: column;
+    gap: 10px;
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 560px) {
+  .doc-vehicle-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .doc-validation-card {
+    grid-template-columns: 1fr;
+  }
+
+  .doc-validation-badge {
+    justify-self: start;
+  }
+}
+
+/* =========================================
+   IMPRESSÃO — somente a folha do documento
+========================================= */
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+
+  /* Só a folha principal é impressa (a prévia do modal "Visualizar" é
+     fechada antes de imprimir — ver documentation.js). */
+  #documentPreview,
+  #documentPreview * {
+    visibility: visible;
+  }
+
+  .doc-sheet-wrapper {
+    padding: 0;
+    background: transparent;
+    overflow: visible;
+  }
+
+  #documentPreview {
+    position: fixed;
+    inset: 0;
+    width: 210mm;
+    height: 297mm;
+    max-width: none;
+    aspect-ratio: auto;
+    margin: 0;
+    padding: 16mm;
+    box-shadow: none;
+    overflow: visible;
+    page-break-after: avoid;
+  }
+
+  @page {
+    size: A4;
+    margin: 0;
+  }
+}

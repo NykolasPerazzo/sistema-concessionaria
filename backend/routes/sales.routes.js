@@ -5,6 +5,7 @@ const {
 } = require("../middleware/auth.middleware");
 const {
   getSales,
+  getSaleById,
   getSaleVehicles,
   getSellers,
   createSale,
@@ -14,6 +15,7 @@ router.use(authenticate, authorizeRoles("admin", "vendedor"));
 router.get("/vehicles", getSaleVehicles);
 router.get("/sellers", getSellers);
 router.get("/", getSales);
+router.get("/:id", getSaleById);
 router.post("/", createSale);
 router.post("/:id/cancel", cancelSale);
 module.exports = router;

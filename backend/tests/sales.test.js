@@ -293,6 +293,27 @@ test("vendas: autenticação, validação, valores, estoque, histórico e cancel
     },
   );
   await t.test(
+    "GET /api/sales/:id retorna a venda com dados do veículo e cliente, e bloqueia acesso indevido",
+    async () => {
+      assert.equal((await f.request("/api/sales/abc")).status, 400);
+      assert.equal((await f.request("/api/sales/999999")).status, 404);
+
+      const found = await f.request(`/api/sales/${saleId}`);
+      assert.equal(found.status, 200);
+      assert.equal(found.data.sale.id, saleId);
+      assert.equal(found.data.sale.vehicle_brand, "Chevrolet");
+
+      // Vendedor só pode consultar as próprias vendas (mesma regra do histórico).
+      const otherSellerSale = (
+        await f.request("/api/sales?status=all")
+      ).data.sales.find((sale) => sale.seller_id === 1);
+      const blocked = await f.request(`/api/sales/${otherSellerSale.id}`, {
+        role: "vendedor",
+      });
+      assert.equal(blocked.status, 404);
+    },
+  );
+  await t.test(
     "GET /api/sales/sellers retorna só quem pode vender, sem dados sensíveis",
     async () => {
       const result = await f.request("/api/sales/sellers");

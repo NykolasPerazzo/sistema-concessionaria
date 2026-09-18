@@ -735,6 +735,10 @@
 
     $("sendToDispatcherButton").hidden = Boolean(sale.cancelled_at);
 
+    // A área de Documentação é restrita a administradores.
+    $("generateDocumentsButton").hidden =
+      Boolean(sale.cancelled_at) || currentUser?.role !== "admin";
+
     const details = createNode("dl", "", "sales-details");
 
     const fields = [
@@ -929,6 +933,11 @@
 
   function bindEvents() {
     $("sendToDispatcherButton").addEventListener("click", sendToDispatcher);
+
+    $("generateDocumentsButton").addEventListener("click", () => {
+      if (!selectedSale) return;
+      window.location.href = `./documentation.html?saleId=${selectedSale.id}`;
+    });
 
     $("vehicleSelect").addEventListener("change", () => {
       const vehicle = vehicles.find(

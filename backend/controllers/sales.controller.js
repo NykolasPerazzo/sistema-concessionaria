@@ -114,6 +114,28 @@ async function getSales(req, res) {
     respondError(res, error);
   }
 }
+async function getSaleById(req, res) {
+  try {
+    if (!validId(req.params.id)) throw fail(400, "Venda inválida.");
+    const ownSellerId = req.user.role === "vendedor" ? req.user.sub : null;
+    const result = await pool.query(
+      `SELECT s.*, s.sale_date::text AS sale_date, u.name AS seller_name,
+      v.brand AS vehicle_brand, v.model AS vehicle_model, v.year AS vehicle_year,
+      v.color AS vehicle_color, v.license_plate, v.renavam, v.chassis_number,
+      c.name AS customer_name, c.phone AS customer_phone, c.email AS customer_email
+      FROM sales s
+      LEFT JOIN users u ON u.id = s.seller_id
+      LEFT JOIN vehicles v ON v.id = s.vehicle_id
+      LEFT JOIN customers c ON c.id = s.customer_id
+      WHERE s.id=$1 AND ($2::integer IS NULL OR s.seller_id = $2)`,
+      [req.params.id, ownSellerId],
+    );
+    if (!result.rows[0]) throw fail(404, "Venda não encontrada.");
+    res.json({ sale: result.rows[0] });
+  } catch (error) {
+    respondError(res, error);
+  }
+}
 async function createSale(req, res) {
   try {
     const body = req.body || {};
@@ -306,6 +328,7 @@ async function cancelSale(req, res) {
 }
 module.exports = {
   getSales,
+  getSaleById,
   getSaleVehicles,
   getSellers,
   createSale,

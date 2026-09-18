@@ -26,7 +26,9 @@
     "migrate:dispatcher": "npm run migrate:lead-assignment && node backend/scripts/migrate-dispatcher.js",
     "test:dispatcher": "node --test backend/tests/dispatcher.test.js",
     "migrate:vehicle-specs": "npm run migrate:dispatcher && node backend/scripts/migrate-vehicle-specs.js",
-    "migrate:sales-seller": "npm run migrate:vehicle-specs && node backend/scripts/migrate-sales-seller.js"
+    "migrate:sales-seller": "npm run migrate:vehicle-specs && node backend/scripts/migrate-sales-seller.js",
+    "migrate:documents": "npm run migrate:sales-seller && node backend/scripts/migrate-documents.js",
+    "test:documents": "node --test backend/tests/documents.test.js"
   },
   "repository": {
     "type": "git",

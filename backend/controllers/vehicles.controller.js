@@ -150,6 +150,9 @@ function validateVehicleData(data) {
     trunk_capacity,
     engine,
     horsepower,
+    license_plate,
+    renavam,
+    chassis_number,
   } = data;
 
   /* ======================================
@@ -353,6 +356,39 @@ function validateVehicleData(data) {
   }
 
   /* ======================================
+     PLACA
+  ====================================== */
+
+  if (!validOptionalString(license_plate, 10)) {
+    return {
+      valid: false,
+      error: "Placa inválida.",
+    };
+  }
+
+  /* ======================================
+     RENAVAM
+  ====================================== */
+
+  if (!validOptionalString(renavam, 20)) {
+    return {
+      valid: false,
+      error: "RENAVAM inválido.",
+    };
+  }
+
+  /* ======================================
+     CHASSI
+  ====================================== */
+
+  if (!validOptionalString(chassis_number, 30)) {
+    return {
+      valid: false,
+      error: "Chassi inválido.",
+    };
+  }
+
+  /* ======================================
      STATUS
   ====================================== */
 
@@ -417,6 +453,14 @@ function normalizeVehicleData(data) {
     engine: nullable(normalizeString(data.engine)),
 
     horsepower: nullableNumber(data.horsepower),
+
+    license_plate: nullable(normalizeString(data.license_plate)?.toUpperCase()),
+
+    renavam: nullable(normalizeString(data.renavam)),
+
+    chassis_number: nullable(
+      normalizeString(data.chassis_number)?.toUpperCase(),
+    ),
   };
 }
 
@@ -573,6 +617,9 @@ const createVehicle = async (req, res) => {
           trunk_capacity,
           engine,
           horsepower,
+          license_plate,
+          renavam,
+          chassis_number,
           image_url
         )
 
@@ -596,6 +643,9 @@ const createVehicle = async (req, res) => {
           $17,
           $18,
           $19,
+          $20,
+          $21,
+          $22,
           NULL
         )
 
@@ -627,6 +677,10 @@ const createVehicle = async (req, res) => {
         vehicleData.trunk_capacity,
         vehicleData.engine,
         vehicleData.horsepower,
+
+        vehicleData.license_plate,
+        vehicleData.renavam,
+        vehicleData.chassis_number,
       ],
     );
 
@@ -933,9 +987,12 @@ const updateVehicle = async (req, res) => {
           seats = $18,
           trunk_capacity = $19,
           engine = $20,
-          horsepower = $21
+          horsepower = $21,
+          license_plate = $22,
+          renavam = $23,
+          chassis_number = $24
 
-        WHERE id = $22
+        WHERE id = $25
 
         RETURNING *
         `,
@@ -968,6 +1025,10 @@ const updateVehicle = async (req, res) => {
         vehicleData.trunk_capacity,
         vehicleData.engine,
         vehicleData.horsepower,
+
+        vehicleData.license_plate,
+        vehicleData.renavam,
+        vehicleData.chassis_number,
 
         id,
       ],

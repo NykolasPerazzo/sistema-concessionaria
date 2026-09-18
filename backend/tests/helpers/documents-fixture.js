@@ -8,84 +8,25 @@ async function fixture() {
     id SERIAL PRIMARY KEY, brand TEXT, model TEXT, year INTEGER, price NUMERIC(14,2),
     purchase_price NUMERIC(14,2), entry_date DATE, sale_price NUMERIC(14,2),
     status TEXT, image_url TEXT, mileage INTEGER, fuel TEXT, transmission TEXT,
-    body_type TEXT, color TEXT, description TEXT,
-    license_plate TEXT, renavam TEXT, chassis_number TEXT);
-    CREATE TABLE vehicle_expenses(id SERIAL PRIMARY KEY, vehicle_id INTEGER REFERENCES vehicles(id), amount NUMERIC(14,2));
-    CREATE TABLE vehicle_images(id SERIAL PRIMARY KEY, vehicle_id INTEGER, image_url TEXT, is_cover BOOLEAN);
+    body_type TEXT, color TEXT, description TEXT);
     CREATE TABLE users(id SERIAL PRIMARY KEY, name TEXT, email TEXT, password_hash TEXT, role TEXT);
     INSERT INTO users(id, name, email, password_hash, role) VALUES
       (1, 'Admin Teste', 'admin@example.com', 'x', 'admin'),
       (2, 'Vendedor Teste', 'vendedor@example.com', 'x', 'vendedor');
     SELECT setval('users_id_seq', 2);`);
-  const migration = fs.readFileSync(
-    path.join(__dirname, "../../database/migrations/001_sales.sql"),
-    "utf8",
-  );
-  await db.exec(migration);
-  await db.exec(migration); // migração repetível
-  const proposalMigration = fs.readFileSync(
-    path.join(__dirname, "../../database/migrations/002_proposals.sql"),
-    "utf8",
-  );
-  await db.exec(proposalMigration);
-  await db.exec(proposalMigration);
-  const customerMigration = fs.readFileSync(
-    path.join(__dirname, "../../database/migrations/003_customers.sql"),
-    "utf8",
-  );
-  await db.exec(customerMigration);
-  await db.exec(customerMigration);
-  const leadMigration = fs.readFileSync(
-    path.join(__dirname, "../../database/migrations/004_leads.sql"),
-    "utf8",
-  );
-  await db.exec(leadMigration);
-  await db.exec(leadMigration);
-  const metaAiMigration = fs.readFileSync(
-    path.join(__dirname, "../../database/migrations/005_meta_lead_ai.sql"),
-    "utf8",
-  );
-  await db.exec(metaAiMigration);
-  await db.exec(metaAiMigration);
-  const cloudinaryMigration = fs.readFileSync(
-    path.join(__dirname, "../../database/migrations/006_cloudinary_images.sql"),
-    "utf8",
-  );
-  await db.exec(cloudinaryMigration);
-  await db.exec(cloudinaryMigration);
-  const leadIntelligenceMigration = fs.readFileSync(
-    path.join(
-      __dirname,
-      "../../database/migrations/007_lead_intelligence.sql",
-    ),
-    "utf8",
-  );
-  await db.exec(leadIntelligenceMigration);
-  await db.exec(leadIntelligenceMigration);
-  const leadAiHistoryMigration = fs.readFileSync(
-    path.join(__dirname, "../../database/migrations/008_lead_ai_history.sql"),
-    "utf8",
-  );
-  await db.exec(leadAiHistoryMigration);
-  await db.exec(leadAiHistoryMigration);
-  const leadAssignmentMigration = fs.readFileSync(
-    path.join(__dirname, "../../database/migrations/009_lead_assignment.sql"),
-    "utf8",
-  );
-  await db.exec(leadAssignmentMigration);
-  await db.exec(leadAssignmentMigration);
-  const vehicleSpecsMigration = fs.readFileSync(
-    path.join(__dirname, "../../database/migrations/011_vehicle_specs.sql"),
-    "utf8",
-  );
-  await db.exec(vehicleSpecsMigration);
-  await db.exec(vehicleSpecsMigration);
-  const salesSellerMigration = fs.readFileSync(
-    path.join(__dirname, "../../database/migrations/012_sales_seller.sql"),
-    "utf8",
-  );
-  await db.exec(salesSellerMigration);
-  await db.exec(salesSellerMigration);
+  for (const file of [
+    "001_sales.sql",
+    "002_proposals.sql",
+    "003_customers.sql",
+    "013_documents.sql",
+  ]) {
+    const sql = fs.readFileSync(
+      path.join(__dirname, "../../database/migrations", file),
+      "utf8",
+    );
+    await db.exec(sql);
+    await db.exec(sql); // migração repetível
+  }
   // PGlite possui uma conexão. A fila impede intercalar transações HTTP no teste.
   let queue = Promise.resolve();
   async function acquire() {
@@ -128,21 +69,13 @@ async function fixture() {
     }),
   );
   app.use(require("cookie-parser")());
-  app.use("/api/sales", require("../../routes/sales.routes"));
-  app.use("/api/proposals", require("../../routes/proposals.routes"));
+  app.use("/api/documents", require("../../routes/documents.routes"));
   app.use("/api/customers", require("../../routes/customers.routes"));
-  app.use("/api/leads", require("../../routes/leads.routes"));
-  app.use("/api/users", require("../../routes/users.routes"));
-  app.use("/api/integrations/meta", require("../../routes/meta.routes"));
   app.use("/api/vehicles", require("../../routes/vehicles.routes"));
   const { authenticate } = require("../../middleware/auth.middleware");
   app.get("/api/auth/me", authenticate, (req, res) =>
     res.json({ user: { id: req.user.sub, role: req.user.role } }),
   );
-  app.get("/js/config.js", (req, res) =>
-    res.type("js").send('const API_URL = "/api";'),
-  );
-  app.use(express.static(path.join(__dirname, "../../../frontend")));
   const server = await new Promise((resolve) => {
     const server = app.listen(0, "127.0.0.1", () => resolve(server));
   });

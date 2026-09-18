@@ -165,6 +165,13 @@ function fillForm(vehicle) {
 
   document.getElementById("horsepower").value = vehicle.horsepower || "";
 
+  document.getElementById("license_plate").value = vehicle.license_plate || "";
+
+  document.getElementById("renavam").value = vehicle.renavam || "";
+
+  document.getElementById("chassis_number").value =
+    vehicle.chassis_number || "";
+
   document.getElementById("description").value = vehicle.description || "";
 
   document.getElementById("status").value = vehicle.status || "available";
@@ -589,6 +596,30 @@ form.addEventListener("submit", async (event) => {
 
   if (horsepower) {
     formData.append("horsepower", horsepower);
+  }
+
+  const licensePlate = document
+    .getElementById("license_plate")
+    .value.trim()
+    .toUpperCase();
+
+  if (licensePlate) {
+    formData.append("license_plate", licensePlate);
+  }
+
+  const renavam = document.getElementById("renavam").value.trim();
+
+  if (renavam) {
+    formData.append("renavam", renavam);
+  }
+
+  const chassisNumber = document
+    .getElementById("chassis_number")
+    .value.trim()
+    .toUpperCase();
+
+  if (chassisNumber) {
+    formData.append("chassis_number", chassisNumber);
   }
 
   const description = document.getElementById("description").value.trim();
