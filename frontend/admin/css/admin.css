@@ -431,10 +431,10 @@ strong {
 .vehicle-toolbar select {
   width: 100%;
   padding: 14px 16px;
-  background: #111;
-  border: 1px solid #292929;
+  background: var(--card-bg-secondary);
+  border: 1px solid var(--border-color);
   border-radius: 8px;
-  color: #fff;
+  color: var(--text-color);
   outline: none;
 }
 
@@ -451,17 +451,17 @@ strong {
 .admin-table th {
   padding: 15px 10px;
   text-align: left;
-  color: #666;
+  color: var(--text-secondary);
   font-size: 12px;
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 1px;
-  border-bottom: 1px solid #242424;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .admin-table td {
   padding: 16px 10px;
-  border-bottom: 1px solid #202020;
+  border-bottom: 1px solid var(--border-color);
   vertical-align: middle;
 }
 
@@ -488,7 +488,7 @@ strong {
   height: 52px;
   overflow: hidden;
   border-radius: 6px;
-  background: #1b1b1b;
+  background: var(--card-bg-secondary);
 }
 
 .table-vehicle-image img {
@@ -527,16 +527,16 @@ strong {
 .table-action {
   padding: 8px 10px;
   background: transparent;
-  border: 1px solid #2a2a2a;
+  border: 1px solid var(--border-color);
   border-radius: 6px;
-  color: #bbb;
+  color: var(--text-secondary);
   cursor: pointer;
   font-size: 12px;
 }
 
 .table-action:hover {
-  background: #1b1b1b;
-  color: #fff;
+  background: var(--card-bg-secondary);
+  color: var(--text-color);
 }
 
 .table-action.danger {
@@ -563,14 +563,14 @@ strong {
   display: inline-block;
   padding: 13px 20px;
   border-radius: 8px;
-  background: #151515;
-  border: 1px solid #292929;
-  color: #ccc;
+  background: var(--card-bg-secondary);
+  border: 1px solid var(--border-color);
+  color: var(--text-color);
 }
 
 .admin-secondary-button:hover {
-  background: #1d1d1d;
-  color: #fff;
+  background: var(--card-bg);
+  color: var(--text-color);
 }
 
 .vehicle-form-panel {
@@ -580,7 +580,7 @@ strong {
 .form-section {
   padding-bottom: 35px;
   margin-bottom: 35px;
-  border-bottom: 1px solid #242424;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .form-section:last-of-type {
@@ -609,7 +609,7 @@ strong {
 }
 
 .form-group label {
-  color: #aaa;
+  color: var(--text-secondary);
   font-size: 13px;
 }
 
@@ -618,10 +618,10 @@ strong {
 .form-group textarea {
   width: 100%;
   padding: 14px 15px;
-  background: #0d0d0d;
-  border: 1px solid #292929;
+  background: var(--card-bg-secondary);
+  border: 1px solid var(--border-color);
   border-radius: 8px;
-  color: #fff;
+  color: var(--text-color);
   font: inherit;
   outline: none;
 }
@@ -634,7 +634,7 @@ strong {
 .form-group input:focus,
 .form-group select:focus,
 .form-group textarea:focus {
-  border-color: #555;
+  border-color: var(--accent);
 }
 
 .form-hint {
@@ -668,13 +668,13 @@ strong {
   width: 50%;
   min-height: 250px;
   margin-top: 20px;
-  border: 1px dashed #333;
+  border: 1px dashed var(--border-color);
   border-radius: 10px;
   display: grid;
   place-items: center;
   overflow: hidden;
-  color: #666;
-  background: #0d0d0d;
+  color: var(--text-secondary);
+  background: var(--card-bg-secondary);
 }
 
 .image-preview img {
@@ -712,10 +712,10 @@ strong {
 .gallery-input-row input {
   width: 100%;
   padding: 14px 15px;
-  background: #0d0d0d;
-  border: 1px solid #292929;
+  background: var(--card-bg-secondary);
+  border: 1px solid var(--border-color);
   border-radius: 8px;
-  color: #fff;
+  color: var(--text-color);
   outline: none;
 }
 
@@ -731,8 +731,8 @@ strong {
   height: 150px;
   overflow: hidden;
   border-radius: 8px;
-  background: #151515;
-  border: 1px solid #292929;
+  background: var(--card-bg-secondary);
+  border: 1px solid var(--border-color);
 }
 
 .gallery-item img {
@@ -1386,9 +1386,9 @@ body {
       rgba(124, 58, 237, 0.06),
       transparent 35%
     ),
-    #0d0d0f;
+    var(--card-bg);
 
-  border-left: 1px solid #25252b;
+  border-left: 1px solid var(--border-color);
 
   overflow-y: auto;
   z-index: 20;
@@ -1407,7 +1407,7 @@ body:has(.vehicles-ai-sidebar) .admin-main {
   padding-bottom: 22px;
   margin-bottom: 20px;
 
-  border-bottom: 1px solid #22232a;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .vehicles-ai-title {
@@ -1447,7 +1447,7 @@ body:has(.vehicles-ai-sidebar) .admin-main {
 .vehicles-ai-header p {
   margin-top: 8px;
 
-  color: #707078;
+  color: var(--text-secondary);
 
   font-size: 11px;
 }
@@ -1484,20 +1484,14 @@ body:has(.vehicles-ai-sidebar) .admin-main {
 .ai-summary-card {
   padding: 14px;
 
-  border: 1px solid #272832;
+  border: 1px solid var(--border-color);
   border-radius: 9px;
 
-  background:
-    linear-gradient(
-      145deg,
-      rgba(255, 255, 255, 0.035),
-      rgba(255, 255, 255, 0.01)
-    ),
-    #15161b;
+  background: var(--card-bg-secondary);
 }
 
 .ai-summary-card p {
-  color: #c9c9cf;
+  color: var(--text-secondary);
 
   font-size: 11px;
   line-height: 1.65;
@@ -1554,9 +1548,9 @@ body:has(.vehicles-ai-sidebar) .admin-main {
   align-items: center;
   gap: 11px;
 
-  background: #15161a;
+  background: var(--card-bg-secondary);
 
-  border: 1px solid #24252b;
+  border: 1px solid var(--border-color);
   border-radius: 8px;
 }
 
@@ -1626,7 +1620,7 @@ body:has(.vehicles-ai-sidebar) .admin-main {
 }
 
 .ai-insight-card small {
-  color: #7a7a82;
+  color: var(--text-secondary);
 
   font-size: 10px;
 }
@@ -1639,7 +1633,7 @@ body:has(.vehicles-ai-sidebar) .admin-main {
   margin-top: -5px;
   margin-bottom: 10px;
 
-  color: #74747c;
+  color: var(--text-secondary);
 
   font-size: 10px;
 }
@@ -1653,10 +1647,10 @@ body:has(.vehicles-ai-sidebar) .admin-main {
 
   padding: 9px;
 
-  border: 1px solid #2a2b34;
+  border: 1px solid var(--border-color);
   border-radius: 7px;
 
-  background: #111216;
+  background: var(--card-bg-secondary);
 }
 
 .ai-question-box textarea {
@@ -1672,7 +1666,7 @@ body:has(.vehicles-ai-sidebar) .admin-main {
 
   background: transparent;
 
-  color: #fff;
+  color: var(--text-color);
 
   font: inherit;
   font-size: 10px;
@@ -1680,7 +1674,7 @@ body:has(.vehicles-ai-sidebar) .admin-main {
 }
 
 .ai-question-box textarea::placeholder {
-  color: #696970;
+  color: var(--text-secondary);
 }
 
 .ai-question-box button {
@@ -1717,12 +1711,12 @@ body:has(.vehicles-ai-sidebar) .admin-main {
 
   padding: 7px 9px;
 
-  border: 1px solid #292a30;
+  border: 1px solid var(--border-color);
   border-radius: 6px;
 
   background: transparent;
 
-  color: #8a8a92;
+  color: var(--text-secondary);
 
   font-size: 9px;
   text-align: left;
@@ -1736,11 +1730,11 @@ body:has(.vehicles-ai-sidebar) .admin-main {
 }
 
 .ai-suggestions button:hover {
-  background: #18191e;
+  background: var(--card-bg-secondary);
 
-  border-color: #34353d;
+  border-color: var(--accent);
 
-  color: #fff;
+  color: var(--text-color);
 }
 
 /* =========================================
@@ -1749,7 +1743,7 @@ body:has(.vehicles-ai-sidebar) .admin-main {
 
 .vehicles-ai-sidebar {
   scrollbar-width: thin;
-  scrollbar-color: #31313a transparent;
+  scrollbar-color: var(--border-color) transparent;
 }
 
 .vehicles-ai-sidebar::-webkit-scrollbar {
@@ -1761,7 +1755,7 @@ body:has(.vehicles-ai-sidebar) .admin-main {
 }
 
 .vehicles-ai-sidebar::-webkit-scrollbar-thumb {
-  background: #303038;
+  background: var(--border-color);
   border-radius: 999px;
 }
 
@@ -1788,7 +1782,7 @@ body:has(.vehicles-ai-sidebar) .admin-main {
 
     margin-top: 20px;
 
-    border: 1px solid #25252b;
+    border: 1px solid var(--border-color);
     border-radius: 12px;
   }
 
@@ -2021,11 +2015,11 @@ body:has(.vehicles-ai-sidebar) .admin-main {
 
   padding: 7px 12px;
 
-  border: 1px solid #2a2a2a;
+  border: 1px solid var(--border-color);
   border-radius: 8px;
 
-  background: #0d0d0d;
-  color: #ccc;
+  background: var(--card-bg-secondary);
+  color: var(--text-color);
 
   font-size: 12px;
   cursor: pointer;
@@ -2045,10 +2039,10 @@ body:has(.vehicles-ai-sidebar) .admin-main {
 }
 
 .cover-ai-choice-option {
-  border: 1px solid #2a2a2a;
+  border: 1px solid var(--border-color);
   border-radius: 10px;
   padding: 8px;
-  background: #0d0d0d;
+  background: var(--card-bg-secondary);
 }
 
 .cover-ai-choice-option img {
@@ -2057,7 +2051,7 @@ body:has(.vehicles-ai-sidebar) .admin-main {
   object-fit: cover;
   border-radius: 6px;
   margin-bottom: 8px;
-  background: #111;
+  background: var(--card-bg);
 }
 
 .cover-ai-choice-option label {
@@ -2065,7 +2059,7 @@ body:has(.vehicles-ai-sidebar) .admin-main {
   align-items: center;
   gap: 6px;
   font-size: 12px;
-  color: #ccc;
+  color: var(--text-color);
   cursor: pointer;
 }
 
