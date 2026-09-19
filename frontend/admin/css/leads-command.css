@@ -248,6 +248,12 @@ body.light-theme {
   align-items: start;
   overflow-x: auto;
   padding-bottom: 4px;
+  cursor: grab;
+}
+
+.leads-board.is-dragging {
+  cursor: grabbing;
+  user-select: none;
 }
 
 .lead-column {

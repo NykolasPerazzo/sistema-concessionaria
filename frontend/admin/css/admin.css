@@ -413,7 +413,7 @@ strong {
 .admin-primary-button {
   display: inline-block;
   padding: 13px 20px;
-  margin: 20px 0;
+  margin: 0;
   border-radius: 8px;
   background: #fff;
   color: #000;

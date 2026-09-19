@@ -13,6 +13,62 @@
       currency: "BRL",
     });
 
+  function setupBoardDragScroll(board) {
+    const DRAG_THRESHOLD = 6;
+    let pointerId = null;
+    let startX = 0;
+    let startScrollLeft = 0;
+    let dragging = false;
+
+    const suppressClick = (event) => {
+      event.stopPropagation();
+      event.preventDefault();
+    };
+
+    board.addEventListener("pointerdown", (event) => {
+      if (event.pointerType !== "mouse" || event.button !== 0) return;
+
+      pointerId = event.pointerId;
+      startX = event.clientX;
+      startScrollLeft = board.scrollLeft;
+      dragging = false;
+      board.setPointerCapture(pointerId);
+    });
+
+    board.addEventListener("pointermove", (event) => {
+      if (event.pointerId !== pointerId) return;
+
+      const delta = event.clientX - startX;
+
+      if (!dragging && Math.abs(delta) > DRAG_THRESHOLD) {
+        dragging = true;
+        board.classList.add("is-dragging");
+      }
+
+      if (dragging) {
+        board.scrollLeft = startScrollLeft - delta;
+      }
+    });
+
+    const endDrag = (event) => {
+      if (event.pointerId !== pointerId) return;
+
+      if (dragging) {
+        board.addEventListener("click", suppressClick, {
+          capture: true,
+          once: true,
+        });
+      }
+
+      board.classList.remove("is-dragging");
+      pointerId = null;
+      dragging = false;
+    };
+
+    board.addEventListener("pointerup", endDrag);
+    board.addEventListener("pointercancel", endDrag);
+  }
+
   const stages = {
     new: "Novo",
     contacting: "Em atendimento",
@@ -1315,6 +1371,8 @@
       form();
     }
   });
+
+  setupBoardDragScroll($("leadsBoard"));
 
   for (const id of [
     "search",
