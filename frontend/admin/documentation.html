@@ -165,7 +165,7 @@
               </label>
               <label>
                 <span>CPF/CNPJ</span>
-                <input id="primaryDocument" maxlength="20" autocomplete="off" placeholder="Somente números" />
+                <input id="primaryDocument" maxlength="18" inputmode="numeric" autocomplete="off" placeholder="000.000.000-00" />
               </label>
 
               <label>
@@ -174,7 +174,7 @@
               </label>
               <label>
                 <span>CPF/CNPJ</span>
-                <input id="secondaryDocument" maxlength="20" autocomplete="off" placeholder="Somente números" />
+                <input id="secondaryDocument" maxlength="18" inputmode="numeric" autocomplete="off" placeholder="000.000.000-00" />
               </label>
 
               <label class="doc-full">
@@ -209,7 +209,7 @@
 
               <label class="doc-field-operationValue">
                 <span id="labelOperationValue">Valor da operação (R$)</span>
-                <input id="operationValue" type="number" step="0.01" min="0.01" max="100000000" inputmode="decimal" />
+                <input id="operationValue" type="text" inputmode="decimal" placeholder="R$ 0,00" autocomplete="off" />
               </label>
 
               <label class="doc-field-paymentMethod">

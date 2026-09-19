@@ -101,6 +101,73 @@
   }
 
   /* ==========================================
+     MÁSCARAS DE DIGITAÇÃO (CPF/CNPJ e R$)
+     O valor exibido tem pontuação; o valor enviado ao backend
+     continua normalizado (somente dígitos / número puro).
+  ========================================== */
+
+  function formatDocumentMask(rawValue) {
+    const digits = onlyDigits(rawValue).slice(0, 14);
+    let out = "";
+    if (digits.length <= 11) {
+      for (let i = 0; i < digits.length; i++) {
+        if (i === 3 || i === 6) out += ".";
+        if (i === 9) out += "-";
+        out += digits[i];
+      }
+    } else {
+      for (let i = 0; i < digits.length; i++) {
+        if (i === 2 || i === 5) out += ".";
+        if (i === 8) out += "/";
+        if (i === 12) out += "-";
+        out += digits[i];
+      }
+    }
+    return out;
+  }
+
+  function displayDocumentNumber(value) {
+    const digits = onlyDigits(value);
+    return digits ? formatDocumentMask(digits) : "Não informado";
+  }
+
+  function bindDocumentMask(input) {
+    input.addEventListener("input", () => {
+      const caretAtEnd = input.selectionEnd === input.value.length;
+      input.value = formatDocumentMask(input.value);
+      if (caretAtEnd) input.setSelectionRange(input.value.length, input.value.length);
+    });
+  }
+
+  // Digita-se em centavos (como em caixas eletrônicos): "12345" vira R$ 123,45.
+  // O número puro (ex.: "123.45") fica em data-raw, usado no envio e na validação.
+  function formatMoneyMask(rawValue) {
+    const digits = onlyDigits(rawValue).slice(0, 12);
+    if (!digits) return { display: "", raw: "" };
+    const amount = Number(digits) / 100;
+    return { display: money(amount), raw: amount.toFixed(2) };
+  }
+
+  function bindMoneyMask(input) {
+    input.addEventListener("input", () => {
+      const { display, raw } = formatMoneyMask(input.value);
+      input.value = display;
+      input.dataset.raw = raw;
+    });
+  }
+
+  function setMoneyValue(input, rawNumber) {
+    if (rawNumber === null || rawNumber === undefined || rawNumber === "") {
+      input.value = "";
+      input.dataset.raw = "";
+      return;
+    }
+    const amount = Number(rawNumber);
+    input.value = money(amount);
+    input.dataset.raw = amount.toFixed(2);
+  }
+
+  /* ==========================================
      CONFIGURAÇÃO POR TIPO DE DOCUMENTO
   ========================================== */
 
@@ -591,7 +658,7 @@
       },
       vehicle_snapshot: vehicleSnapshot,
       document_data: documentData,
-      operation_value: config.showOperationValue ? $("operationValue").value.trim() : "",
+      operation_value: config.showOperationValue ? $("operationValue").dataset.raw || "" : "",
       issue_date: $("issueDate").value,
       expiration_date: config.showExpiration ? $("expirationDate").value : "",
     };
@@ -770,11 +837,11 @@
 
     section(
       config.primaryLabel.toUpperCase(),
-      `${text(data.participant_primary.name)}\nCPF/CNPJ: ${text(data.participant_primary.document)}`,
+      `${text(data.participant_primary.name)}\nCPF/CNPJ: ${displayDocumentNumber(data.participant_primary.document)}`,
     );
     section(
       config.secondaryLabel.toUpperCase(),
-      `${text(data.participant_secondary.name)}\nCPF/CNPJ: ${text(data.participant_secondary.document)}`,
+      `${text(data.participant_secondary.name)}\nCPF/CNPJ: ${displayDocumentNumber(data.participant_secondary.document)}`,
     );
 
     const snapshot = data.vehicle_snapshot || {};
@@ -868,6 +935,7 @@
 
   function clearForm() {
     $("documentForm").reset();
+    $("operationValue").dataset.raw = "";
     $("vehicleSummary").hidden = true;
     $("vehicleSummary").replaceChildren();
     $("primaryName").readOnly = false;
@@ -988,9 +1056,9 @@
     renderVehicleSummary(buildVehicleSnapshot(getSelectedVehicle()));
 
     $("primaryName").value = doc.participant_primary?.name || "";
-    $("primaryDocument").value = doc.participant_primary?.document || "";
+    $("primaryDocument").value = formatDocumentMask(doc.participant_primary?.document || "");
     $("secondaryName").value = doc.participant_secondary?.name || "";
-    $("secondaryDocument").value = doc.participant_secondary?.document || "";
+    $("secondaryDocument").value = formatDocumentMask(doc.participant_secondary?.document || "");
     if (doc.client_id) $("primaryName").readOnly = true;
 
     const dd = doc.document_data || {};
@@ -1002,7 +1070,7 @@
     $("referenteA").value = dd.referente_a || "";
     $("observations").value = dd.observacoes || "";
 
-    $("operationValue").value = doc.operation_value ?? "";
+    setMoneyValue($("operationValue"), doc.operation_value);
     $("issueDate").value = doc.issue_date || "";
     $("expirationDate").value = doc.expiration_date || "";
 
@@ -1239,7 +1307,7 @@
       $("secondaryDocument").value = "";
       $("vehicleSelect").value = sale.vehicle_id ? String(sale.vehicle_id) : "";
       renderVehicleSummary(buildVehicleSnapshot(getSelectedVehicle()));
-      $("operationValue").value = sale.sale_price || "";
+      setMoneyValue($("operationValue"), sale.sale_price);
       $("paymentMethod").value = sale.payment_method || "";
       $("issueDate").value = (sale.sale_date || "").slice(0, 10);
       scheduleUpdate();
@@ -1260,6 +1328,10 @@
 
     $("documentForm").addEventListener("input", scheduleUpdate);
     $("documentForm").addEventListener("change", scheduleUpdate);
+
+    bindDocumentMask($("primaryDocument"));
+    bindDocumentMask($("secondaryDocument"));
+    bindMoneyMask($("operationValue"));
 
     $("vehicleSelect").addEventListener("change", onVehicleChange);
     $("clientSelect").addEventListener("change", onClientChange);
