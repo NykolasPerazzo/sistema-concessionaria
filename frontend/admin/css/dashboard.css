@@ -1465,3 +1465,25 @@ body.light-theme {
   font-size: 13px;
   font-weight: 800;
 }
+
+/* =========================================
+   CENTRAL DE COMANDO - CORRECAO MOBILE FINAL
+   (fica no fim do arquivo de propósito: os blocos
+   "MAIS COMPACTA" e "IMAGEM DO CARRO" acima não têm
+   media query e sobrescreviam o layout mobile)
+========================================= */
+
+@media (max-width: 760px) {
+  .command-center-page .sidebar {
+    width: 100%;
+    padding: 12px;
+  }
+
+  .command-center-page .vehicle-intel-card .vehicle-photo {
+    height: 160px;
+  }
+
+  .command-center-page .vehicle-intel-card {
+    min-height: auto;
+  }
+}
