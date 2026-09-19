@@ -65,7 +65,7 @@ function setTheme(theme) {
   }
 }
 
-setTheme(localStorage.getItem("carDealerAdminTheme") || "dark");
+setTheme(localStorage.getItem("carDealerAdminTheme") || "light");
 
 const themeToggle = document.getElementById("themeToggle");
 

@@ -1,7 +1,10 @@
 :root {
   --cc-bg: #07090d;
+  --cc-bg-radial: rgba(255, 81, 11, 0.11);
   --cc-panel: #101318;
   --cc-panel-2: #151922;
+  --cc-panel-alt: #12161d;
+  --cc-track: #2a303b;
   --cc-border: rgba(255, 255, 255, 0.105);
   --cc-text: #f6f7fb;
   --cc-muted: #9ca3af;
@@ -13,15 +16,63 @@
   --cc-red: #ff443a;
   --cc-blue: #4895ff;
   --cc-shadow: 0 22px 65px rgba(0, 0, 0, 0.38);
+  --cc-overlay-1: rgba(255, 255, 255, 0.025);
+  --cc-overlay-2: rgba(255, 255, 255, 0.035);
+  --cc-overlay-hover: rgba(255, 255, 255, 0.08);
+  --cc-card-grad-1: #11151d;
+  --cc-card-grad-2: #090c12;
+  --cc-sidebar-grad-1: #0d1117;
+  --cc-sidebar-grad-2: #080a0f;
+  --cc-nav-link-color: #cbd2df;
+  --cc-photo-grad-1: #202733;
+  --cc-photo-grad-2: #090b0f;
+  --cc-photo-grad-1-lg: #171c25;
+  --cc-photo-grad-2-lg: #0d1118;
+  --cc-photo-highlight: rgba(255, 255, 255, 0.14);
+  --cc-notif-grad-1: rgba(20, 24, 33, 0.98);
+  --cc-notif-grad-2: rgba(9, 12, 17, 0.98);
+}
+
+/* =========================================
+   CENTRAL DE COMANDO - TEMA CLARO
+========================================= */
+
+body.light-theme {
+  --cc-bg: #f5f5f5;
+  --cc-bg-radial: rgba(255, 81, 11, 0.08);
+  --cc-panel: #ffffff;
+  --cc-panel-2: #f0f0f0;
+  --cc-panel-alt: #eef0f3;
+  --cc-track: #e2e5ea;
+  --cc-border: rgba(0, 0, 0, 0.1);
+  --cc-text: #16181d;
+  --cc-muted: #6b7280;
+  --cc-soft: #4b5563;
+  --cc-shadow: 0 22px 65px rgba(0, 0, 0, 0.12);
+  --cc-overlay-1: rgba(0, 0, 0, 0.025);
+  --cc-overlay-2: rgba(0, 0, 0, 0.045);
+  --cc-overlay-hover: rgba(0, 0, 0, 0.06);
+  --cc-card-grad-1: #ffffff;
+  --cc-card-grad-2: #f4f5f7;
+  --cc-sidebar-grad-1: #ffffff;
+  --cc-sidebar-grad-2: #f7f7f8;
+  --cc-nav-link-color: #3f4655;
+  --cc-photo-grad-1: #eef1f5;
+  --cc-photo-grad-2: #dde1e7;
+  --cc-photo-grad-1-lg: #f1f3f6;
+  --cc-photo-grad-2-lg: #e3e6eb;
+  --cc-photo-highlight: rgba(0, 0, 0, 0.05);
+  --cc-notif-grad-1: #ffffff;
+  --cc-notif-grad-2: #f4f5f7;
 }
 .command-center-page {
   background:
     radial-gradient(
       circle at 35% -20%,
-      rgba(255, 81, 11, 0.11),
+      var(--cc-bg-radial),
       transparent 34%
     ),
-    linear-gradient(180deg, #080a0f 0%, #06070a 100%);
+    var(--cc-bg);
   color: var(--cc-text);
   min-height: 100vh;
 }
@@ -33,7 +84,11 @@
   position: fixed;
   inset: 0 auto 0 0;
   width: 248px;
-  background: linear-gradient(180deg, #0d1117 0%, #080a0f 100%);
+  background: linear-gradient(
+    180deg,
+    var(--cc-sidebar-grad-1) 0%,
+    var(--cc-sidebar-grad-2) 100%
+  );
   border-right: 1px solid var(--cc-border);
   padding: 24px 10px;
   display: flex;
@@ -72,7 +127,7 @@
   min-height: 46px;
   border-radius: 8px;
   padding: 0 15px;
-  color: #cbd2df;
+  color: var(--cc-nav-link-color);
   background: transparent;
   border: 0;
   font: inherit;
@@ -82,7 +137,7 @@
   width: 22px;
   text-align: center;
   font-size: 18px;
-  color: #fff;
+  color: var(--cc-text);
 }
 .command-center-page .nav-link.active {
   background: linear-gradient(
@@ -126,7 +181,7 @@
   right: 24px;
   top: 24px;
   z-index: 50;
-  background: #141821;
+  background: var(--cc-panel-alt);
   border: 1px solid var(--cc-border);
   box-shadow: var(--cc-shadow);
   padding: 14px 42px 14px 16px;
@@ -138,7 +193,7 @@
   top: 8px;
   background: none;
   border: 0;
-  color: #fff;
+  color: var(--cc-text);
   font-size: 22px;
 }
 .command-shell {
@@ -156,7 +211,7 @@
 .eyebrow {
   text-transform: uppercase;
   font-size: 11px;
-  color: #727b8b;
+  color: var(--cc-muted);
   letter-spacing: 0.08em;
   margin: 0 0 4px;
 }
@@ -164,12 +219,12 @@
   font-size: 32px;
   line-height: 1.05;
   margin: 0;
-  color: #fff;
+  color: var(--cc-text);
   font-weight: 900;
 }
 .command-hero p {
   margin: 7px 0 0;
-  color: #aeb7c6;
+  color: var(--cc-soft);
 }
 .hero-actions {
   display: flex;
@@ -188,8 +243,8 @@
 }
 .demo-pill {
   border: 1px solid var(--cc-border);
-  background: #141821;
-  color: #c9d1dd;
+  background: var(--cc-panel-alt);
+  color: var(--cc-soft);
 }
 .btn-primary {
   background: linear-gradient(135deg, var(--cc-orange), var(--cc-orange-2));
@@ -209,14 +264,10 @@
 .ai-recommendation,
 .copilot-cta,
 .finance-strip {
-  background: linear-gradient(
-    145deg,
-    rgba(18, 22, 29, 0.96),
-    rgba(10, 13, 18, 0.96)
-  );
+  background: linear-gradient(145deg, var(--cc-card-grad-1), var(--cc-card-grad-2));
   border: 1px solid var(--cc-border);
   border-radius: 10px;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035);
+  box-shadow: inset 0 1px 0 var(--cc-overlay-2);
 }
 .radar-card,
 .priority-card,
@@ -233,12 +284,12 @@
 .command-card h2 {
   font-size: 20px;
   margin: 0 0 4px;
-  color: #fff;
+  color: var(--cc-text);
 }
 .section-title-row p,
 .command-card p {
   margin: 0;
-  color: #aeb7c6;
+  color: var(--cc-soft);
 }
 .section-title-row a {
   color: var(--cc-orange);
@@ -265,7 +316,7 @@
   stroke-linecap: butt;
 }
 .meter-track {
-  stroke: #232830;
+  stroke: var(--cc-track);
 }
 .meter-green {
   stroke: var(--cc-green);
@@ -277,7 +328,7 @@
   stroke: var(--cc-red);
 }
 .meter-needle {
-  stroke: #f8fafc;
+  stroke: var(--cc-text);
   stroke-width: 7;
   stroke-linecap: round;
   filter: drop-shadow(0 4px 7px rgba(0, 0, 0, 0.55));
@@ -285,7 +336,7 @@
   transition: 0.35s;
 }
 .meter-center {
-  fill: #f8fafc;
+  fill: var(--cc-text);
 }
 .radar-meter strong {
   display: block;
@@ -296,11 +347,11 @@
 .radar-copy h3 {
   font-size: 21px;
   margin: 0 0 8px;
-  color: #fff;
+  color: var(--cc-text);
 }
 .radar-copy p {
   margin: 0 0 18px;
-  color: #b6bfce;
+  color: var(--cc-soft);
   line-height: 1.45;
 }
 .radar-status-grid {
@@ -312,9 +363,9 @@
   min-height: 64px;
   border: 1px solid var(--cc-border);
   border-radius: 8px;
-  background: #141820;
+  background: var(--cc-panel-alt);
   padding: 12px;
-  color: #cbd5e1;
+  color: var(--cc-soft);
 }
 .radar-status-grid i {
   display: inline-block;
@@ -364,7 +415,7 @@
   min-height: 54px;
   border: 1px solid var(--cc-border);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.025);
+  background: var(--cc-overlay-1);
   padding: 0 12px;
 }
 .priority-row span {
@@ -381,11 +432,11 @@
 }
 .priority-row p {
   margin: 0;
-  color: #fff;
+  color: var(--cc-text);
   font-weight: 700;
 }
 .priority-row a {
-  background: #1a1f28;
+  background: var(--cc-panel-alt);
   border: 1px solid var(--cc-border);
   border-radius: 7px;
   padding: 9px 15px;
@@ -430,7 +481,7 @@
 }
 .ai-recommendation span,
 .copilot-cta p {
-  color: #bcc5d3;
+  color: var(--cc-soft);
 }
 .metric-grid {
   display: grid;
@@ -452,23 +503,23 @@
   width: 54px;
   height: 54px;
   border-radius: 9px;
-  background: #1a1f28;
+  background: var(--cc-panel-alt);
   border: 1px solid var(--cc-border);
   display: grid;
   place-items: center;
   font-size: 22px;
 }
 .metric-card span {
-  color: #cbd5e1;
+  color: var(--cc-soft);
 }
 .metric-card strong {
   font-size: 34px;
   line-height: 1;
-  color: #fff;
+  color: var(--cc-text);
 }
 .metric-card em {
   grid-column: 2/4;
-  color: #8b95a5;
+  color: var(--cc-muted);
   font-style: normal;
   font-size: 12px;
 }
@@ -485,12 +536,12 @@
   gap: 14px;
   align-items: center;
   margin-top: 18px;
-  color: #cbd5e1;
+  color: var(--cc-soft);
 }
 .funnel-row div {
   height: 15px;
   border-radius: 999px;
-  background: #242934;
+  background: var(--cc-track);
   overflow: hidden;
 }
 .funnel-row b {
@@ -520,7 +571,7 @@
   gap: 12px;
   border: 1px solid var(--cc-border);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.025);
+  background: var(--cc-overlay-1);
   padding: 9px;
 }
 .lead-action-list span {
@@ -541,7 +592,7 @@
 }
 .lead-action-list em {
   font-style: normal;
-  color: #8e98a8;
+  color: var(--cc-muted);
   font-size: 12px;
 }
 .stock-intel-card {
@@ -557,13 +608,13 @@
   border: 1px solid var(--cc-border);
   border-radius: 9px;
   overflow: hidden;
-  background: #11161d;
+  background: var(--cc-panel-alt);
   min-height: 255px;
   position: relative;
 }
 .vehicle-intel-card .vehicle-photo {
   height: 150px;
-  background: linear-gradient(135deg, #202733, #090b0f);
+  background: linear-gradient(135deg, var(--cc-photo-grad-1), var(--cc-photo-grad-2));
   display: grid;
   place-items: center;
   overflow: hidden;
@@ -575,7 +626,7 @@
 }
 .vehicle-intel-card .vehicle-photo i {
   font-size: 70px;
-  color: #313946;
+  color: var(--cc-muted);
 }
 .vehicle-intel-card .vehicle-info {
   padding: 13px;
@@ -583,7 +634,7 @@
 .vehicle-intel-card h3 {
   margin: 0 0 4px;
   font-size: 17px;
-  color: #fff;
+  color: var(--cc-text);
 }
 .vehicle-intel-card p {
   margin: 0 0 10px;
@@ -629,7 +680,7 @@
   align-items: center;
   padding: 12px 0;
   border-top: 1px solid var(--cc-border);
-  color: #fff;
+  color: var(--cc-text);
 }
 .channel-card strong {
   font-size: 13px;
@@ -645,7 +696,7 @@
   margin-top: 30px;
 }
 .result-card > span {
-  color: #aeb7c6;
+  color: var(--cc-soft);
 }
 .result-card > i {
   position: absolute;
@@ -667,18 +718,18 @@
 }
 .finance-strip span {
   display: block;
-  color: #8f9aaa;
+  color: var(--cc-muted);
   font-size: 12px;
 }
 .finance-strip strong {
   display: block;
-  color: #fff;
+  color: var(--cc-text);
   font-size: 17px;
   margin-top: 4px;
 }
 .finance-strip small {
   display: block;
-  color: #8f9aaa;
+  color: var(--cc-muted);
 }
 .recent-vehicle-grid {
   display: grid;
@@ -690,34 +741,34 @@
   border: 1px solid var(--cc-border);
   border-radius: 9px;
   overflow: hidden;
-  background: #11161d;
+  background: var(--cc-panel-alt);
 }
 .recent-vehicle-card img {
   width: 100%;
   height: 110px;
   object-fit: cover;
-  background: #1b2029;
+  background: var(--cc-panel-alt);
 }
 .recent-vehicle-card div {
   padding: 12px;
 }
 .recent-vehicle-card strong {
   display: block;
-  color: #fff;
+  color: var(--cc-text);
 }
 .recent-vehicle-card span {
-  color: #aeb7c6;
+  color: var(--cc-soft);
   font-size: 13px;
 }
 .empty-card {
   display: grid;
   place-items: center;
-  color: #9ca3af;
+  color: var(--cc-muted);
   padding: 22px;
   text-align: center;
 }
 .skeleton-row span {
-  background: #333b48;
+  background: var(--cc-track);
 }
 @media (max-width: 1180px) {
   .command-shell {
@@ -802,8 +853,14 @@
 /* CORRECOES DA CENTRAL DE COMANDO */
 
 .command-center-page {
-  background: #07090d;
-  color: #f8fafc;
+  background:
+    radial-gradient(
+      circle at 35% -20%,
+      var(--cc-bg-radial),
+      transparent 34%
+    ),
+    var(--cc-bg);
+  color: var(--cc-text);
 }
 
 .command-center-page .command-shell {
@@ -815,8 +872,8 @@
 .command-center-page .radar-card,
 .command-center-page .command-card,
 .command-center-page .metric-card {
-  background: linear-gradient(145deg, #11151d, #090c12);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: linear-gradient(145deg, var(--cc-card-grad-1), var(--cc-card-grad-2));
+  border: 1px solid var(--cc-border);
 }
 
 .command-center-page .priority-row,
@@ -829,9 +886,9 @@
   min-height: 56px;
   padding: 12px 14px;
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.035);
-  border: 1px solid rgba(255, 255, 255, 0.09);
-  color: #f8fafc;
+  background: var(--cc-overlay-2);
+  border: 1px solid var(--cc-border);
+  color: var(--cc-text);
 }
 
 .command-center-page .stock-alert {
@@ -856,20 +913,20 @@
 
 .command-center-page .stock-alert strong,
 .command-center-page .priority-row p {
-  color: #ffffff;
+  color: var(--cc-text);
   font-weight: 800;
 }
 
 .command-center-page .stock-alert span {
   display: block;
   margin-top: 4px;
-  color: #b9c3d3;
+  color: var(--cc-soft);
 }
 
 .command-center-page .priority-row a {
-  background: #1a1f28;
-  border: 1px solid rgba(255, 255, 255, 0.11);
-  color: #ffffff;
+  background: var(--cc-panel-alt);
+  border: 1px solid var(--cc-border);
+  color: var(--cc-text);
   border-radius: 8px;
   padding: 9px 14px;
   font-size: 12px;
@@ -887,7 +944,7 @@
 .command-center-page .radar-status-grid span {
   overflow: hidden;
   white-space: normal;
-  color: #dbe4f0;
+  color: var(--cc-soft);
 }
 
 .command-center-page .radar-status-grid strong {
@@ -898,7 +955,7 @@
 .command-center-page .ai-recommendation span,
 .command-center-page .copilot-cta h2,
 .command-center-page .copilot-cta p {
-  color: #ffffff;
+  color: var(--cc-text);
 }
 
 .command-center-page .ai-recommendation p {
@@ -908,19 +965,19 @@
 .command-center-page .lead-action-list a,
 .command-center-page .lead-action-list strong,
 .command-center-page .lead-action-list em {
-  color: #ffffff;
+  color: var(--cc-text);
 }
 
 .command-center-page .lead-action-list a {
-  background: rgba(255, 255, 255, 0.035);
+  background: var(--cc-overlay-2);
 }
 
 .command-center-page .lead-action-list em {
-  color: #aeb7c6;
+  color: var(--cc-soft);
 }
 
 .command-center-page .funnel-row strong {
-  color: #ffffff;
+  color: var(--cc-text);
   text-align: right;
 }
 
@@ -933,7 +990,7 @@
 }
 
 .command-center-page .demo-pill i {
-  color: #9fb0c8;
+  color: var(--cc-muted);
 }
 
 @media (max-width: 1180px) {
@@ -1279,14 +1336,14 @@
   gap: 12px;
   padding: 14px 14px 14px 16px;
   border-radius: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid var(--cc-border);
   background: linear-gradient(
     145deg,
-    rgba(20, 24, 33, 0.98),
-    rgba(9, 12, 17, 0.98)
+    var(--cc-notif-grad-1),
+    var(--cc-notif-grad-2)
   );
   box-shadow: 0 22px 60px rgba(0, 0, 0, 0.45);
-  color: #f8fafc;
+  color: var(--cc-text);
 }
 
 .lead-notification::before {
@@ -1305,7 +1362,7 @@
 .lead-notification strong {
   display: block;
   max-width: 100%;
-  color: #ffffff;
+  color: var(--cc-text);
   font-size: 15px;
   line-height: 1.15;
   font-weight: 900;
@@ -1317,7 +1374,7 @@
 .lead-notification small {
   display: block;
   margin-top: 4px;
-  color: #aeb8c8;
+  color: var(--cc-soft);
   font-size: 13px;
   line-height: 1.25;
   white-space: nowrap;
@@ -1333,14 +1390,14 @@
   border: 0;
   border-radius: 8px;
   background: transparent;
-  color: #ffffff;
+  color: var(--cc-text);
   font-size: 20px;
   line-height: 1;
   cursor: pointer;
 }
 
 .lead-notification button:hover {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--cc-overlay-hover);
 }
 
 .lead-notification.hidden,
@@ -1373,10 +1430,14 @@
   background:
     radial-gradient(
       circle at 50% 42%,
-      rgba(255, 255, 255, 0.14),
+      var(--cc-photo-highlight),
       transparent 45%
     ),
-    linear-gradient(180deg, #171c25 0%, #0d1118 100%);
+    linear-gradient(
+      180deg,
+      var(--cc-photo-grad-1-lg) 0%,
+      var(--cc-photo-grad-2-lg) 100%
+    );
 }
 
 .command-center-page .vehicle-intel-card .vehicle-photo img {
@@ -1400,7 +1461,7 @@
   .vehicle-photo:has(img[src=""])::before,
 .command-center-page .vehicle-intel-card .vehicle-photo:not(:has(img))::before {
   content: "Sem imagem";
-  color: #8f9aaa;
+  color: var(--cc-muted);
   font-size: 13px;
   font-weight: 800;
 }
