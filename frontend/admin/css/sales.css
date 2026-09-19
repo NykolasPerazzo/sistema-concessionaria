@@ -7,6 +7,11 @@
   --sales-danger: #ff5e57;
 }
 
+body.light-theme.sales-page {
+  --sales-panel: #ffffff;
+  --sales-panel-soft: #f4f5f7;
+}
+
 .sales-page .admin-main {
   width: auto;
   max-width: none;
