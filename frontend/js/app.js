@@ -44,9 +44,22 @@ async function loadFeaturedVehicles() {
 
     const vehicles = vehicleList.filter((vehicle) => vehicle.status !== "sold");
 
+    /*
+      Prioriza os veículos marcados como destaque no cadastro
+      (is_featured). Sem nenhum marcado, cai de volta para os
+      mais recentes, pra página inicial nunca ficar vazia.
+    */
+
+    const featuredOnly = vehicles.filter((vehicle) => vehicle.is_featured);
+
+    const highlighted = (featuredOnly.length ? featuredOnly : vehicles).slice(
+      0,
+      6,
+    );
+
     /* HERO */
 
-    heroVehicles = vehicles.slice(0, 6);
+    heroVehicles = highlighted;
     const heroSection = document.querySelector(".hero-showcase");
     if (heroSection)
       heroSection.style.display = heroVehicles.length ? "" : "none";
@@ -68,7 +81,7 @@ async function loadFeaturedVehicles() {
       return;
     }
 
-    const featuredVehicles = vehicles.slice(0, 6);
+    const featuredVehicles = highlighted;
 
     if (!featuredVehicles.length) {
       container.innerHTML = `

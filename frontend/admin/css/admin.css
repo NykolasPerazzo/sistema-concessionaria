@@ -644,6 +644,51 @@ strong {
   line-height: 1.5;
 }
 
+/* =========================================
+   DESTAQUE NA PÁGINA INICIAL
+========================================= */
+
+.featured-toggle {
+  cursor: pointer;
+}
+
+.featured-toggle input {
+  position: absolute;
+  width: 0;
+  height: 0;
+  opacity: 0;
+}
+
+.featured-toggle-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
+  padding: 14px 15px;
+
+  background: var(--card-bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 600;
+
+  transition: 0.2s;
+}
+
+.featured-toggle input:checked + .featured-toggle-btn {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #ffffff;
+}
+
+.featured-toggle input:focus-visible + .featured-toggle-btn {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 .form-message {
   min-height: 20px;
   margin-bottom: 20px;

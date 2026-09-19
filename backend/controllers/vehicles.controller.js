@@ -39,6 +39,10 @@ function normalizeString(value) {
   return value.trim();
 }
 
+function parseBoolean(value) {
+  return value === true || value === "true" || value === "on" || value === "1";
+}
+
 function validId(value) {
   const id = Number(value);
 
@@ -524,6 +528,8 @@ function normalizeVehicleData(data) {
     document_category: nullable(normalizeString(data.document_category)),
 
     engine_displacement_cc: nullableNumber(data.engine_displacement_cc),
+
+    is_featured: parseBoolean(data.is_featured),
   };
 }
 
@@ -712,6 +718,7 @@ const createVehicle = async (req, res) => {
           document_species,
           document_category,
           engine_displacement_cc,
+          is_featured,
           image_url
         )
 
@@ -743,6 +750,7 @@ const createVehicle = async (req, res) => {
           $25,
           $26,
           $27,
+          $28,
           NULL
         )
 
@@ -784,6 +792,7 @@ const createVehicle = async (req, res) => {
         vehicleData.document_species,
         vehicleData.document_category,
         vehicleData.engine_displacement_cc,
+        vehicleData.is_featured,
       ],
     );
 
@@ -1105,9 +1114,10 @@ const updateVehicle = async (req, res) => {
           document_vehicle_type = $26,
           document_species = $27,
           document_category = $28,
-          engine_displacement_cc = $29
+          engine_displacement_cc = $29,
+          is_featured = $30
 
-        WHERE id = $30
+        WHERE id = $31
 
         RETURNING *
         `,
@@ -1150,6 +1160,8 @@ const updateVehicle = async (req, res) => {
         vehicleData.document_species,
         vehicleData.document_category,
         vehicleData.engine_displacement_cc,
+
+        vehicleData.is_featured,
 
         id,
       ],

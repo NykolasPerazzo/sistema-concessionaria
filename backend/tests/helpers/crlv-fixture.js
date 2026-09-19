@@ -28,7 +28,11 @@ async function fixture() {
       (2, 'Vendedor Teste', 'vendedor@example.com', 'x', 'vendedor');
     SELECT setval('users_id_seq', 2);`);
 
-  for (const file of ["011_vehicle_specs.sql", "014_crlv_import.sql"]) {
+  for (const file of [
+    "011_vehicle_specs.sql",
+    "014_crlv_import.sql",
+    "015_vehicle_featured.sql",
+  ]) {
     const sql = fs.readFileSync(
       path.join(__dirname, "../../database/migrations", file),
       "utf8",

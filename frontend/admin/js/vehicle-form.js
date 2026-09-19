@@ -285,6 +285,10 @@ function fillForm(vehicle) {
 
   document.getElementById("status").value = vehicle.status || "available";
 
+  document.getElementById("is_featured").checked = Boolean(
+    vehicle.is_featured,
+  );
+
   /*
         Se o veículo já possui uma imagem,
         mostramos ela ao editar.
@@ -776,6 +780,11 @@ form.addEventListener("submit", async (event) => {
   }
 
   formData.append("status", document.getElementById("status").value);
+
+  formData.append(
+    "is_featured",
+    document.getElementById("is_featured").checked ? "true" : "false",
+  );
 
   /*
             IMAGEM PRINCIPAL
