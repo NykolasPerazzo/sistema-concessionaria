@@ -1178,9 +1178,101 @@ const generateSpecsAI = document.getElementById("generateSpecsAI");
 
 const specsAIStatus = document.getElementById("specsAIStatus");
 
-generateSpecsAI?.addEventListener("click", generateVehicleSpecs);
+generateSpecsAI?.addEventListener("click", () =>
+  generateVehicleSpecs({ overwrite: true }),
+);
 
-async function generateVehicleSpecs() {
+// Campos que a IA de especificações pode preencher no formulário.
+const SPECS_FIELD_MAP = {
+  velocidade_maxima_kmh: "top_speed",
+  capacidade_passageiros: "seats",
+  capacidade_porta_malas_litros: "trunk_capacity",
+  combustivel: "fuel",
+  cambio: "transmission",
+  motorizacao: "engine",
+  potencia_cv: "horsepower",
+};
+
+/*
+  Busca as especificações técnicas na IA. Quando o formulário já tem
+  cilindrada/potência (preenchidas manualmente ou lidas do CRLV), elas
+  são enviadas como pista para a IA identificar a motorização exata.
+*/
+async function fetchVehicleSpecsFromAI({ brand, model, year, version, engine }) {
+  const engineDisplacementCc = document.getElementById(
+    "engine_displacement_cc",
+  )?.value;
+
+  const horsepower = document.getElementById("horsepower")?.value;
+
+  const response = await fetch(`${API_URL}/ai/vehicle-specs`, {
+    method: "POST",
+
+    credentials: "include",
+
+    headers: {
+      "Content-Type": "application/json",
+    },
+
+    body: JSON.stringify({
+      brand,
+      model,
+      year,
+      version,
+      engine,
+      engine_displacement_cc: engineDisplacementCc || undefined,
+      horsepower: horsepower || undefined,
+    }),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(
+      data.error || "Não foi possível buscar as especificações.",
+    );
+  }
+
+  return data;
+}
+
+/*
+  Aplica o resultado da IA de especificações aos campos do formulário.
+  overwrite=true (botão manual): é uma ação explícita do admin/vendedor,
+  pode substituir valores já preenchidos.
+  overwrite=false (disparo automático após aplicar o CRLV): só preenche
+  campos vazios — nunca substitui um dado que já veio do próprio CRLV
+  (ex.: potência, combustível).
+*/
+function applySpecsFields(data, { overwrite }) {
+  let filledCount = 0;
+
+  Object.entries(SPECS_FIELD_MAP).forEach(([aiField, formFieldId]) => {
+    const value = data[aiField];
+
+    if (value === null || value === undefined || value === "") {
+      return;
+    }
+
+    const input = document.getElementById(formFieldId);
+
+    if (!input || input.disabled) {
+      return;
+    }
+
+    if (!overwrite && String(input.value || "").trim() !== "") {
+      return;
+    }
+
+    input.value = value;
+
+    filledCount += 1;
+  });
+
+  return filledCount;
+}
+
+async function generateVehicleSpecs({ overwrite }) {
   const brand = document.getElementById("brand")?.value.trim();
 
   const model = document.getElementById("model")?.value.trim();
@@ -1209,31 +1301,13 @@ async function generateVehicleSpecs() {
 
     specsAIStatus.className = "description-ai-status";
 
-    const response = await fetch(`${API_URL}/ai/vehicle-specs`, {
-      method: "POST",
-
-      credentials: "include",
-
-      headers: {
-        "Content-Type": "application/json",
-      },
-
-      body: JSON.stringify({
-        brand,
-        model,
-        year,
-        version,
-        engine,
-      }),
+    const data = await fetchVehicleSpecsFromAI({
+      brand,
+      model,
+      year,
+      version,
+      engine,
     });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(
-        data.error || "Não foi possível buscar as especificações.",
-      );
-    }
 
     /*
       Preenchemos somente os campos que a IA devolveu com segurança
@@ -1242,35 +1316,7 @@ async function generateVehicleSpecs() {
       pode editar tudo antes de salvar.
     */
 
-    const fieldMap = {
-      velocidade_maxima_kmh: "top_speed",
-      capacidade_passageiros: "seats",
-      capacidade_porta_malas_litros: "trunk_capacity",
-      combustivel: "fuel",
-      cambio: "transmission",
-      motorizacao: "engine",
-      potencia_cv: "horsepower",
-    };
-
-    let filledCount = 0;
-
-    Object.entries(fieldMap).forEach(([aiField, formFieldId]) => {
-      const value = data[aiField];
-
-      if (value === null || value === undefined || value === "") {
-        return;
-      }
-
-      const input = document.getElementById(formFieldId);
-
-      if (!input) {
-        return;
-      }
-
-      input.value = value;
-
-      filledCount += 1;
-    });
+    const filledCount = applySpecsFields(data, { overwrite });
 
     const messageParts = [];
 
@@ -1304,6 +1350,85 @@ async function generateVehicleSpecs() {
     generateSpecsAI.disabled = false;
 
     generateSpecsAI.innerHTML = "<span>✦</span> Buscar novamente";
+  }
+}
+
+/*
+  Disparo automático após aplicar os dados do CRLV: usa marca/modelo/ano
+  já aplicados no formulário (e a cilindrada/potência lidas do próprio
+  CRLV) para buscar o motor exato e preencher velocidade máxima,
+  passageiros, porta-malas e câmbio — só em campos ainda vazios. Falha
+  nesta busca é silenciosa (best-effort): a leitura do CRLV já foi
+  concluída com sucesso independentemente disso.
+*/
+async function autoFillSpecsFromCrlv() {
+  const brand = document.getElementById("brand")?.value.trim();
+  const model = document.getElementById("model")?.value.trim();
+  const year = document.getElementById("year")?.value;
+
+  if (!brand || !model || !year) {
+    return null;
+  }
+
+  const version = document.getElementById("specsVersion")?.value.trim();
+  const engine = document.getElementById("engine")?.value.trim();
+
+  if (generateSpecsAI) {
+    generateSpecsAI.disabled = true;
+    generateSpecsAI.innerHTML = "<span>✦</span> Buscando...";
+  }
+
+  if (specsAIStatus) {
+    specsAIStatus.textContent =
+      "Buscando o motor e os detalhes técnicos com base no CRLV...";
+    specsAIStatus.className = "description-ai-status";
+  }
+
+  try {
+    const data = await fetchVehicleSpecsFromAI({
+      brand,
+      model,
+      year,
+      version,
+      engine,
+    });
+
+    const filledCount = applySpecsFields(data, { overwrite: false });
+
+    if (specsAIStatus) {
+      const messageParts = [
+        filledCount > 0
+          ? `${filledCount} detalhe(s) técnico(s) preenchido(s) a partir do CRLV (confiança: ${data.confianca}).`
+          : "A IA não encontrou detalhes técnicos confiáveis para preencher automaticamente.",
+      ];
+
+      if (data.observacao) {
+        messageParts.push(data.observacao);
+      }
+
+      specsAIStatus.textContent = messageParts.join(" ");
+      specsAIStatus.className =
+        filledCount > 0 && data.confianca === "alta"
+          ? "description-ai-status success"
+          : "description-ai-status warning";
+    }
+
+    return { filledCount, data };
+  } catch (error) {
+    console.error("Erro ao buscar motor/detalhes técnicos a partir do CRLV:", error);
+
+    if (specsAIStatus) {
+      specsAIStatus.textContent =
+        "Não foi possível buscar o motor e os detalhes técnicos automaticamente. Você pode tentar de novo abaixo.";
+      specsAIStatus.className = "description-ai-status warning";
+    }
+
+    return null;
+  } finally {
+    if (generateSpecsAI) {
+      generateSpecsAI.disabled = false;
+      generateSpecsAI.innerHTML = "<span>✦</span> Buscar novamente";
+    }
   }
 }
 
@@ -1713,4 +1838,11 @@ crlvApplyButton?.addEventListener("click", () => {
 
   // O arquivo já cumpriu seu papel: descarta a referência local.
   resetCrlvState();
+
+  // Com marca/modelo/ano (e cilindrada/potência, quando lidas do CRLV)
+  // já no formulário, busca o motor exato e preenche o restante dos
+  // detalhes técnicos (velocidade máxima, passageiros, porta-malas,
+  // câmbio) — só em campos ainda vazios. Roda em segundo plano: não
+  // atrasa nem bloqueia a aplicação dos dados do CRLV.
+  autoFillSpecsFromCrlv();
 });

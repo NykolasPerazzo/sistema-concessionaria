@@ -600,12 +600,33 @@ function sanitizeSpecsPayload(raw) {
 
 const generateVehicleSpecs = async (req, res) => {
   try {
-    const { brand, model, year, version, engine } = req.body || {};
+    const {
+      brand,
+      model,
+      year,
+      version,
+      engine,
+      engine_displacement_cc,
+      horsepower,
+    } = req.body || {};
 
     const brandText = typeof brand === "string" ? brand.trim() : "";
     const modelText = typeof model === "string" ? model.trim() : "";
     const versionText = typeof version === "string" ? version.trim() : "";
     const engineText = typeof engine === "string" ? engine.trim() : "";
+
+    // Pistas opcionais lidas do CRLV (cilindrada/potência): quando
+    // presentes, ajudam a IA a identificar a versão/motorização exata
+    // em vez de generalizar para o modelo/ano informados.
+    const knownDisplacementCc = nullOrFiniteNumber(engine_displacement_cc, {
+      min: 1,
+      max: 10000,
+    });
+
+    const knownHorsepower = nullOrFiniteNumber(horsepower, {
+      min: 1,
+      max: 2000,
+    });
 
     const yearNumber = Number(year);
 
@@ -633,6 +654,8 @@ const generateVehicleSpecs = async (req, res) => {
       ano: yearNumber,
       versao: versionText || null,
       motorizacao_informada: engineText || null,
+      cilindrada_conhecida_cc: knownDisplacementCc,
+      potencia_conhecida_cv: knownHorsepower,
     };
 
     const prompt = `
@@ -652,6 +675,13 @@ REGRAS OBRIGATÓRIAS:
   possível identificar qual delas com segurança a partir dos dados
   informados, retorne null nos campos afetados e explique em "observacao"
   quais dados adicionais (versão, motorização, etc.) resolveriam a dúvida.
+- Quando "cilindrada_conhecida_cc" e/ou "potencia_conhecida_cv" estiverem
+  preenchidos, eles vieram da leitura do CRLV do veículo e são CONFIÁVEIS:
+  use-os para identificar a motorização/versão exata (ex.: 1.0, 1.6 Turbo)
+  em vez de generalizar. Nunca retorne "motorizacao" ou "potencia_cv" que
+  contradigam esses valores conhecidos. Se a cilindrada/potência conhecida
+  corresponder com segurança a uma motorização documentada dessa
+  marca/modelo/ano, use "confianca": "alta".
 - "velocidade_maxima_kmh" deve ser um número inteiro em km/h, sem texto,
   sem unidade. Nunca estime; use somente se for um dado técnico conhecido.
 - "capacidade_passageiros" é a quantidade de PESSOAS que o veículo

@@ -93,7 +93,7 @@ router.post("/vehicle-description", generateVehicleDescription);
 router.post(
   "/vehicle-specs",
   authenticate,
-  authorizeRoles("admin"),
+  authorizeRoles("admin", "vendedor"),
   specsLimiter,
   generateVehicleSpecs,
 );
