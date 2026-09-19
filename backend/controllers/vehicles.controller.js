@@ -13,6 +13,7 @@ const MAX_TOP_SPEED = 500;
 const MAX_SEATS = 9;
 const MAX_TRUNK_CAPACITY = 3000;
 const MAX_HORSEPOWER = 2000;
+const MAX_ENGINE_DISPLACEMENT_CC = 10000;
 
 /* ==========================================
    AUXILIARES
@@ -153,6 +154,11 @@ function validateVehicleData(data) {
     license_plate,
     renavam,
     chassis_number,
+    manufacture_year,
+    document_vehicle_type,
+    document_species,
+    document_category,
+    engine_displacement_cc,
   } = data;
 
   /* ======================================
@@ -389,6 +395,53 @@ function validateVehicleData(data) {
   }
 
   /* ======================================
+     ANO DE FABRICAÇÃO (CRLV)
+  ====================================== */
+
+  if (!validOptionalNumber(manufacture_year, 1886, currentYear + 2)) {
+    return {
+      valid: false,
+      error: `Ano de fabricação inválido. Informe um ano entre 1886 e ${currentYear + 2}.`,
+    };
+  }
+
+  /* ======================================
+     TIPO / ESPÉCIE / CATEGORIA (CRLV)
+  ====================================== */
+
+  if (!validOptionalString(document_vehicle_type, 60)) {
+    return {
+      valid: false,
+      error: "Tipo de veículo (documento) inválido.",
+    };
+  }
+
+  if (!validOptionalString(document_species, 60)) {
+    return {
+      valid: false,
+      error: "Espécie do veículo (documento) inválida.",
+    };
+  }
+
+  if (!validOptionalString(document_category, 60)) {
+    return {
+      valid: false,
+      error: "Categoria do veículo (documento) inválida.",
+    };
+  }
+
+  /* ======================================
+     CILINDRADA (CRLV)
+  ====================================== */
+
+  if (!validOptionalNumber(engine_displacement_cc, 1, MAX_ENGINE_DISPLACEMENT_CC)) {
+    return {
+      valid: false,
+      error: "Cilindrada do motor inválida.",
+    };
+  }
+
+  /* ======================================
      STATUS
   ====================================== */
 
@@ -461,6 +514,16 @@ function normalizeVehicleData(data) {
     chassis_number: nullable(
       normalizeString(data.chassis_number)?.toUpperCase(),
     ),
+
+    manufacture_year: nullableNumber(data.manufacture_year),
+
+    document_vehicle_type: nullable(normalizeString(data.document_vehicle_type)),
+
+    document_species: nullable(normalizeString(data.document_species)),
+
+    document_category: nullable(normalizeString(data.document_category)),
+
+    engine_displacement_cc: nullableNumber(data.engine_displacement_cc),
   };
 }
 
@@ -555,6 +618,30 @@ const createVehicle = async (req, res) => {
     const body = req.body || {};
 
     /* ======================================
+       RESTRIÇÕES DO VENDEDOR
+
+       Vendedor cadastra dados operacionais do veículo, mas não define
+       preço de compra/venda nem cadastra diretamente como vendido —
+       isso é feito pelo fluxo de Vendas. Tentar enviar esses campos é
+       rejeitado explicitamente (403), nunca apenas ignorado.
+    ====================================== */
+
+    if (req.user?.role === "vendedor") {
+      const hasPurchasePrice = nullable(body.purchase_price) !== null;
+      const hasSalePrice = nullable(body.sale_price) !== null;
+
+      if (hasPurchasePrice || hasSalePrice) {
+        return res.status(403).json({
+          error: "Vendedores não podem informar preço de compra ou de venda.",
+        });
+      }
+
+      // Vendedor só cadastra veículos disponíveis: o status enviado
+      // (inclusive "sold") é sempre substituído por "available".
+      body.status = "available";
+    }
+
+    /* ======================================
        VALIDAR DADOS
     ====================================== */
 
@@ -620,6 +707,11 @@ const createVehicle = async (req, res) => {
           license_plate,
           renavam,
           chassis_number,
+          manufacture_year,
+          document_vehicle_type,
+          document_species,
+          document_category,
+          engine_displacement_cc,
           image_url
         )
 
@@ -646,6 +738,11 @@ const createVehicle = async (req, res) => {
           $20,
           $21,
           $22,
+          $23,
+          $24,
+          $25,
+          $26,
+          $27,
           NULL
         )
 
@@ -681,6 +778,12 @@ const createVehicle = async (req, res) => {
         vehicleData.license_plate,
         vehicleData.renavam,
         vehicleData.chassis_number,
+
+        vehicleData.manufacture_year,
+        vehicleData.document_vehicle_type,
+        vehicleData.document_species,
+        vehicleData.document_category,
+        vehicleData.engine_displacement_cc,
       ],
     );
 
@@ -800,6 +903,13 @@ const createVehicle = async (req, res) => {
     */
 
     await removeUploadedImages(uploadedPublicIds);
+
+    if (error.code === "23505") {
+      return res.status(409).json({
+        error:
+          "Já existe um veículo cadastrado com esta placa, RENAVAM ou chassi.",
+      });
+    }
 
     console.error("Erro ao cadastrar veículo:", error);
 
@@ -990,9 +1100,14 @@ const updateVehicle = async (req, res) => {
           horsepower = $21,
           license_plate = $22,
           renavam = $23,
-          chassis_number = $24
+          chassis_number = $24,
+          manufacture_year = $25,
+          document_vehicle_type = $26,
+          document_species = $27,
+          document_category = $28,
+          engine_displacement_cc = $29
 
-        WHERE id = $25
+        WHERE id = $30
 
         RETURNING *
         `,
@@ -1029,6 +1144,12 @@ const updateVehicle = async (req, res) => {
         vehicleData.license_plate,
         vehicleData.renavam,
         vehicleData.chassis_number,
+
+        vehicleData.manufacture_year,
+        vehicleData.document_vehicle_type,
+        vehicleData.document_species,
+        vehicleData.document_category,
+        vehicleData.engine_displacement_cc,
 
         id,
       ],
@@ -1096,6 +1217,13 @@ const updateVehicle = async (req, res) => {
     */
 
     await removeUploadedImages(uploadedPublicIds);
+
+    if (error.code === "23505") {
+      return res.status(409).json({
+        error:
+          "Já existe outro veículo cadastrado com esta placa, RENAVAM ou chassi.",
+      });
+    }
 
     console.error("Erro ao atualizar veículo:", error);
 

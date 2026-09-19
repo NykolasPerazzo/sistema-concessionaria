@@ -59,6 +59,8 @@ requireAuth().then((user) => {
     return;
   }
 
+  applyRolePermissions(user);
+
   if (isEditing) {
     pageTitle.textContent = "Editar veículo";
     submitButton.textContent = "Salvar alterações";
@@ -70,6 +72,31 @@ requireAuth().then((user) => {
     loadVehicle();
   }
 });
+
+/* =========================
+   PERMISSÕES POR PAPEL
+
+   Vendedor cadastra dados operacionais do veículo, mas não define
+   preço de compra/venda nem cadastra diretamente como vendido — isso é
+   feito pelo fluxo de Vendas. O backend já rejeita esses campos com
+   403; aqui só ocultamos/desabilitamos a interface correspondente.
+========================= */
+
+function applyRolePermissions(user) {
+  if (user.role !== "vendedor") {
+    return;
+  }
+
+  document.getElementById("purchasePriceGroup")?.setAttribute("hidden", "");
+  document.getElementById("salePriceGroup")?.setAttribute("hidden", "");
+
+  const statusSelect = document.getElementById("status");
+
+  if (statusSelect) {
+    statusSelect.value = "available";
+    statusSelect.disabled = true;
+  }
+}
 
 /* =========================
    CARREGAR VEÍCULO
@@ -133,6 +160,9 @@ function fillForm(vehicle) {
 
   document.getElementById("year").value = vehicle.year || "";
 
+  document.getElementById("manufacture_year").value =
+    vehicle.manufacture_year || "";
+
   document.getElementById("price").value = vehicle.price || "";
 
   document.getElementById("purchase_price").value =
@@ -165,12 +195,24 @@ function fillForm(vehicle) {
 
   document.getElementById("horsepower").value = vehicle.horsepower || "";
 
+  document.getElementById("engine_displacement_cc").value =
+    vehicle.engine_displacement_cc || "";
+
   document.getElementById("license_plate").value = vehicle.license_plate || "";
 
   document.getElementById("renavam").value = vehicle.renavam || "";
 
   document.getElementById("chassis_number").value =
     vehicle.chassis_number || "";
+
+  document.getElementById("document_vehicle_type").value =
+    vehicle.document_vehicle_type || "";
+
+  document.getElementById("document_species").value =
+    vehicle.document_species || "";
+
+  document.getElementById("document_category").value =
+    vehicle.document_category || "";
 
   document.getElementById("description").value = vehicle.description || "";
 
@@ -536,6 +578,12 @@ form.addEventListener("submit", async (event) => {
 
   formData.append("year", year);
 
+  const manufactureYear = document.getElementById("manufacture_year").value;
+
+  if (manufactureYear) {
+    formData.append("manufacture_year", manufactureYear);
+  }
+
   formData.append("price", price);
 
   const mileage = document.getElementById("mileage").value;
@@ -598,6 +646,14 @@ form.addEventListener("submit", async (event) => {
     formData.append("horsepower", horsepower);
   }
 
+  const engineDisplacementCc = document.getElementById(
+    "engine_displacement_cc",
+  ).value;
+
+  if (engineDisplacementCc) {
+    formData.append("engine_displacement_cc", engineDisplacementCc);
+  }
+
   const licensePlate = document
     .getElementById("license_plate")
     .value.trim()
@@ -620,6 +676,30 @@ form.addEventListener("submit", async (event) => {
 
   if (chassisNumber) {
     formData.append("chassis_number", chassisNumber);
+  }
+
+  const documentVehicleType = document
+    .getElementById("document_vehicle_type")
+    .value.trim();
+
+  if (documentVehicleType) {
+    formData.append("document_vehicle_type", documentVehicleType);
+  }
+
+  const documentSpecies = document
+    .getElementById("document_species")
+    .value.trim();
+
+  if (documentSpecies) {
+    formData.append("document_species", documentSpecies);
+  }
+
+  const documentCategory = document
+    .getElementById("document_category")
+    .value.trim();
+
+  if (documentCategory) {
+    formData.append("document_category", documentCategory);
   }
 
   const description = document.getElementById("description").value.trim();
@@ -1226,3 +1306,411 @@ async function generateVehicleSpecs() {
     generateSpecsAI.innerHTML = "<span>✦</span> Buscar novamente";
   }
 }
+
+/* ==========================================
+   IMPORTAR CRLV
+
+   Só lê o documento e prepara os dados para revisão — em nenhuma
+   hipótese isso envia o formulário. O usuário decide o que aplicar e
+   ainda precisa clicar em "Salvar veículo" para cadastrar de fato.
+========================================== */
+
+const crlvDropzone = document.getElementById("crlvDropzone");
+const crlvFileInput = document.getElementById("crlvFileInput");
+const crlvFileInfo = document.getElementById("crlvFileInfo");
+const crlvFileName = document.getElementById("crlvFileName");
+const crlvFileSize = document.getElementById("crlvFileSize");
+const crlvRemoveFile = document.getElementById("crlvRemoveFile");
+const crlvReadButton = document.getElementById("crlvReadButton");
+const crlvCancelButton = document.getElementById("crlvCancelButton");
+const crlvLoading = document.getElementById("crlvLoading");
+const crlvError = document.getElementById("crlvError");
+const crlvReviewPanel = document.getElementById("crlvReviewPanel");
+const crlvDuplicateWarning = document.getElementById("crlvDuplicateWarning");
+const crlvWarningsList = document.getElementById("crlvWarningsList");
+const crlvFieldsList = document.getElementById("crlvFieldsList");
+const crlvApplyButton = document.getElementById("crlvApplyButton");
+const crlvCancelReviewButton = document.getElementById(
+  "crlvCancelReviewButton",
+);
+
+const CRLV_MAX_SIZE = 10 * 1024 * 1024;
+const CRLV_ALLOWED_TYPES = ["application/pdf", "image/jpeg", "image/png"];
+const CRLV_READ_TIMEOUT_MS = 30000;
+
+const CRLV_CONFIDENCE_LABELS = {
+  alta: "Alta confiança",
+  media: "Média confiança",
+  baixa: "Baixa confiança",
+};
+
+const CRLV_FIELD_LABELS = {
+  license_plate: "Placa",
+  renavam: "RENAVAM",
+  chassis_number: "Chassi",
+};
+
+// Ordem de exibição no painel de revisão + mapeamento para os campos
+// já existentes no formulário.
+const CRLV_FIELD_MAP = [
+  { key: "brand", label: "Marca", inputId: "brand" },
+  { key: "model", label: "Modelo", inputId: "model" },
+  { key: "model_year", label: "Ano do modelo", inputId: "year" },
+  {
+    key: "manufacture_year",
+    label: "Ano de fabricação",
+    inputId: "manufacture_year",
+  },
+  { key: "color", label: "Cor", inputId: "color" },
+  { key: "fuel", label: "Combustível", inputId: "fuel" },
+  { key: "license_plate", label: "Placa", inputId: "license_plate" },
+  { key: "renavam", label: "RENAVAM", inputId: "renavam" },
+  { key: "chassis_number", label: "Chassi", inputId: "chassis_number" },
+  {
+    key: "vehicle_type",
+    label: "Tipo (documento)",
+    inputId: "document_vehicle_type",
+  },
+  { key: "species", label: "Espécie (documento)", inputId: "document_species" },
+  {
+    key: "category",
+    label: "Categoria (documento)",
+    inputId: "document_category",
+  },
+  {
+    key: "engine_displacement_cc",
+    label: "Cilindrada (cm³)",
+    inputId: "engine_displacement_cc",
+  },
+  { key: "horsepower", label: "Potência (cv)", inputId: "horsepower" },
+];
+
+let selectedCrlvFile = null;
+let crlvReviewData = null;
+
+function isValidCrlvFile(file) {
+  return CRLV_ALLOWED_TYPES.includes(file.type);
+}
+
+function formatCrlvFileSize(bytes) {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function showCrlvError(message) {
+  crlvError.textContent = message;
+  crlvError.hidden = false;
+}
+
+function selectCrlvFile(file) {
+  if (!file) {
+    return;
+  }
+
+  if (!isValidCrlvFile(file)) {
+    showCrlvError("Envie um CRLV em PDF, JPG ou PNG.");
+    return;
+  }
+
+  if (file.size > CRLV_MAX_SIZE) {
+    showCrlvError("O arquivo deve ter no máximo 10 MB.");
+    return;
+  }
+
+  selectedCrlvFile = file;
+  crlvReviewData = null;
+
+  crlvError.hidden = true;
+  crlvReviewPanel.hidden = true;
+
+  crlvFileName.textContent = file.name;
+  crlvFileSize.textContent = formatCrlvFileSize(file.size);
+  crlvFileInfo.hidden = false;
+  crlvDropzone.hidden = true;
+
+  crlvReadButton.disabled = false;
+  crlvCancelButton.hidden = false;
+}
+
+function resetCrlvState() {
+  selectedCrlvFile = null;
+  crlvReviewData = null;
+
+  crlvFileInput.value = "";
+  crlvFileInfo.hidden = true;
+  crlvDropzone.hidden = false;
+
+  crlvReviewPanel.hidden = true;
+  crlvError.hidden = true;
+  crlvLoading.hidden = true;
+
+  crlvReadButton.disabled = true;
+  crlvCancelButton.hidden = true;
+}
+
+crlvDropzone?.addEventListener("click", () => crlvFileInput.click());
+
+crlvDropzone?.addEventListener("keydown", (event) => {
+  if (event.key === "Enter" || event.key === " ") {
+    event.preventDefault();
+    crlvFileInput.click();
+  }
+});
+
+crlvDropzone?.addEventListener("dragover", (event) => {
+  event.preventDefault();
+  crlvDropzone.classList.add("dragover");
+});
+
+crlvDropzone?.addEventListener("dragleave", () => {
+  crlvDropzone.classList.remove("dragover");
+});
+
+crlvDropzone?.addEventListener("drop", (event) => {
+  event.preventDefault();
+  crlvDropzone.classList.remove("dragover");
+  selectCrlvFile(event.dataTransfer?.files?.[0]);
+});
+
+crlvFileInput?.addEventListener("change", () => {
+  selectCrlvFile(crlvFileInput.files?.[0]);
+});
+
+crlvRemoveFile?.addEventListener("click", resetCrlvState);
+crlvCancelButton?.addEventListener("click", resetCrlvState);
+crlvCancelReviewButton?.addEventListener("click", resetCrlvState);
+
+function mapCrlvErrorMessage(status, data) {
+  const fallbackByStatus = {
+    400: "Envie um CRLV em PDF, JPG ou PNG.",
+    401: "Sua sessão expirou. Faça login novamente.",
+    403: "Você não tem permissão para ler o CRLV.",
+    413: "O arquivo deve ter no máximo 10 MB.",
+    415: "Envie um CRLV em PDF, JPG ou PNG.",
+    422: "O arquivo não parece ser um CRLV válido ou legível.",
+    429: "Muitas leituras em pouco tempo. Aguarde alguns minutos.",
+    502: "Não foi possível ler o documento agora. Tente novamente em instantes.",
+    503: "Leitura de CRLV indisponível no momento.",
+    504: "A leitura demorou demais. Tente novamente.",
+  };
+
+  return data?.error || fallbackByStatus[status] || "Não foi possível ler o CRLV.";
+}
+
+crlvReadButton?.addEventListener("click", async () => {
+  if (!selectedCrlvFile) {
+    return;
+  }
+
+  crlvError.hidden = true;
+  crlvReviewPanel.hidden = true;
+  crlvLoading.hidden = false;
+
+  crlvReadButton.disabled = true;
+  crlvCancelButton.hidden = true;
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(
+    () => controller.abort(),
+    CRLV_READ_TIMEOUT_MS,
+  );
+
+  try {
+    const crlvFormData = new FormData();
+    crlvFormData.append("crlv", selectedCrlvFile);
+
+    const response = await fetch(`${API_URL}/vehicles/import-crlv`, {
+      method: "POST",
+      credentials: "include",
+      body: crlvFormData,
+      signal: controller.signal,
+    });
+
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      throw new Error(mapCrlvErrorMessage(response.status, data));
+    }
+
+    renderCrlvReview(data);
+  } catch (error) {
+    console.error("Erro ao ler CRLV:", error);
+
+    showCrlvError(
+      error.name === "AbortError"
+        ? "Tempo esgotado ao ler o documento. Tente novamente."
+        : error.message,
+    );
+
+    crlvCancelButton.hidden = false;
+  } finally {
+    clearTimeout(timeoutId);
+
+    crlvLoading.hidden = true;
+    crlvReadButton.disabled = false;
+  }
+});
+
+function renderCrlvReview(result) {
+  crlvReviewData = result;
+
+  const data = result.data || {};
+  const confidence = result.confidence || {};
+  const warnings = Array.isArray(result.warnings) ? result.warnings : [];
+  const duplicates = Array.isArray(result.duplicates) ? result.duplicates : [];
+
+  crlvFieldsList.innerHTML = "";
+
+  CRLV_FIELD_MAP.forEach((field) => {
+    const value = data[field.key];
+
+    if (value === null || value === undefined || value === "") {
+      return;
+    }
+
+    const row = document.createElement("div");
+    row.className = "crlv-field-item";
+
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.checked = true;
+    checkbox.id = `crlvField_${field.key}`;
+    checkbox.dataset.fieldKey = field.key;
+
+    const textWrap = document.createElement("div");
+    textWrap.className = "crlv-field-text";
+
+    const labelEl = document.createElement("label");
+    labelEl.setAttribute("for", checkbox.id);
+    labelEl.textContent = field.label;
+
+    const valueEl = document.createElement("span");
+    valueEl.className = "crlv-field-value";
+    valueEl.textContent = String(value);
+
+    textWrap.appendChild(labelEl);
+    textWrap.appendChild(valueEl);
+
+    const confidenceLevel = confidence[field.key] || "baixa";
+
+    const confidenceEl = document.createElement("span");
+    confidenceEl.className = `crlv-field-confidence crlv-confidence-${confidenceLevel}`;
+    confidenceEl.textContent =
+      CRLV_CONFIDENCE_LABELS[confidenceLevel] || confidenceLevel;
+
+    row.appendChild(checkbox);
+    row.appendChild(textWrap);
+    row.appendChild(confidenceEl);
+
+    crlvFieldsList.appendChild(row);
+  });
+
+  crlvWarningsList.innerHTML = "";
+
+  if (warnings.length > 0) {
+    warnings.forEach((warning) => {
+      const item = document.createElement("li");
+      item.textContent = warning;
+      crlvWarningsList.appendChild(item);
+    });
+
+    crlvWarningsList.hidden = false;
+  } else {
+    crlvWarningsList.hidden = true;
+  }
+
+  crlvDuplicateWarning.innerHTML = "";
+
+  if (duplicates.length > 0) {
+    const title = document.createElement("strong");
+    title.textContent = "Possível duplicidade encontrada: ";
+    crlvDuplicateWarning.appendChild(title);
+
+    duplicates.forEach((duplicate, index) => {
+      const fieldLabel =
+        CRLV_FIELD_LABELS[duplicate.field] || duplicate.field;
+
+      const text = document.createElement("span");
+      text.textContent = `${fieldLabel} já cadastrada no veículo #${duplicate.vehicle_id} (${duplicate.vehicle_label})${
+        index < duplicates.length - 1 ? "; " : "."
+      }`;
+
+      crlvDuplicateWarning.appendChild(text);
+    });
+
+    crlvDuplicateWarning.hidden = false;
+  } else {
+    crlvDuplicateWarning.hidden = true;
+  }
+
+  crlvReviewPanel.hidden = false;
+  crlvCancelButton.hidden = false;
+}
+
+crlvApplyButton?.addEventListener("click", () => {
+  if (!crlvReviewData) {
+    return;
+  }
+
+  const checkboxes = crlvFieldsList.querySelectorAll('input[type="checkbox"]');
+
+  let appliedCount = 0;
+
+  checkboxes.forEach((checkbox) => {
+    if (!checkbox.checked) {
+      return;
+    }
+
+    const fieldConfig = CRLV_FIELD_MAP.find(
+      (field) => field.key === checkbox.dataset.fieldKey,
+    );
+
+    if (!fieldConfig) {
+      return;
+    }
+
+    const value = crlvReviewData.data?.[fieldConfig.key];
+
+    if (value === null || value === undefined || value === "") {
+      return;
+    }
+
+    const input = document.getElementById(fieldConfig.inputId);
+
+    if (!input || input.disabled) {
+      return;
+    }
+
+    const currentValue =
+      typeof input.value === "string" ? input.value.trim() : input.value;
+
+    if (currentValue) {
+      const confirmed = window.confirm(
+        `O campo "${fieldConfig.label}" já está preenchido com "${currentValue}". Substituir pelo valor lido do CRLV ("${value}")?`,
+      );
+
+      if (!confirmed) {
+        return;
+      }
+    }
+
+    input.value = value;
+    appliedCount += 1;
+  });
+
+  crlvReviewPanel.hidden = true;
+  crlvCancelButton.hidden = true;
+
+  showMessage(
+    appliedCount > 0
+      ? `${appliedCount} campo(s) preenchido(s) a partir do CRLV. Revise e salve o veículo.`
+      : "Nenhum campo foi aplicado.",
+    "success",
+  );
+
+  updateFinanceSummary();
+
+  // O arquivo já cumpriu seu papel: descarta a referência local.
+  resetCrlvState();
+});

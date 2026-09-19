@@ -103,6 +103,123 @@
     ================================= -->
 
       <section class="panel vehicle-form-panel">
+        <!-- ================================
+           IMPORTAR CRLV
+      ================================= -->
+
+        <div class="form-section crlv-import-section" id="crlvImportSection">
+          <div class="form-section-title">
+            <span class="eyebrow"> IMPORTAR CRLV </span>
+
+            <h2>Preencher pelo CRLV</h2>
+          </div>
+
+          <p class="form-hint">
+            Envie o CRLV em PDF ou foto. O sistema identifica os dados do
+            veículo e prepara o cadastro para sua revisão.
+          </p>
+
+          <p class="crlv-privacy-note">
+            <i class="fa-solid fa-shield-halved"></i>
+            O arquivo será processado para identificar os dados do veículo.
+            Confira as informações antes de salvar.
+          </p>
+
+          <div
+            id="crlvDropzone"
+            class="crlv-dropzone"
+            tabindex="0"
+            role="button"
+            aria-label="Selecionar ou arrastar o CRLV"
+          >
+            <i class="fa-solid fa-file-arrow-up"></i>
+            <p>Arraste o CRLV aqui ou clique para selecionar</p>
+            <small>PDF, JPG ou PNG — até 10 MB</small>
+
+            <input
+              type="file"
+              id="crlvFileInput"
+              accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
+              hidden
+            />
+          </div>
+
+          <div id="crlvFileInfo" class="crlv-file-info" hidden>
+            <i class="fa-solid fa-file-lines"></i>
+            <span id="crlvFileName"></span>
+            <span id="crlvFileSize"></span>
+            <button
+              type="button"
+              id="crlvRemoveFile"
+              class="crlv-remove-file"
+              aria-label="Remover arquivo selecionado"
+            >
+              ×
+            </button>
+          </div>
+
+          <div class="crlv-actions">
+            <button
+              type="button"
+              id="crlvReadButton"
+              class="admin-primary-button"
+              disabled
+            >
+              Ler CRLV e preencher
+            </button>
+
+            <button
+              type="button"
+              id="crlvCancelButton"
+              class="admin-secondary-button"
+              hidden
+            >
+              Cancelar leitura
+            </button>
+          </div>
+
+          <div id="crlvLoading" class="crlv-loading" hidden>
+            <i class="fa-solid fa-spinner fa-spin"></i>
+            Lendo o documento com IA...
+          </div>
+
+          <p id="crlvError" class="description-ai-status error" hidden></p>
+
+          <div id="crlvReviewPanel" class="crlv-review-panel" hidden>
+            <p class="crlv-review-title">
+              Revise os dados antes de aplicar ao formulário
+            </p>
+
+            <div
+              id="crlvDuplicateWarning"
+              class="crlv-duplicate-warning"
+              hidden
+            ></div>
+
+            <ul id="crlvWarningsList" class="crlv-warnings-list" hidden></ul>
+
+            <div id="crlvFieldsList" class="crlv-fields-list"></div>
+
+            <div class="crlv-actions">
+              <button
+                type="button"
+                id="crlvApplyButton"
+                class="admin-primary-button"
+              >
+                Aplicar dados ao formulário
+              </button>
+
+              <button
+                type="button"
+                id="crlvCancelReviewButton"
+                class="admin-secondary-button"
+              >
+                Cancelar leitura
+              </button>
+            </div>
+          </div>
+        </div>
+
         <form id="vehicleForm">
           <!-- ================================
              DADOS PRINCIPAIS
@@ -144,7 +261,7 @@
                 />
               </div>
 
-              <!-- ANO -->
+              <!-- ANO (MODELO) -->
 
               <div class="form-group">
                 <label for="year"> Ano * </label>
@@ -157,6 +274,21 @@
                   max="2100"
                   placeholder="2024"
                   required
+                />
+              </div>
+
+              <!-- ANO DE FABRICAÇÃO -->
+
+              <div class="form-group">
+                <label for="manufacture_year"> Ano de fabricação </label>
+
+                <input
+                  id="manufacture_year"
+                  name="manufacture_year"
+                  type="number"
+                  min="1886"
+                  max="2100"
+                  placeholder="Ex.: 2023"
                 />
               </div>
 
@@ -178,7 +310,7 @@
 
               <!-- PREÇO DE COMPRA -->
 
-              <div class="form-group">
+              <div class="form-group" id="purchasePriceGroup">
                 <label for="purchase_price"> Preço de compra </label>
 
                 <input
@@ -448,6 +580,21 @@
                   placeholder="Ex.: 145"
                 />
               </div>
+
+              <!-- CILINDRADA -->
+
+              <div class="form-group">
+                <label for="engine_displacement_cc"> Cilindrada (cm³) </label>
+
+                <input
+                  id="engine_displacement_cc"
+                  name="engine_displacement_cc"
+                  type="number"
+                  min="1"
+                  max="10000"
+                  placeholder="Ex.: 999"
+                />
+              </div>
             </div>
           </div>
 
@@ -501,6 +648,42 @@
                   type="text"
                   maxlength="30"
                   placeholder="Ex.: 9BWZZZ377VT004251"
+                />
+              </div>
+
+              <div class="form-group">
+                <label for="document_vehicle_type"> Tipo (CRLV) </label>
+
+                <input
+                  id="document_vehicle_type"
+                  name="document_vehicle_type"
+                  type="text"
+                  maxlength="60"
+                  placeholder="Ex.: AUTOMOVEL"
+                />
+              </div>
+
+              <div class="form-group">
+                <label for="document_species"> Espécie (CRLV) </label>
+
+                <input
+                  id="document_species"
+                  name="document_species"
+                  type="text"
+                  maxlength="60"
+                  placeholder="Ex.: PASSAGEIRO"
+                />
+              </div>
+
+              <div class="form-group">
+                <label for="document_category"> Categoria (CRLV) </label>
+
+                <input
+                  id="document_category"
+                  name="document_category"
+                  type="text"
+                  maxlength="60"
+                  placeholder="Ex.: PARTICULAR"
                 />
               </div>
             </div>

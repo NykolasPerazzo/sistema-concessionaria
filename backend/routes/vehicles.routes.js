@@ -1,6 +1,8 @@
 const express = require("express");
+const { rateLimit, ipKeyGenerator } = require("express-rate-limit");
 
 const upload = require("../middleware/upload.middleware");
+const crlvUpload = require("../middleware/crlv-upload.middleware");
 
 const router = express.Router();
 
@@ -17,6 +19,21 @@ const {
   deleteVehicle,
 } = require("../controllers/vehicles.controller");
 
+const { importCrlv } = require("../controllers/crlv.controller");
+
+// Leitura de CRLV por usuário/IP: chama uma IA paga, limita abuso.
+const crlvImportLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) =>
+    req.user?.sub ? `user:${req.user.sub}` : ipKeyGenerator(req.ip),
+  message: {
+    error: "Muitas leituras de CRLV em pouco tempo. Aguarde alguns minutos.",
+  },
+});
+
 router.get("/", getVehicles);
 
 router.get("/:id", getVehicleById);
@@ -24,7 +41,7 @@ router.get("/:id", getVehicleById);
 router.post(
   "/",
   authenticate,
-  authorizeRoles("admin"),
+  authorizeRoles("admin", "vendedor"),
   upload.fields([
     {
       name: "coverImage",
@@ -36,6 +53,15 @@ router.post(
     },
   ]),
   createVehicle,
+);
+
+router.post(
+  "/import-crlv",
+  authenticate,
+  authorizeRoles("admin", "vendedor"),
+  crlvImportLimiter,
+  ...crlvUpload,
+  importCrlv,
 );
 
 router.put(

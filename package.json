@@ -28,7 +28,9 @@
     "migrate:vehicle-specs": "npm run migrate:dispatcher && node backend/scripts/migrate-vehicle-specs.js",
     "migrate:sales-seller": "npm run migrate:vehicle-specs && node backend/scripts/migrate-sales-seller.js",
     "migrate:documents": "npm run migrate:sales-seller && node backend/scripts/migrate-documents.js",
-    "test:documents": "node --test backend/tests/documents.test.js"
+    "test:documents": "node --test backend/tests/documents.test.js",
+    "migrate:crlv-import": "npm run migrate:documents && node backend/scripts/migrate-crlv-import.js",
+    "test:crlv-import": "node --test backend/tests/crlv-import.test.js"
   },
   "repository": {
     "type": "git",
