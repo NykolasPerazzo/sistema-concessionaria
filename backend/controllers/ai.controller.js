@@ -592,6 +592,8 @@ function sanitizeSpecsPayload(raw) {
 
     potencia_cv: nullOrFiniteNumber(raw.potencia_cv, { min: 1, max: 2000 }),
 
+    versao_identificada: nullOrTrimmedString(raw.versao_identificada, 80),
+
     confianca,
 
     observacao: nullOrTrimmedString(raw.observacao, 500),
@@ -691,6 +693,12 @@ REGRAS OBRIGATÓRIAS:
 - "combustivel" e "cambio" devem refletir o padrão dessa versão/motorização.
 - "potencia_cv" é a potência em cavalos (CV), apenas se for um dado
   técnico confiável para essa versão específica.
+- "versao_identificada" é um texto curto com a versão/trim que você
+  identificou com essa combinação de marca, modelo, ano e motorização
+  (ex.: "XEi 2.0 Flex Automático", "1.0 12V TSI Flex"). Preencha sempre
+  que tiver identificado a motorização com confiança "alta" ou "media";
+  use null somente quando não for possível identificar nenhuma versão
+  plausível. Não invente um nome de versão comercial que não exista.
 - "confianca" só pode ser "alta", "media" ou "baixa":
   * "alta": você tem certeza dos dados preenchidos para essa versão exata.
   * "media": os dados são prováveis, mas a versão/motorização não foi
@@ -713,6 +721,7 @@ sem Markdown):
   "cambio": null,
   "motorizacao": null,
   "potencia_cv": null,
+  "versao_identificada": null,
   "confianca": "alta",
   "observacao": null
 }

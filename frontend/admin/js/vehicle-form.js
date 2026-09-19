@@ -32,6 +32,74 @@ let isGeneratingCover = false;
 const galleryImagesInput = document.getElementById("galleryImages");
 const galleryPreview = document.getElementById("galleryPreview");
 
+/* =========================
+   MÁSCARA DE VALORES (R$)
+
+   Preço anunciado, preço de compra e valor da venda são digitados como
+   em caixa eletrônico: "18990000" vira "R$ 189.900,00" na tela. O valor
+   puro (sem pontuação) fica em input.dataset.raw e é o que é enviado
+   ao backend e usado nos cálculos do resumo financeiro.
+========================= */
+
+function onlyDigits(value) {
+  return String(value || "").replace(/\D/g, "");
+}
+
+function formatMoneyMaskValue(rawValue) {
+  const digits = onlyDigits(rawValue).slice(0, 12);
+
+  if (!digits) {
+    return { display: "", raw: "" };
+  }
+
+  const amount = Number(digits) / 100;
+
+  return { display: formatCurrency(amount), raw: amount.toFixed(2) };
+}
+
+function bindMoneyMask(input) {
+  if (!input) {
+    return;
+  }
+
+  input.addEventListener("input", () => {
+    const { display, raw } = formatMoneyMaskValue(input.value);
+
+    input.value = display;
+    input.dataset.raw = raw;
+  });
+}
+
+function setMoneyInputValue(input, rawNumber) {
+  if (!input) {
+    return;
+  }
+
+  if (rawNumber === null || rawNumber === undefined || rawNumber === "") {
+    input.value = "";
+    input.dataset.raw = "";
+
+    return;
+  }
+
+  const amount = Number(rawNumber);
+
+  input.value = formatCurrency(amount);
+  input.dataset.raw = amount.toFixed(2);
+}
+
+function getMoneyRaw(input) {
+  return input?.dataset.raw || "";
+}
+
+const priceInput = document.getElementById("price");
+const purchasePriceInput = document.getElementById("purchase_price");
+const salePriceInput = document.getElementById("sale_price");
+
+bindMoneyMask(priceInput);
+bindMoneyMask(purchasePriceInput);
+bindMoneyMask(salePriceInput);
+
 const params = new URLSearchParams(window.location.search);
 
 const vehicleId = params.get("id");
@@ -163,16 +231,15 @@ function fillForm(vehicle) {
   document.getElementById("manufacture_year").value =
     vehicle.manufacture_year || "";
 
-  document.getElementById("price").value = vehicle.price || "";
+  setMoneyInputValue(priceInput, vehicle.price);
 
-  document.getElementById("purchase_price").value =
-    vehicle.purchase_price ?? "";
+  setMoneyInputValue(purchasePriceInput, vehicle.purchase_price);
 
   document.getElementById("entry_date").value = vehicle.entry_date
     ? vehicle.entry_date.split("T")[0]
     : "";
 
-  document.getElementById("sale_price").value = vehicle.sale_price ?? "";
+  setMoneyInputValue(salePriceInput, vehicle.sale_price);
 
   document.getElementById("mileage").value = vehicle.mileage || "";
 
@@ -538,7 +605,7 @@ form.addEventListener("submit", async (event) => {
 
   const year = document.getElementById("year").value;
 
-  const price = document.getElementById("price").value;
+  const price = getMoneyRaw(priceInput);
 
   if (!brand || !model || !year || !price) {
     showMessage("Preencha marca, modelo, ano e preço.", "error");
@@ -554,7 +621,7 @@ form.addEventListener("submit", async (event) => {
 
   const formData = new FormData();
 
-  const purchasePrice = document.getElementById("purchase_price").value;
+  const purchasePrice = getMoneyRaw(purchasePriceInput);
 
   if (purchasePrice) {
     formData.append("purchase_price", purchasePrice);
@@ -566,7 +633,7 @@ form.addEventListener("submit", async (event) => {
     formData.append("entry_date", entryDate);
   }
 
-  const salePrice = document.getElementById("sale_price").value;
+  const salePrice = getMoneyRaw(salePriceInput);
 
   if (salePrice) {
     formData.append("sale_price", salePrice);
@@ -962,13 +1029,11 @@ function renderExpenses() {
 ========================= */
 
 function updateFinanceSummary() {
-  const purchasePrice = Number(
-    document.getElementById("purchase_price")?.value || 0,
-  );
+  const purchasePrice = Number(getMoneyRaw(purchasePriceInput) || 0);
 
-  const advertisedPrice = Number(document.getElementById("price")?.value || 0);
+  const advertisedPrice = Number(getMoneyRaw(priceInput) || 0);
 
-  const salePrice = Number(document.getElementById("sale_price")?.value || 0);
+  const salePrice = Number(getMoneyRaw(salePriceInput) || 0);
 
   const totalExpenses = vehicleExpenses.reduce((total, expense) => {
     return total + Number(expense.amount || 0);
@@ -1100,7 +1165,7 @@ async function generateVehicleDescription() {
 
   const color = document.getElementById("color")?.value.trim();
 
-  const price = document.getElementById("price")?.value;
+  const price = getMoneyRaw(priceInput);
 
   const description = document.getElementById("description");
 
@@ -1191,6 +1256,9 @@ const SPECS_FIELD_MAP = {
   cambio: "transmission",
   motorizacao: "engine",
   potencia_cv: "horsepower",
+  // A versão/trim identificada pela IA fica visível no próprio campo
+  // que serve de pista ("Versão"), mesmo sem ser enviada ao salvar.
+  versao_identificada: "specsVersion",
 };
 
 /*
@@ -1330,6 +1398,10 @@ async function generateVehicleSpecs({ overwrite }) {
       );
     }
 
+    if (data.versao_identificada) {
+      messageParts.push(`Versão identificada: ${data.versao_identificada}.`);
+    }
+
     if (data.observacao) {
       messageParts.push(data.observacao);
     }
@@ -1401,6 +1473,10 @@ async function autoFillSpecsFromCrlv() {
           ? `${filledCount} detalhe(s) técnico(s) preenchido(s) a partir do CRLV (confiança: ${data.confianca}).`
           : "A IA não encontrou detalhes técnicos confiáveis para preencher automaticamente.",
       ];
+
+      if (data.versao_identificada) {
+        messageParts.push(`Versão identificada: ${data.versao_identificada}.`);
+      }
 
       if (data.observacao) {
         messageParts.push(data.observacao);

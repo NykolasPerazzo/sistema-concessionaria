@@ -84,6 +84,7 @@ test("POST /api/ai/vehicle-specs: permissões e pistas do CRLV (cilindrada/potê
     cambio: "Automático",
     motorizacao: "1.0 12V TSI Flex",
     potencia_cv: 128,
+    versao_identificada: "Sense 1.0 12V TSI Flex Automático",
     confianca: "alta",
     observacao: null,
   };
@@ -132,6 +133,53 @@ test("POST /api/ai/vehicle-specs: permissões e pistas do CRLV (cilindrada/potê
     assert.equal(result.status, 200);
     assert.equal(result.data.motorizacao, "1.0 12V TSI Flex");
   });
+
+  await t.test(
+    "resposta traz a versão/trim identificada como texto (visível no campo Versão)",
+    async () => {
+      const result = await f.request("/api/ai/vehicle-specs", {
+        role: "admin",
+        body: { brand: "Volkswagen", model: "T-Cross", year: 2024 },
+      });
+      assert.equal(result.status, 200);
+      assert.equal(
+        result.data.versao_identificada,
+        "Sense 1.0 12V TSI Flex Automático",
+      );
+    },
+  );
+
+  await t.test(
+    "versão identificada inválida (não string) vira null, não quebra a resposta",
+    async () => {
+      global.fetch = async (url, options = {}) => {
+        const target = String(url);
+        if (target.startsWith(f.url)) return originalFetch(url, options);
+        if (target.includes("generativelanguage.googleapis.com")) {
+          return geminiJsonResponse({ ...specsPayload, versao_identificada: 123 });
+        }
+        return originalFetch(url, options);
+      };
+
+      const result = await f.request("/api/ai/vehicle-specs", {
+        role: "admin",
+        body: { brand: "Volkswagen", model: "T-Cross", year: 2024 },
+      });
+      assert.equal(result.status, 200);
+      assert.equal(result.data.versao_identificada, null);
+
+      // restaura o mock padrão para os testes seguintes
+      global.fetch = async (url, options = {}) => {
+        const target = String(url);
+        if (target.startsWith(f.url)) return originalFetch(url, options);
+        if (target.includes("generativelanguage.googleapis.com")) {
+          lastGeminiBody = JSON.parse(options.body);
+          return geminiJsonResponse(specsPayload);
+        }
+        return originalFetch(url, options);
+      };
+    },
+  );
 
   await t.test("vendedor também consegue buscar especificações", async () => {
     const result = await f.request("/api/ai/vehicle-specs", {
