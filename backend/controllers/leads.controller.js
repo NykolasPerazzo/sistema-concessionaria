@@ -496,7 +496,7 @@ async function listLeads(req, res) {
       FROM leads l
       ${aiJoin}
       ${scoreJoin}
-      ORDER BY l.created_at DESC, l.id DESC
+      ORDER BY l.status, l.position, l.created_at DESC, l.id DESC
     `);
 
     res.json({
@@ -708,6 +708,11 @@ async function saveLead(req, res) {
           [...values, oldLead.id],
         );
       } else {
+        /*
+         * Todo lead novo entra pela coluna "new" do quadro Kanban — a
+         * posição vai para o fim dela (senão todo lead novo entraria
+         * com position=0 e colidiria com os cards já existentes).
+         */
         result = await client.query(
           `
               INSERT INTO leads(
@@ -730,7 +735,8 @@ async function saveLead(req, res) {
                 purchase_timeframe,
                 declared_preferences,
                 assigned_to,
-                created_by
+                created_by,
+                position
               )
               VALUES(
                 $1,
@@ -752,7 +758,8 @@ async function saveLead(req, res) {
                 $17,
                 $18,
                 $19,
-                $20
+                $20,
+                (SELECT COALESCE(MAX(position) + 1, 0) FROM leads WHERE status = 'new')
               )
               RETURNING *
             `,
@@ -793,6 +800,26 @@ async function saveLead(req, res) {
   }
 }
 
+/*
+ * Usado sempre que um lead muda de etapa fora do endpoint de arrastar
+ * (/move): fecha o espaço deixado na coluna de origem e devolve a
+ * posição de destino (fim da coluna), para o card não ficar com uma
+ * posição "perdida" de outra coluna quando o quadro Kanban for aberto.
+ */
+async function moveToEndOfStage(client, lead, targetStatus) {
+  const countResult = await client.query(
+    `SELECT COUNT(*)::int AS count FROM leads WHERE status = $1`,
+    [targetStatus],
+  );
+
+  await client.query(
+    `UPDATE leads SET position = position - 1 WHERE status = $1 AND position > $2`,
+    [lead.status, lead.position],
+  );
+
+  return countResult.rows[0].count;
+}
+
 async function changeStage(req, res) {
   try {
     const target = req.body?.status;
@@ -807,17 +834,20 @@ async function changeStage(req, res) {
       const reason =
         target === "lost" ? textValue(req.body.reason, 500, true) : null;
 
+      const position = await moveToEndOfStage(client, lead, target);
+
       await client.query(
         `
           UPDATE leads
           SET
             status = $2,
             loss_reason = $3,
+            position = $4,
             version = version + 1,
             updated_at = NOW()
           WHERE id = $1
         `,
-        [lead.id, target, reason],
+        [lead.id, target, reason, position],
       );
 
       const description =
@@ -982,17 +1012,20 @@ async function convertLead(req, res) {
         customer = customerResult.rows[0];
       }
 
+      const position = await moveToEndOfStage(client, lead, "converted");
+
       await client.query(
         `
             UPDATE leads
             SET
               status = 'converted',
               customer_id = $2,
+              position = $3,
               version = version + 1,
               updated_at = NOW()
             WHERE id = $1
           `,
-        [lead.id, customer.id],
+        [lead.id, customer.id, position],
       );
 
       await event(
@@ -1057,8 +1090,15 @@ async function createPublicLead(req, res) {
     const lead = await transaction(async (client) => {
       const result = await client.query(
         `
-          INSERT INTO leads(name, phone, source, notes, created_by)
-          VALUES($1, $2, 'website', $3, 0)
+          INSERT INTO leads(name, phone, source, notes, created_by, position)
+          VALUES(
+            $1,
+            $2,
+            'website',
+            $3,
+            0,
+            (SELECT COALESCE(MAX(position) + 1, 0) FROM leads WHERE status = 'new')
+          )
           RETURNING *
         `,
         [name, phone, notes],
@@ -1298,6 +1338,139 @@ async function updateTask(req, res) {
   }
 }
 
+function validPosition(value) {
+  return Number.isInteger(value) && value >= 0;
+}
+
+/*
+ * Movimentação do card no quadro Kanban (arrastar e soltar): muda a etapa
+ * (quando a coluna de destino é diferente) e/ou a posição dentro da coluna.
+ * A etapa continua sendo o campo "status" já existente — "stage" é aceito
+ * no corpo da requisição só para compatibilidade com a nomenclatura do
+ * quadro, mas por baixo é a mesma máquina de estados usada no resto da
+ * área de leads (states/labels), então as mesmas transições permitidas
+ * (e o motivo obrigatório ao perder) continuam valendo ao arrastar.
+ */
+async function moveLead(req, res) {
+  try {
+    const targetStatus = req.body?.stage ?? req.body?.status;
+
+    if (!labels[targetStatus]) {
+      throw fail(400, "Etapa inválida.");
+    }
+
+    if (!validPosition(req.body?.position)) {
+      throw fail(400, "Posição inválida.");
+    }
+
+    const position = req.body.position;
+
+    const lead = await transaction(async (client) => {
+      const current = await locked(client, req);
+
+      const sameStatus = current.status === targetStatus;
+
+      if (!sameStatus && !states[current.status]?.includes(targetStatus)) {
+        throw fail(409, "Mudança de etapa não permitida.");
+      }
+
+      const reason =
+        !sameStatus && targetStatus === "lost"
+          ? textValue(req.body.reason, 500, true)
+          : sameStatus
+            ? current.loss_reason
+            : null;
+
+      const countResult = await client.query(
+        `SELECT COUNT(*)::int AS count FROM leads WHERE status = $1 AND id <> $2`,
+        [targetStatus, current.id],
+      );
+
+      const clamped = Math.max(
+        0,
+        Math.min(position, countResult.rows[0].count),
+      );
+
+      if (sameStatus && clamped === current.position) {
+        return current;
+      }
+
+      if (sameStatus) {
+        if (clamped > current.position) {
+          await client.query(
+            `
+              UPDATE leads
+              SET position = position - 1
+              WHERE status = $1 AND position > $2 AND position <= $3 AND id <> $4
+            `,
+            [current.status, current.position, clamped, current.id],
+          );
+        } else {
+          await client.query(
+            `
+              UPDATE leads
+              SET position = position + 1
+              WHERE status = $1 AND position >= $2 AND position < $3 AND id <> $4
+            `,
+            [current.status, clamped, current.position, current.id],
+          );
+        }
+      } else {
+        await client.query(
+          `UPDATE leads SET position = position - 1 WHERE status = $1 AND position > $2`,
+          [current.status, current.position],
+        );
+
+        await client.query(
+          `UPDATE leads SET position = position + 1 WHERE status = $1 AND position >= $2`,
+          [targetStatus, clamped],
+        );
+      }
+
+      const result = await client.query(
+        `
+          UPDATE leads
+          SET
+            status = $2,
+            position = $3,
+            loss_reason = $4,
+            version = version + 1,
+            updated_at = NOW()
+          WHERE id = $1
+          RETURNING *
+        `,
+        [current.id, targetStatus, clamped, reason],
+      );
+
+      const updated = result.rows[0];
+
+      if (!sameStatus) {
+        const description =
+          `${labels[current.status]} → ` +
+          `${labels[targetStatus]}` +
+          `${reason ? `: ${reason}` : ""}`;
+
+        await event(client, updated.id, "stage_changed", description, req.user.sub);
+      }
+
+      return updated;
+    });
+
+    res.json({
+      success: true,
+      lead: {
+        id: lead.id,
+        status: lead.status,
+        position: lead.position,
+        version: lead.version,
+        updated_at: lead.updated_at,
+      },
+    });
+  } catch (error) {
+    errorResponse(res, error);
+  }
+}
+
 /*
  * Recomputa a pontuação sob demanda (botão "Atualizar pontuação").
  * Não chama IA nem nenhum serviço externo — é só reaplicar as regras.
@@ -1365,6 +1538,7 @@ module.exports = {
   leadDetails,
   saveLead,
   changeStage,
+  moveLead,
   assignLead,
   addNote,
   convertLead,

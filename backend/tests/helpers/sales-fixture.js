@@ -98,6 +98,15 @@ async function fixture() {
   );
   await db.exec(vehicleFeaturedMigration);
   await db.exec(vehicleFeaturedMigration);
+  const leadKanbanMigration = fs.readFileSync(
+    path.join(
+      __dirname,
+      "../../database/migrations/016_lead_kanban_position.sql",
+    ),
+    "utf8",
+  );
+  await db.exec(leadKanbanMigration);
+  await db.exec(leadKanbanMigration);
   // PGlite possui uma conexão. A fila impede intercalar transações HTTP no teste.
   let queue = Promise.resolve();
   async function acquire() {

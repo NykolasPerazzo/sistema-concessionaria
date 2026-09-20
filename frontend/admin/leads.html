@@ -221,8 +221,26 @@
                 <option value="unassigned">Não atribuído</option>
               </select></label
             >
+            <label
+              >Prioridade<select id="priorityFilter">
+                <option value="all">Todas</option>
+                <option value="hot">Quente</option>
+                <option value="warm">Morno</option>
+                <option value="cold">Frio</option>
+              </select></label
+            >
+            <label
+              >Período<select id="periodFilter">
+                <option value="all">Todo o período</option>
+                <option value="7">Últimos 7 dias</option>
+                <option value="30">Últimos 30 dias</option>
+                <option value="90">Últimos 90 dias</option>
+              </select></label
+            >
             <button class="sales-secondary" type="submit">Atualizar</button>
           </form>
+
+          <p id="kanbanStatus" class="lead-kanban-status" role="status" aria-live="polite"></p>
 
           <div class="leads-board" id="leadsBoard">
             <div class="lead-column" data-status="new">
@@ -230,8 +248,14 @@
                 <span class="lead-column-dot"></span>
                 <h3>Novo</h3>
                 <span class="lead-column-count" id="colCount-new">0</span>
+                <span class="lead-column-value" id="colValue-new"></span>
               </div>
-              <div class="lead-column-cards" id="colCards-new"></div>
+              <div
+                class="lead-column-cards"
+                id="colCards-new"
+                role="list"
+                aria-label="Leads na etapa Novo"
+              ></div>
               <button
                 type="button"
                 class="lead-column-add"
@@ -247,8 +271,14 @@
                 <span class="lead-column-count" id="colCount-contacting"
                   >0</span
                 >
+                <span class="lead-column-value" id="colValue-contacting"></span>
               </div>
-              <div class="lead-column-cards" id="colCards-contacting"></div>
+              <div
+                class="lead-column-cards"
+                id="colCards-contacting"
+                role="list"
+                aria-label="Leads na etapa Em atendimento"
+              ></div>
               <button
                 type="button"
                 class="lead-column-add"
@@ -264,8 +294,14 @@
                 <span class="lead-column-count" id="colCount-qualified"
                   >0</span
                 >
+                <span class="lead-column-value" id="colValue-qualified"></span>
               </div>
-              <div class="lead-column-cards" id="colCards-qualified"></div>
+              <div
+                class="lead-column-cards"
+                id="colCards-qualified"
+                role="list"
+                aria-label="Leads na etapa Qualificado"
+              ></div>
               <button
                 type="button"
                 class="lead-column-add"
@@ -281,8 +317,14 @@
                 <span class="lead-column-count" id="colCount-converted"
                   >0</span
                 >
+                <span class="lead-column-value" id="colValue-converted"></span>
               </div>
-              <div class="lead-column-cards" id="colCards-converted"></div>
+              <div
+                class="lead-column-cards"
+                id="colCards-converted"
+                role="list"
+                aria-label="Leads na etapa Convertido"
+              ></div>
               <button
                 type="button"
                 class="lead-column-add"
@@ -296,8 +338,14 @@
                 <span class="lead-column-dot"></span>
                 <h3>Perdido</h3>
                 <span class="lead-column-count" id="colCount-lost">0</span>
+                <span class="lead-column-value" id="colValue-lost"></span>
               </div>
-              <div class="lead-column-cards" id="colCards-lost"></div>
+              <div
+                class="lead-column-cards"
+                id="colCards-lost"
+                role="list"
+                aria-label="Leads na etapa Perdido"
+              ></div>
               <button
                 type="button"
                 class="lead-column-add"
@@ -729,6 +777,7 @@
     <script src="./js/nav-badge.js"></script>
     <script src="./js/mobile-shell.js"></script>
     <script src="./js/pwa-install.js"></script>
+    <script src="./js/vendor/sortable.min.js"></script>
     <script src="./js/leads.js"></script>
   </body>
 </html>

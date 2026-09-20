@@ -28,6 +28,13 @@
     board.addEventListener("pointerdown", (event) => {
       if (event.pointerType !== "mouse" || event.button !== 0) return;
 
+      /*
+       * Um card (ou sua alça de arraste) trata o próprio gesto de
+       * arrastar (SortableJS). Sem isto, o board tentaria rolar
+       * horizontalmente ao mesmo tempo que o card é movido.
+       */
+      if (event.target.closest(".lead-card")) return;
+
       pointerId = event.pointerId;
       startX = event.clientX;
       startScrollLeft = board.scrollLeft;
@@ -76,6 +83,48 @@
     lost: "Perdido",
     converted: "Convertido",
   };
+
+  /*
+   * Colunas para as quais é permitido ARRASTAR um card a partir de cada
+   * etapa (espelha o mapa "states" do backend em leads.controller.js).
+   * "qualified -> converted" é liberado aqui só para não bloquear o
+   * gesto de soltar sobre a coluna "Convertido": ao soltar, não
+   * chamamos a API de mover — abrimos o fluxo existente de conversão
+   * (que exige escolher/criar o cliente), e o backend também recusa um
+   * /move direto para "converted" (única forma seria pelo /convert).
+   */
+  const dragAllowed = {
+    new: ["contacting", "qualified", "lost"],
+    contacting: ["qualified", "lost"],
+    qualified: ["contacting", "converted", "lost"],
+    lost: ["new"],
+    converted: [],
+  };
+
+  /*
+   * Opções do menu acessível "Mover para" de cada card — alternativa ao
+   * arrastar, com as mesmas transições permitidas pelo backend (states).
+   */
+  const nextStageOptions = {
+    new: [
+      ["contacting", "Iniciar atendimento"],
+      ["qualified", "Qualificar lead"],
+      ["lost", "Marcar como perdido"],
+    ],
+    contacting: [
+      ["qualified", "Qualificar lead"],
+      ["lost", "Marcar como perdido"],
+    ],
+    qualified: [
+      ["contacting", "Retomar atendimento"],
+      ["converted", "Converter em cliente"],
+      ["lost", "Marcar como perdido"],
+    ],
+    lost: [["new", "Reabrir lead"]],
+    converted: [],
+  };
+
+  const boardStatuses = ["new", "contacting", "qualified", "converted", "lost"];
 
   const sources = {
     website: "Site",
@@ -256,7 +305,12 @@
     const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(data.error || "Não foi possível carregar os leads.");
+      const error = new Error(
+        data.error || "Não foi possível carregar os leads.",
+      );
+
+      error.status = response.status;
+      throw error;
     }
 
     return data;
@@ -296,6 +350,8 @@
     const status = $("statusFilter").value;
     const source = $("sourceFilter").value;
     const assignee = $("assigneeFilter").value;
+    const priority = $("priorityFilter").value;
+    const period = $("periodFilter").value;
 
     const rows = leads.filter((lead) => {
       const matchesStatus = status === "all" || lead.status === status;
@@ -307,6 +363,15 @@
         (assignee === "unassigned"
           ? lead.assigned_to == null
           : String(lead.assigned_to) === assignee);
+
+      const matchesPriority =
+        priority === "all" || temperatureOf(lead.priority_score) === priority;
+
+      const matchesPeriod =
+        period === "all" ||
+        (lead.created_at &&
+          (Date.now() - new Date(lead.created_at).getTime()) / 86400000 <=
+            Number(period));
 
       const searchable =
         `${lead.name} ${lead.phone || ""} ${lead.email || ""} ${
@@ -323,6 +388,8 @@
         matchesSource &&
         matchesReturn &&
         matchesAssignee &&
+        matchesPriority &&
+        matchesPeriod &&
         matchesSearch
       );
     });
@@ -342,9 +409,23 @@
 
       if (!container) return;
 
-      const columnLeads = rows.filter((lead) => lead.status === status);
+      const columnLeads = rows
+        .filter((lead) => lead.status === status)
+        .sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
 
       $(`colCount-${status}`).textContent = String(columnLeads.length);
+
+      const valueNode = $(`colValue-${status}`);
+
+      if (valueNode) {
+        const total = columnLeads.reduce(
+          (sum, lead) => sum + (lead.budget != null ? Number(lead.budget) : 0),
+          0,
+        );
+
+        valueNode.textContent = total > 0 ? money(total) : "";
+      }
+
       container.replaceChildren();
 
       if (!columnLeads.length) {
@@ -360,9 +441,19 @@
   }
 
   function buildLeadCard(lead) {
-    const card = el("button", "", "lead-card");
+    const card = el("article", "", "lead-card");
 
-    card.type = "button";
+    card.dataset.leadId = String(lead.id);
+    card.setAttribute("role", "listitem");
+    card.tabIndex = 0;
+    card.setAttribute("aria-label", `Ver detalhes de ${lead.name}`);
+
+    const handle = el("button", "⠿", "lead-card-handle");
+
+    handle.type = "button";
+    handle.tabIndex = -1;
+    handle.setAttribute("aria-hidden", "true");
+    handle.title = "Arrastar para mover";
 
     const avatar = el("span", initials(lead.name), "lead-card-avatar");
 
@@ -378,6 +469,10 @@
         "lead-card-interest",
       ),
     );
+
+    if (lead.phone) {
+      body.append(el("span", lead.phone, "lead-card-extra"));
+    }
 
     const meta = el("div", "", "lead-card-meta");
     const temp = temperatureInfo[temperatureOf(lead.priority_score)];
@@ -395,10 +490,26 @@
 
     meta.append(channel);
 
-    const ago = timeAgo(lead.created_at);
+    if (lead.assigned_to != null) {
+      const seller = el(
+        "span",
+        usersById[lead.assigned_to] || `Vendedor #${lead.assigned_to}`,
+        "lead-card-channel",
+      );
+
+      meta.append(seller);
+    }
+
+    if (lead.budget != null) {
+      meta.append(
+        el("span", money(lead.budget), "lead-card-tag lead-card-value"),
+      );
+    }
+
+    const ago = timeAgo(lead.updated_at || lead.created_at);
 
     if (ago) {
-      meta.append(el("span", ago, "lead-card-time"));
+      meta.append(el("span", `Atualizado há ${ago}`, "lead-card-time"));
     }
 
     if (lead.overdue) {
@@ -406,8 +517,48 @@
     }
 
     body.append(meta);
-    card.append(avatar, body);
-    card.addEventListener("click", () => details(lead.id));
+    card.append(handle, avatar, body);
+
+    const options = nextStageOptions[lead.status] || [];
+
+    if (options.length) {
+      const footer = el("div", "", "lead-card-footer");
+      const select = el("select", "", "lead-card-move");
+
+      select.setAttribute("aria-label", `Mover ${lead.name} para outra etapa`);
+      select.append(new Option("Mover para…", ""));
+      options.forEach(([value, label]) => select.add(new Option(label, value)));
+
+      select.addEventListener("click", (event) => event.stopPropagation());
+
+      select.addEventListener("change", async (event) => {
+        const target = event.target.value;
+
+        event.target.value = "";
+
+        if (target) {
+          await quickMove(lead, target);
+        }
+      });
+
+      footer.append(select);
+      card.append(footer);
+    }
+
+    card.addEventListener("click", (event) => {
+      if (event.target.closest(".lead-card-handle, .lead-card-move")) return;
+
+      details(lead.id);
+    });
+
+    card.addEventListener("keydown", (event) => {
+      if (event.target !== card) return;
+
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        details(lead.id);
+      }
+    });
 
     return card;
   }
@@ -1138,6 +1289,283 @@
     }
   }
 
+  function kanbanStatus(text, kind = "") {
+    const node = $("kanbanStatus");
+
+    if (!node) return;
+
+    node.textContent = text;
+    node.className = `lead-kanban-status${kind ? ` is-${kind}` : ""}`;
+
+    if (kind === "success") {
+      setTimeout(() => {
+        if (node.textContent === text) {
+          node.textContent = "";
+          node.className = "lead-kanban-status";
+        }
+      }, 2500);
+    }
+  }
+
+  function statusOf(node) {
+    return node?.closest("[data-status]")?.dataset.status;
+  }
+
+  function canDropInColumn(fromStatus, toStatus) {
+    if (fromStatus === toStatus) return true;
+
+    return (dragAllowed[fromStatus] || []).includes(toStatus);
+  }
+
+  /*
+   * Reflete, só na memória do navegador, o mesmo reindexamento de
+   * posições que o backend faz em /leads/:id/move — assim a interface
+   * já mostra o resultado final sem esperar a resposta da API. Se a
+   * chamada falhar, o card volta para leads salvos antes desta função.
+   */
+  function applyOptimisticMove(lead, toStatus, targetPosition) {
+    const fromStatus = lead.status;
+    const fromPosition = lead.position ?? 0;
+
+    const destCount = leads.filter(
+      (item) => item.status === toStatus && item.id !== lead.id,
+    ).length;
+
+    const clamped = Math.max(0, Math.min(targetPosition, destCount));
+
+    if (fromStatus === toStatus) {
+      if (clamped === fromPosition) return;
+
+      leads.forEach((item) => {
+        if (item.id === lead.id || item.status !== fromStatus) return;
+
+        if (
+          clamped > fromPosition &&
+          item.position > fromPosition &&
+          item.position <= clamped
+        ) {
+          item.position -= 1;
+        } else if (
+          clamped < fromPosition &&
+          item.position >= clamped &&
+          item.position < fromPosition
+        ) {
+          item.position += 1;
+        }
+      });
+    } else {
+      leads.forEach((item) => {
+        if (item.id === lead.id) return;
+
+        if (item.status === fromStatus && item.position > fromPosition) {
+          item.position -= 1;
+        }
+
+        if (item.status === toStatus && item.position >= clamped) {
+          item.position += 1;
+        }
+      });
+    }
+
+    lead.status = toStatus;
+    lead.position = clamped;
+  }
+
+  /*
+   * Persiste a movimentação de um card (arrastar ou "Mover para"):
+   * aplica a mudança já na tela (otimista), chama a API e, se falhar,
+   * desfaz tudo e devolve o quadro ao estado salvo no banco.
+   */
+  async function commitMove(lead, toStatus, targetPosition, extra = {}) {
+    const snapshot = leads.map((item) => ({ ...item }));
+
+    applyOptimisticMove(lead, toStatus, targetPosition);
+    render();
+    kanbanStatus("Salvando alteração...", "saving");
+
+    try {
+      const result = await send(`/leads/${lead.id}/move`, "PATCH", {
+        version: lead.version,
+        status: toStatus,
+        position: targetPosition,
+        ...extra,
+      });
+
+      const idx = leads.findIndex((item) => item.id === lead.id);
+
+      if (idx !== -1) {
+        leads[idx] = { ...leads[idx], ...result.lead };
+      }
+
+      kanbanStatus("Etapa e posição salvas.", "success");
+      render();
+
+      document.dispatchEvent(
+        new CustomEvent("leads:new-count", {
+          detail: leads.filter((item) => item.status === "new").length,
+        }),
+      );
+
+      return true;
+    } catch (error) {
+      console.error(
+        `Falha ao mover lead #${lead.id} (${error.status ?? "?"}):`,
+        error.message,
+      );
+
+      leads = snapshot;
+      render();
+
+      const notFoundOrConflict = [401, 403, 404, 409].includes(error.status);
+
+      kanbanStatus(
+        notFoundOrConflict || error.status === 500
+          ? error.message
+          : "Não foi possível salvar a movimentação. Tente novamente.",
+        "error",
+      );
+
+      return false;
+    }
+  }
+
+  /*
+   * Alternativa ao arrastar (menu "Mover para" no card, com suporte a
+   * teclado). Para as duas etapas com regra especial, reaproveita os
+   * mesmos fluxos já existentes na ficha do lead (conversão em cliente
+   * e motivo da perda) em vez de duplicar essa lógica aqui.
+   */
+  async function quickMove(lead, targetStatus) {
+    if (busy) return;
+
+    if (targetStatus === "converted") {
+      await details(lead.id);
+      await prepareConversion();
+      return;
+    }
+
+    if (targetStatus === "lost") {
+      await details(lead.id);
+      $("convertForm").hidden = true;
+      $("lossForm").hidden = false;
+      $("lossReason").value = "";
+      $("lossReason").focus();
+      return;
+    }
+
+    const destCount = leads.filter(
+      (item) => item.status === targetStatus && item.id !== lead.id,
+    ).length;
+
+    await commitMove(lead, targetStatus, destCount);
+  }
+
+  function initSortable() {
+    if (typeof Sortable === "undefined") return;
+
+    boardStatuses.forEach((status) => {
+      const container = $(`colCards-${status}`);
+
+      if (!container) return;
+
+      Sortable.create(container, {
+        group: "leads-board",
+        handle: ".lead-card-handle",
+        animation: 150,
+        ghostClass: "lead-card-ghost",
+        chosenClass: "lead-card-chosen",
+        dragClass: "lead-card-dragging",
+        delay: 120,
+        delayOnTouchOnly: true,
+        touchStartThreshold: 5,
+        scroll: true,
+        scrollSensitivity: 60,
+        scrollSpeed: 12,
+        onMove(event) {
+          const ok = canDropInColumn(statusOf(event.from), statusOf(event.to));
+
+          document.querySelectorAll(".lead-column").forEach((column) => {
+            column.classList.remove(
+              "lead-column-drop-ok",
+              "lead-column-drop-blocked",
+            );
+          });
+
+          const column = event.to.closest(".lead-column");
+
+          if (column) {
+            column.classList.add(
+              ok ? "lead-column-drop-ok" : "lead-column-drop-blocked",
+            );
+          }
+
+          return ok;
+        },
+        onEnd(event) {
+          document.querySelectorAll(".lead-column").forEach((column) => {
+            column.classList.remove(
+              "lead-column-drop-ok",
+              "lead-column-drop-blocked",
+            );
+          });
+
+          handleDragEnd(event);
+        },
+      });
+    });
+  }
+
+  async function handleDragEnd(event) {
+    const leadId = Number(event.item.dataset.leadId);
+    const lead = leads.find((item) => item.id === leadId);
+
+    if (!lead) return;
+
+    const fromStatus = statusOf(event.from);
+    const toStatus = statusOf(event.to);
+
+    if (fromStatus === toStatus && event.oldIndex === event.newIndex) {
+      return;
+    }
+
+    let sibling = event.item.previousElementSibling;
+
+    while (sibling && !sibling.classList.contains("lead-card")) {
+      sibling = sibling.previousElementSibling;
+    }
+
+    const prevLead = sibling
+      ? leads.find((item) => String(item.id) === sibling.dataset.leadId)
+      : null;
+
+    const targetPosition = prevLead ? prevLead.position + 1 : 0;
+
+    if (toStatus === "converted") {
+      render();
+
+      if (lead.status !== "qualified") {
+        message("pageMessage", "Qualifique o lead antes de converter.", true);
+        return;
+      }
+
+      await details(lead.id);
+      await prepareConversion();
+      return;
+    }
+
+    if (toStatus === "lost" && fromStatus !== "lost") {
+      render();
+      await details(lead.id);
+      $("convertForm").hidden = true;
+      $("lossForm").hidden = false;
+      $("lossReason").value = "";
+      $("lossReason").focus();
+      return;
+    }
+
+    await commitMove(lead, toStatus, targetPosition);
+  }
+
   async function prepareConversion() {
     if (busy) return;
 
@@ -1373,6 +1801,7 @@
   });
 
   setupBoardDragScroll($("leadsBoard"));
+  initSortable();
 
   for (const id of [
     "search",
@@ -1380,6 +1809,8 @@
     "sourceFilter",
     "returnFilter",
     "assigneeFilter",
+    "priorityFilter",
+    "periodFilter",
   ]) {
     $(id).addEventListener(id === "search" ? "input" : "change", render);
   }

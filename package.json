@@ -33,7 +33,9 @@
     "migrate:crlv-import": "npm run migrate:documents && node backend/scripts/migrate-crlv-import.js",
     "test:crlv-import": "node --test backend/tests/crlv-import.test.js",
     "migrate:vehicle-featured": "npm run migrate:crlv-import && node backend/scripts/migrate-vehicle-featured.js",
-    "test:ai-vehicle-specs": "node --test backend/tests/ai-vehicle-specs.test.js"
+    "test:ai-vehicle-specs": "node --test backend/tests/ai-vehicle-specs.test.js",
+    "migrate:lead-kanban": "npm run migrate:vehicle-featured && node backend/scripts/migrate-lead-kanban.js",
+    "test:lead-kanban": "node --test backend/tests/lead-kanban.test.js"
   },
   "repository": {
     "type": "git",
