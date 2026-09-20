@@ -6,6 +6,7 @@
   "scripts": {
     "start": "node backend/server.js",
     "test": "node --test backend/tests/*.test.js",
+    "test:pwa": "node scripts/validate-pwa.js",
     "test:sales": "node --test backend/tests/sales.test.js",
     "migrate:sales": "node backend/scripts/migrate-sales.js",
     "migrate:proposals": "npm run migrate:sales && node backend/scripts/migrate-proposals.js",

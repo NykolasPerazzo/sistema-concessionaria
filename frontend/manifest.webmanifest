@@ -1,0 +1,70 @@
+{
+  "id": "/admin/index.html",
+  "name": "Car Dealer IA",
+  "short_name": "Car Dealer",
+  "description": "Gestão inteligente para lojas de veículos.",
+  "start_url": "/admin/index.html",
+  "scope": "/admin/",
+  "display": "standalone",
+  "orientation": "any",
+  "lang": "pt-BR",
+  "background_color": "#07090d",
+  "theme_color": "#ff5a1f",
+  "icons": [
+    {
+      "src": "/assets/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Novo veículo",
+      "short_name": "Novo veículo",
+      "description": "Cadastrar um novo veículo no estoque",
+      "url": "/admin/vehicle-form.html",
+      "icons": [{ "src": "/assets/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Ler CRLV",
+      "short_name": "Ler CRLV",
+      "description": "Importar dados de um veículo a partir do CRLV",
+      "url": "/admin/vehicle-form.html?focus=crlv",
+      "icons": [{ "src": "/assets/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Novo lead",
+      "short_name": "Novo lead",
+      "description": "Registrar um novo lead",
+      "url": "/admin/leads.html?quickAction=new-lead",
+      "icons": [{ "src": "/assets/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Nova proposta",
+      "short_name": "Nova proposta",
+      "description": "Criar uma nova proposta",
+      "url": "/admin/proposals.html?quickAction=new-proposal",
+      "icons": [{ "src": "/assets/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Registrar venda",
+      "short_name": "Registrar venda",
+      "description": "Registrar uma nova venda",
+      "url": "/admin/sales.html?quickAction=new-sale",
+      "icons": [{ "src": "/assets/icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

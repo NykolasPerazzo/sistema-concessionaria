@@ -14,6 +14,13 @@
     />
     <link rel="stylesheet" href="./css/admin.css" />
     <link rel="stylesheet" href="./css/settings.css" />
+      <link rel="manifest" href="../manifest.webmanifest" />
+    <meta name="theme-color" content="#ff5a1f" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Car Dealer" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <link rel="stylesheet" href="./css/mobile-app.css" />
   </head>
 
   <body>
@@ -129,6 +136,11 @@
           <button class="settings-tab" data-section="security">
             <span>🔒</span>
             Segurança
+          </button>
+
+          <button class="settings-tab" data-section="app">
+            <span>📱</span>
+            Aplicativo
           </button>
         </aside>
 
@@ -459,6 +471,36 @@
               </div>
             </section>
 
+            <!-- APLICATIVO (PWA) -->
+            <section class="settings-section" id="app">
+              <div class="settings-section-header">
+                <span class="eyebrow">APLICATIVO</span>
+                <h2>Instalar como aplicativo</h2>
+                <p>
+                  Instale o Car Dealer IA na tela inicial do seu celular para
+                  uma experiência de aplicativo, sem a barra do navegador.
+                </p>
+              </div>
+
+              <div class="security-card">
+                <div>
+                  <strong>Instalar no celular</strong>
+                  <span id="pwaInstallStatus">
+                    No Android, toque no botão abaixo. No iPhone, toque em
+                    Compartilhar e depois em "Adicionar à Tela de Início".
+                  </span>
+                </div>
+
+                <button
+                  type="button"
+                  id="pwaInstallButton"
+                  class="admin-primary-button"
+                >
+                  Instalar aplicativo
+                </button>
+              </div>
+            </section>
+
             <div class="settings-footer">
               <span id="settingsMessage"></span>
 
@@ -477,6 +519,8 @@
     <script src="../js/config.js"></script>
     <script src="./js/auth.js"></script>
     <script src="./js/nav-badge.js"></script>
+    <script src="./js/mobile-shell.js"></script>
+    <script src="./js/pwa-install.js"></script>
     <script src="./js/settings.js"></script>
   </body>
 </html>

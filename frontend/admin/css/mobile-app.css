@@ -1,0 +1,674 @@
+/* =========================================================
+   CAR DEALER IA — SHELL DE APP MOBILE (< 768px)
+   Carregado por último em cada página do admin: as regras
+   aqui têm prioridade sobre admin.css / dashboard.css / etc.
+   Acima de 768px, nada neste arquivo altera a navegação
+   desktop existente.
+========================================================= */
+
+body.has-mobile-shell {
+  --mobile-bg: var(--cc-panel, var(--card-bg, #12161d));
+  --mobile-bg-2: var(--cc-panel-2, var(--card-bg-secondary, #171719));
+  --mobile-bg-page: var(--cc-bg, var(--body-bg, #07090d));
+  --mobile-border: var(--cc-border, var(--border-color, rgba(255, 255, 255, 0.12)));
+  --mobile-text: var(--cc-text, var(--text-color, #f6f7fb));
+  --mobile-muted: var(--cc-muted, var(--text-secondary, #9ca3af));
+  --mobile-accent: var(--cc-orange, var(--accent, #ff5a1f));
+  --mobile-accent-2: var(--cc-orange-2, var(--accent, #ff6a21));
+  --mobile-danger: #ff443a;
+  --mobile-shadow: 0 -8px 30px rgba(0, 0, 0, 0.28);
+  --mobile-nav-height: 64px;
+  --mobile-header-height: 56px;
+}
+
+/* Elementos do shell mobile ficam fora do fluxo acima de 768px */
+@media (min-width: 769px) {
+  .mobile-app-header,
+  .mobile-bottom-nav,
+  .mobile-fab,
+  .mobile-sheet,
+  .mobile-sheet-backdrop,
+  .mobile-dashboard-quick-actions,
+  .pwa-ios-hint {
+    display: none !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mobile-sheet,
+  .mobile-sheet-backdrop,
+  .mobile-fab,
+  * {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
+
+@media (max-width: 768px) {
+  html,
+  body {
+    overflow-x: hidden;
+  }
+
+  body.has-mobile-shell {
+    min-height: 100dvh;
+  }
+
+  body.has-mobile-shell img,
+  body.has-mobile-shell svg {
+    max-width: 100%;
+  }
+
+  body.has-mobile-shell main * {
+    min-width: 0;
+  }
+
+  /* ---------- Sidebar desktop escondida por completo ---------- */
+  body.has-mobile-shell .sidebar {
+    display: none !important;
+  }
+
+  body.has-mobile-shell .admin-main,
+  body.has-mobile-shell .command-shell,
+  body.has-mobile-shell .vehicles-shell,
+  body.has-mobile-shell .leads-shell {
+    margin-left: 0 !important;
+    max-width: 100vw !important;
+    padding-left: 14px !important;
+    padding-right: 14px !important;
+    padding-bottom: calc(var(--mobile-nav-height) + env(safe-area-inset-bottom) + 20px) !important;
+  }
+
+  body.has-mobile-shell main {
+    padding-bottom: calc(var(--mobile-nav-height) + env(safe-area-inset-bottom) + 20px);
+  }
+
+  /* ================= CABEÇALHO MOBILE ================= */
+
+  .mobile-app-header {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    height: var(--mobile-header-height);
+    padding: env(safe-area-inset-top) 14px 0;
+    padding-top: calc(env(safe-area-inset-top) + 0px);
+    min-height: calc(var(--mobile-header-height) + env(safe-area-inset-top));
+    background: var(--mobile-bg-page);
+    border-bottom: 1px solid var(--mobile-border);
+  }
+
+  .mobile-app-header-start {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+  }
+
+  .mobile-app-header-mark {
+    width: 30px;
+    height: 30px;
+    border-radius: 9px;
+    display: grid;
+    place-items: center;
+    background: rgba(255, 90, 31, 0.14);
+    color: var(--mobile-accent);
+    flex: 0 0 auto;
+  }
+
+  .mobile-app-header-back {
+    width: 36px;
+    height: 36px;
+    min-height: 36px;
+    border-radius: 10px;
+    display: grid;
+    place-items: center;
+    color: var(--mobile-text);
+    background: var(--mobile-bg-2);
+    border: 1px solid var(--mobile-border);
+    flex: 0 0 auto;
+  }
+
+  .mobile-app-header-title {
+    font-size: 17px;
+    font-weight: 800;
+    color: var(--mobile-text);
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .mobile-app-header-end {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 0 0 auto;
+  }
+
+  .mobile-app-header-bell {
+    position: relative;
+    width: 40px;
+    height: 40px;
+    min-height: 40px;
+    border-radius: 10px;
+    display: grid;
+    place-items: center;
+    color: var(--mobile-text);
+    background: var(--mobile-bg-2);
+    border: 1px solid var(--mobile-border);
+  }
+
+  .mobile-app-header-badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+    border-radius: 999px;
+    background: #ff334b;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 800;
+    display: grid;
+    place-items: center;
+  }
+
+  /* ================= MENU INFERIOR ================= */
+
+  .mobile-bottom-nav {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 40;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    align-items: center;
+    height: calc(var(--mobile-nav-height) + env(safe-area-inset-bottom));
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: max(4px, env(safe-area-inset-left));
+    padding-right: max(4px, env(safe-area-inset-right));
+    background: var(--mobile-bg-page);
+    border-top: 1px solid var(--mobile-border);
+    box-shadow: var(--mobile-shadow);
+  }
+
+  .mobile-bottom-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    min-height: 44px;
+    height: 100%;
+    color: var(--mobile-muted);
+    font-size: 11px;
+    font-weight: 700;
+    position: relative;
+    background: transparent;
+    border: 0;
+  }
+
+  .mobile-bottom-nav-item i {
+    font-size: 18px;
+  }
+
+  .mobile-bottom-nav-item.is-active {
+    color: var(--mobile-accent);
+  }
+
+  .mobile-bottom-nav-badge {
+    position: absolute;
+    top: 2px;
+    right: 22%;
+    min-width: 14px;
+    height: 14px;
+    padding: 0 3px;
+    border-radius: 999px;
+    background: #ff334b;
+    color: #fff;
+    font-size: 9px;
+    font-weight: 800;
+    display: grid;
+    place-items: center;
+  }
+
+  .mobile-bottom-nav-action {
+    justify-self: center;
+    width: 56px;
+    height: 56px;
+    min-height: 56px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    color: #050507;
+    background: linear-gradient(135deg, var(--mobile-accent), var(--mobile-accent-2));
+    border: 4px solid var(--mobile-bg-page);
+    box-shadow: 0 10px 24px rgba(255, 90, 31, 0.4);
+    transform: translateY(-16px);
+    font-size: 20px;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .mobile-bottom-nav-action {
+      transition: transform 0.18s ease;
+    }
+
+    .mobile-bottom-nav-action:active {
+      transform: translateY(-16px) scale(0.94);
+    }
+  }
+
+  /* ================= FOLHAS (BOTTOM SHEETS) ================= */
+
+  .mobile-sheet-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 45;
+    background: rgba(0, 0, 0, 0.5);
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    pointer-events: none;
+  }
+
+  .mobile-sheet {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 46;
+    max-height: 82dvh;
+    max-height: 82vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    background: var(--mobile-bg);
+    border: 1px solid var(--mobile-border);
+    border-bottom: 0;
+    border-radius: 20px 20px 0 0;
+    padding: 8px 10px calc(16px + env(safe-area-inset-bottom));
+    transform: translateY(100%);
+    transition: transform 0.22s ease;
+    box-shadow: 0 -18px 50px rgba(0, 0, 0, 0.4);
+  }
+
+  .mobile-sheet-backdrop:not([hidden]) {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .mobile-sheet.is-open {
+    transform: translateY(0);
+  }
+
+  .mobile-sheet-handle {
+    width: 40px;
+    height: 4px;
+    border-radius: 999px;
+    background: var(--mobile-border);
+    margin: 4px auto 10px;
+  }
+
+  .mobile-sheet-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 6px 10px;
+  }
+
+  .mobile-sheet-header h2 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--mobile-text);
+  }
+
+  .mobile-sheet-close {
+    width: 32px;
+    height: 32px;
+    min-height: 32px;
+    border-radius: 50%;
+    border: 0;
+    background: var(--mobile-bg-2);
+    color: var(--mobile-text);
+    font-size: 18px;
+    line-height: 1;
+  }
+
+  .mobile-sheet-list {
+    display: grid;
+    gap: 4px;
+    padding-bottom: 6px;
+  }
+
+  .mobile-sheet-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    width: 100%;
+    min-height: 52px;
+    padding: 10px 12px;
+    border: 0;
+    border-radius: 12px;
+    background: transparent;
+    color: var(--mobile-text);
+    font-size: 15px;
+    font-weight: 600;
+    text-align: left;
+  }
+
+  .mobile-sheet-item:active {
+    background: var(--mobile-bg-2);
+  }
+
+  .mobile-sheet-item.is-active {
+    color: var(--mobile-accent);
+    background: rgba(255, 90, 31, 0.1);
+  }
+
+  .mobile-sheet-item.is-danger {
+    color: var(--mobile-danger);
+  }
+
+  .mobile-sheet-item-icon {
+    width: 34px;
+    height: 34px;
+    min-width: 34px;
+    border-radius: 9px;
+    display: grid;
+    place-items: center;
+    background: var(--mobile-bg-2);
+    font-size: 15px;
+  }
+
+  body.mobile-scroll-locked {
+    width: 100%;
+  }
+
+  /* ================= BOTÃO FLUTUANTE ================= */
+
+  .mobile-fab {
+    position: fixed;
+    right: max(16px, env(safe-area-inset-right));
+    bottom: calc(var(--mobile-nav-height) + env(safe-area-inset-bottom) + 16px);
+    z-index: 35;
+    width: 52px;
+    height: 52px;
+    min-height: 52px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    color: #050507;
+    background: linear-gradient(135deg, var(--mobile-accent), var(--mobile-accent-2));
+    box-shadow: 0 12px 28px rgba(255, 90, 31, 0.38);
+    font-size: 19px;
+    border: 0;
+  }
+
+  /* ================= AÇÕES RÁPIDAS DO DASHBOARD ================= */
+
+  .mobile-dashboard-quick-actions {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 2px 2px 10px;
+    margin-bottom: 14px;
+    scroll-snap-type: x proximity;
+  }
+
+  .mobile-dashboard-quick-actions a {
+    scroll-snap-align: start;
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 84px;
+    min-height: 84px;
+    padding: 10px 6px;
+    border-radius: 14px;
+    background: var(--mobile-bg);
+    border: 1px solid var(--mobile-border);
+    color: var(--mobile-text);
+    font-size: 11px;
+    font-weight: 700;
+    text-align: center;
+  }
+
+  .mobile-dashboard-quick-actions i {
+    font-size: 18px;
+    color: var(--mobile-accent);
+  }
+
+  /* ================= DASHBOARD: GRADES E ROLAGEM ================= */
+
+  .command-center-page .metric-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  .command-center-page .vehicle-intel-grid {
+    display: flex !important;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x proximity;
+    gap: 12px;
+    padding-bottom: 4px;
+  }
+
+  .command-center-page .vehicle-intel-grid .vehicle-intel-card {
+    flex: 0 0 78vw;
+    scroll-snap-align: start;
+  }
+
+  .command-center-page .recent-vehicle-grid {
+    display: flex !important;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    gap: 12px;
+  }
+
+  .command-center-page .recent-vehicle-grid .recent-vehicle-card {
+    flex: 0 0 62vw;
+  }
+}
+
+@media (max-width: 400px) {
+  .command-center-page .metric-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ================= FORMULÁRIOS ================= */
+
+@media (max-width: 768px) {
+  body.has-mobile-shell .form-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  body.has-mobile-shell input,
+  body.has-mobile-shell select,
+  body.has-mobile-shell textarea {
+    font-size: 16px;
+  }
+
+  body.has-mobile-shell input,
+  body.has-mobile-shell select,
+  body.has-mobile-shell textarea,
+  body.has-mobile-shell .admin-primary-button,
+  body.has-mobile-shell .admin-secondary-button,
+  body.has-mobile-shell .sales-primary,
+  body.has-mobile-shell .sales-secondary,
+  body.has-mobile-shell .btn-primary,
+  body.has-mobile-shell .mobile-bottom-nav-item,
+  body.has-mobile-shell .mobile-sheet-item,
+  body.has-mobile-shell .crlv-dropzone {
+    min-height: 44px;
+  }
+
+  body.has-mobile-shell .form-actions {
+    flex-wrap: wrap;
+  }
+
+  body.has-mobile-shell .form-actions .admin-primary-button,
+  body.has-mobile-shell .form-actions .admin-secondary-button {
+    flex: 1 1 auto;
+    text-align: center;
+    justify-content: center;
+  }
+}
+
+/* ================= TABELAS -> CARDS ================= */
+
+@media (max-width: 768px) {
+  body.has-mobile-shell main table {
+    width: 100%;
+  }
+
+  body.has-mobile-shell main table thead {
+    display: none;
+  }
+
+  body.has-mobile-shell main table,
+  body.has-mobile-shell main table tbody,
+  body.has-mobile-shell main table tr {
+    display: block;
+    width: 100%;
+  }
+
+  body.has-mobile-shell main table tr {
+    margin-bottom: 12px;
+    padding: 10px 12px;
+    border: 1px solid var(--mobile-border);
+    border-radius: 14px;
+    background: var(--mobile-bg);
+  }
+
+  body.has-mobile-shell main table tr:last-child {
+    margin-bottom: 0;
+  }
+
+  body.has-mobile-shell main table td {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 8px 0;
+    border: 0;
+    border-bottom: 1px solid var(--mobile-border);
+    text-align: right;
+  }
+
+  body.has-mobile-shell main table td:last-child {
+    border-bottom: 0;
+  }
+
+  body.has-mobile-shell main table td[data-label]::before {
+    content: attr(data-label);
+    font-weight: 700;
+    font-size: 12px;
+    color: var(--mobile-muted);
+    text-align: left;
+    margin-right: auto;
+  }
+
+  body.has-mobile-shell main table td:not([data-label]) {
+    justify-content: flex-start;
+  }
+
+  /* linhas de estado (carregando / erro / vazio) não viram card */
+  body.has-mobile-shell main table td.loading,
+  body.has-mobile-shell main table td.error,
+  body.has-mobile-shell main table td[colspan] {
+    display: block;
+    text-align: center;
+    border: 0;
+  }
+
+  body.has-mobile-shell main table td[colspan]::before {
+    content: none;
+  }
+}
+
+/* ================= LEADS: KANBAN COM ROLAGEM ================= */
+
+@media (max-width: 768px) {
+  .leads-board {
+    display: flex !important;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x mandatory;
+    gap: 12px;
+    padding-bottom: 8px;
+  }
+
+  .lead-column {
+    flex: 0 0 86vw;
+    scroll-snap-align: start;
+  }
+}
+
+/* ================= AVISO DE INSTALAÇÃO iOS ================= */
+
+.pwa-ios-hint {
+  position: fixed;
+  left: 12px;
+  right: 12px;
+  bottom: calc(var(--mobile-nav-height, 64px) + env(safe-area-inset-bottom) + 12px);
+  z-index: 50;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 14px 12px;
+  border-radius: 14px;
+  background: var(--mobile-bg, #12161d);
+  border: 1px solid var(--mobile-border, rgba(255, 255, 255, 0.12));
+  color: var(--mobile-text, #f6f7fb);
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.35);
+}
+
+.pwa-ios-hint-icon {
+  font-size: 18px;
+  color: var(--mobile-accent, #ff5a1f);
+  flex: 0 0 auto;
+}
+
+.pwa-ios-hint p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.4;
+  flex: 1 1 auto;
+}
+
+.pwa-ios-hint-close {
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+  min-height: 28px;
+  border-radius: 50%;
+  border: 0;
+  background: rgba(255, 255, 255, 0.08);
+  color: inherit;
+  font-size: 16px;
+  line-height: 1;
+}
+
+/* ================= FOCO VISÍVEL ================= */
+
+.mobile-bottom-nav-item:focus-visible,
+.mobile-bottom-nav-action:focus-visible,
+.mobile-sheet-item:focus-visible,
+.mobile-sheet-close:focus-visible,
+.mobile-fab:focus-visible,
+.mobile-app-header-bell:focus-visible,
+.mobile-app-header-back:focus-visible,
+.pwa-ios-hint-close:focus-visible {
+  outline: 2px solid var(--mobile-accent, #ff5a1f);
+  outline-offset: 2px;
+}

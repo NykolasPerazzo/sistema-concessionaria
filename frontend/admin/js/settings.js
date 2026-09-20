@@ -355,3 +355,52 @@ createUserButton?.addEventListener("click", createUser);
 })();
 
 loadSettings();
+
+// ==========================
+// INSTALAR APLICATIVO (PWA)
+// ==========================
+
+(() => {
+  const button = document.getElementById("pwaInstallButton");
+  const status = document.getElementById("pwaInstallStatus");
+  if (!button || !status) return;
+
+  function refresh() {
+    const pwa = window.CarDealerPWA;
+    if (pwa && pwa.isStandalone()) {
+      button.hidden = true;
+      status.textContent = "O aplicativo já está instalado neste dispositivo.";
+      return;
+    }
+
+    if (pwa && pwa.isIOS()) {
+      status.textContent =
+        'No iPhone/iPad: toque em Compartilhar e depois em "Adicionar à Tela de Início".';
+      return;
+    }
+
+    if (!pwa || !pwa.canPromptInstall()) {
+      status.textContent =
+        "Abra o menu do navegador e procure por \"Instalar aplicativo\" ou \"Adicionar à tela inicial\".";
+    }
+  }
+
+  button.addEventListener("click", async () => {
+    const pwa = window.CarDealerPWA;
+    if (!pwa) return;
+
+    if (pwa.isIOS()) {
+      pwa.showIosHint({ force: true });
+      return;
+    }
+
+    if (pwa.canPromptInstall()) {
+      await pwa.promptInstall();
+      refresh();
+    }
+  });
+
+  window.addEventListener("pwa:install-available", refresh);
+  window.addEventListener("pwa:installed", refresh);
+  refresh();
+})();
