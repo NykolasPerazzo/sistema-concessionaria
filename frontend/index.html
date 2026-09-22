@@ -54,6 +54,15 @@
     <link rel="stylesheet" href="./css/style.css" />
     <link rel="stylesheet" href="./css/sections.css" />
     <link rel="stylesheet" href="./css/particle-car.css" />
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+          "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+        }
+      }
+    </script>
+    <script type="module" src="./particle-car.js"></script>
   </head>
 
   <body>
@@ -522,9 +531,6 @@
         <p class="cd-dialog__status" id="detail-status" aria-live="polite"></p>
       </div>
     </dialog>
-
-    <script src="https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.min.js"></script>
-    <script src="./js/particle-car.js"></script>
 
     <script src="./js/config.js"></script>
 
