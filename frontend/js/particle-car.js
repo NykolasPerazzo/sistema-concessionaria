@@ -32,7 +32,7 @@ function loadLibraries() {
   return libraries;
 }
 
-export async function mountParticleCar(root) {
+async function mountParticleCar(root) {
   if (!root || mounted.has(root)) return;
   const life = new AbortController();
   const select = (suffix) => root.querySelector(`#cdia-particle-${suffix}`);
