@@ -2192,7 +2192,7 @@ a {
     width: calc(60% + 174px);
     position: absolute;
     height: 320px;
-    margin: 85px 0 0px 5px;
+    margin: 160px 0 0px 5px;
     padding: 0;
     border-radius: 0;
   }
@@ -2233,7 +2233,7 @@ a {
   .hero-slider-nav {
     gap: 24px;
 
-    padding: 30px 0 18px;
+    padding: 0 0 18px;
 
     margin: 0 10px;
   }
@@ -2247,7 +2247,7 @@ a {
   ========================= */
 
   .hero-specs {
-    margin: 20px 0 0;
+    margin: 0 auto;
 
     border-radius: 12px;
 
@@ -2534,8 +2534,8 @@ a {
   .hero-description {
     max-width: 185px;
 
-    margin-top: 15px;
-    margin-bottom: 80px;
+    margin-top: 17px;
+    margin-bottom: 190px;
 
     color: #666666;
 
