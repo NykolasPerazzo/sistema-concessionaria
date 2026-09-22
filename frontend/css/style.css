@@ -2165,16 +2165,19 @@ a {
   ========================= */
 
   .hero-details {
-    width: 137px;
+    width: 90%;
+    display: flex;
     min-width: 0;
 
-    min-height: 44px;
+    min-height: 38px;
 
     padding: 0 14px;
+    margin: 20px auto 20px;
 
     border-radius: 7px;
 
     font-size: 10px;
+    justify-content: center;
   }
 
   .hero-details span {
