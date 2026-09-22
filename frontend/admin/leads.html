@@ -13,6 +13,7 @@
     <link rel="stylesheet" href="./css/admin.css" />
     <link rel="stylesheet" href="./css/sales.css" />
     <link rel="stylesheet" href="./css/leads-command.css" />
+    <link rel="stylesheet" href="./css/lead-detail.css" />
       <link rel="manifest" href="../manifest.webmanifest" />
     <meta name="theme-color" content="#ff5a1f" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -627,149 +628,343 @@
     </dialog>
     <dialog
       aria-labelledby="detailTitle"
-      class="sales-dialog"
+      class="sales-dialog lead-detail-dialog"
       id="detailDialog"
     >
-      <div class="sales-dialog-heading">
-        <h2 id="detailTitle">Ficha do lead</h2>
+      <div class="lead-detail-topbar">
         <button
           aria-label="Fechar"
-          class="sales-close"
+          class="lead-detail-back"
           data-close="detailDialog"
           type="button"
         >
-          ×
+          <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
+        </button>
+        <h2 class="lead-detail-topbar-title" id="detailTitle">Lead</h2>
+        <button
+          aria-label="Mais ações"
+          class="lead-detail-kebab"
+          id="leadMenuToggleTop"
+          type="button"
+        >
+          <i class="fa-solid fa-ellipsis" aria-hidden="true"></i>
         </button>
       </div>
-      <div id="leadDetails"></div>
-      <form class="lead-inline-form" id="assignForm">
-        <label
-          >Vendedor responsável<select id="assignSelect">
-            <option value="">Não atribuído</option>
-          </select></label
-        ><button class="sales-secondary" type="submit">Atribuir</button>
-      </form>
-      <section class="lead-score-panel">
-        <div class="lead-score-heading">
-          <h3>Perfil Inteligente</h3>
-          <button class="sales-secondary" id="recalcScoreBtn" type="button">
-            Atualizar pontuação
+
+      <div class="lead-detail-body">
+        <section class="lead-header-card">
+          <div class="lead-header-top">
+            <span class="lead-header-avatar" id="leadHeaderAvatar"></span>
+            <div class="lead-header-info">
+              <h3 class="lead-header-name" id="leadHeaderName"></h3>
+              <div class="lead-header-tags">
+                <span class="lead-stage-badge" id="leadHeaderStage"></span>
+                <span class="lead-origin-badge" id="leadHeaderOrigin"></span>
+              </div>
+            </div>
+            <span class="lead-priority-badge" id="leadHeaderPriority"></span>
+          </div>
+        </section>
+
+        <section aria-label="Resumo do contato" class="lead-summary-card">
+          <div class="lead-summary-item">
+            <span class="lead-summary-icon"
+              ><i aria-hidden="true" class="fa-solid fa-phone"></i
+            ></span>
+            <span class="lead-summary-text">
+              <small>Telefone</small>
+              <strong id="summaryPhone"></strong>
+            </span>
+          </div>
+          <div class="lead-summary-item">
+            <span class="lead-summary-icon"
+              ><i aria-hidden="true" class="fa-solid fa-envelope"></i
+            ></span>
+            <span class="lead-summary-text">
+              <small>E-mail</small>
+              <strong id="summaryEmail"></strong>
+            </span>
+          </div>
+          <div class="lead-summary-item">
+            <span class="lead-summary-icon"
+              ><i aria-hidden="true" class="fa-solid fa-car"></i
+            ></span>
+            <span class="lead-summary-text">
+              <small>Veículo de interesse</small>
+              <strong id="summaryVehicle"></strong>
+            </span>
+          </div>
+          <div class="lead-summary-item">
+            <span class="lead-summary-icon"
+              ><i aria-hidden="true" class="fa-solid fa-sack-dollar"></i
+            ></span>
+            <span class="lead-summary-text">
+              <small>Orçamento</small>
+              <strong id="summaryBudget"></strong>
+            </span>
+          </div>
+        </section>
+
+        <section class="lead-next-action-card">
+          <div class="lead-next-action-head">
+            <i aria-hidden="true" class="fa-regular fa-calendar"></i>
+            <span>Próxima ação</span>
+          </div>
+          <div class="lead-next-action-row">
+            <p id="nextActionValue"></p>
+            <button class="lead-next-action-btn" id="nextActionBtn" type="button">
+              Definir retorno
+              <i aria-hidden="true" class="fa-solid fa-chevron-right"></i>
+            </button>
+          </div>
+        </section>
+
+        <div class="lead-tabs" role="tablist">
+          <button
+            aria-selected="true"
+            class="lead-tab active"
+            data-tab="resumo"
+            role="tab"
+            type="button"
+          >
+            Resumo
+          </button>
+          <button
+            aria-selected="false"
+            class="lead-tab"
+            data-tab="ia"
+            role="tab"
+            type="button"
+          >
+            IA
+          </button>
+          <button
+            aria-selected="false"
+            class="lead-tab"
+            data-tab="tarefas"
+            role="tab"
+            type="button"
+          >
+            Tarefas
+          </button>
+          <button
+            aria-selected="false"
+            class="lead-tab"
+            data-tab="historico"
+            role="tab"
+            type="button"
+          >
+            Histórico
           </button>
         </div>
-        <div id="leadScoreContent"></div>
-      </section>
-      <section class="lead-ai-panel">
-        <h3>Assistente IA</h3>
-        <p class="sales-footnote">
-          Estimativa da IA (Gemini) — sempre revise antes de agir. Não é um
-          fato, é uma sugestão baseada nos dados do lead.
-        </p>
-        <div class="sales-message error" hidden="" id="leadAiError"></div>
-        <div id="leadAiContent">Este lead ainda não foi analisado.</div>
-        <details class="lead-ai-history">
-          <summary>Ver análises anteriores</summary>
-          <div id="aiHistoryList"></div>
-        </details>
-      </section>
-      <section class="lead-tasks-panel">
-        <h3>Tarefas</h3>
-        <div id="taskList"></div>
-        <form class="lead-subform" id="taskForm">
-          <div class="sales-form-grid">
-            <label class="sales-full"
-              >Nova tarefa<input
-                id="taskTitle"
-                maxlength="255"
-                placeholder="Ex.: Enviar simulação de financiamento"
-                required="" /></label
-            ><label
-              >Data (opcional)<input id="taskDueDate" type="date"
-            /></label>
-          </div>
-          <button class="sales-secondary" type="submit">
-            Adicionar tarefa
-          </button>
-        </form>
-      </section>
-      <div
-        class="sales-dialog-actions"
-        id="leadActions"
-        style="flex-wrap: wrap"
-      ></div>
-      <form class="lead-subform" hidden="" id="lossForm">
-        <label
-          >Motivo da perda<textarea
-            id="lossReason"
-            maxlength="500"
-            required=""
-            rows="2"
-          ></textarea></label
-        ><button class="sales-secondary" type="submit">Confirmar perda</button>
-      </form>
-      <form class="lead-subform" hidden="" id="convertForm">
-        <label
-          >Cadastro de destino<select id="customerSelect">
-            <option value="">Criar novo cliente com os dados do lead</option>
-          </select></label
-        >
-        <p class="sales-footnote">
-          Confira se a pessoa selecionada é a mesma. Vincular a um cliente
-          existente não altera os dados dele. A conversão não registra uma venda
-          nem reserva veículo.
-        </p>
-        <button class="sales-primary" type="submit">
-          Confirmar conversão em cliente
-        </button>
-      </form>
-      <p class="sales-message" hidden="" id="detailMessage" role="alert"></p>
-      <section class="customer-history">
-        <h3>Histórico de atendimento</h3>
-        <form id="noteForm">
+
+        <div class="lead-tab-panel" data-tab-panel="resumo">
+          <section class="lead-ai-mini-card">
+            <span class="lead-ai-mini-icon"
+              ><i aria-hidden="true" class="fa-solid fa-wand-magic-sparkles"></i
+            ></span>
+            <div class="lead-ai-mini-body">
+              <strong>Assistente IA</strong>
+              <p id="resumoAiSuggestion">Este lead ainda não foi analisado.</p>
+            </div>
+            <button class="lead-ai-mini-btn" id="resumoAiBtn" type="button">
+              Analisar <i aria-hidden="true" class="fa-solid fa-chevron-right"></i>
+            </button>
+          </section>
+
+          <section class="lead-info-list">
+            <button class="lead-info-row" id="resumoNotesRow" type="button">
+              <span class="lead-info-row-icon"
+                ><i aria-hidden="true" class="fa-solid fa-note-sticky"></i
+              ></span>
+              <span class="lead-info-row-text">
+                <small>Observações</small>
+                <span id="resumoNotes">Sem observações.</span>
+              </span>
+              <i aria-hidden="true" class="fa-solid fa-chevron-right"></i>
+            </button>
+            <button class="lead-info-row" id="resumoAssignedToRow" type="button">
+              <span class="lead-info-row-icon"
+                ><i aria-hidden="true" class="fa-solid fa-user"></i
+              ></span>
+              <span class="lead-info-row-text">
+                <small>Vendedor responsável</small>
+                <span id="resumoAssignedTo">Não atribuído</span>
+              </span>
+              <i aria-hidden="true" class="fa-solid fa-chevron-right"></i>
+            </button>
+          </section>
+
+          <form class="lead-inline-form" hidden id="assignForm">
+            <label
+              >Vendedor responsável<select id="assignSelect">
+                <option value="">Não atribuído</option>
+              </select></label
+            ><button class="sales-secondary" type="submit">Atribuir</button>
+          </form>
+
+          <details class="lead-more-details">
+            <summary>Mais detalhes</summary>
+            <div id="leadDetails"></div>
+          </details>
+        </div>
+
+        <div class="lead-tab-panel" data-tab-panel="ia" hidden>
+          <section class="lead-score-panel">
+            <div class="lead-score-heading">
+              <h3>Perfil Inteligente</h3>
+              <button class="sales-secondary" id="recalcScoreBtn" type="button">
+                Atualizar pontuação
+              </button>
+            </div>
+            <div id="leadScoreContent"></div>
+          </section>
+
+          <section class="lead-ai-panel">
+            <div class="lead-ai-panel-head">
+              <h3>Assistente IA</h3>
+              <button class="sales-primary" id="analyzeAiBtn" type="button">
+                Analisar com IA
+              </button>
+            </div>
+            <p class="sales-footnote">
+              Estimativa da IA (Gemini) — sempre revise antes de agir. Não é um
+              fato, é uma sugestão baseada nos dados do lead.
+            </p>
+            <div class="sales-message error" hidden="" id="leadAiError"></div>
+            <div id="leadAiContent">Este lead ainda não foi analisado.</div>
+            <details class="lead-ai-history">
+              <summary>Ver análises anteriores</summary>
+              <div id="aiHistoryList"></div>
+            </details>
+          </section>
+        </div>
+
+        <div class="lead-tab-panel" data-tab-panel="tarefas" hidden>
+          <section class="lead-tasks-panel">
+            <div id="taskList"></div>
+            <form class="lead-subform" id="taskForm">
+              <div class="sales-form-grid">
+                <label class="sales-full"
+                  >Nova tarefa<input
+                    id="taskTitle"
+                    maxlength="255"
+                    placeholder="Ex.: Enviar simulação de financiamento"
+                    required="" /></label
+                ><label
+                  >Data (opcional)<input id="taskDueDate" type="date"
+                /></label>
+              </div>
+              <button class="sales-secondary" type="submit">
+                Adicionar tarefa
+              </button>
+            </form>
+          </section>
+        </div>
+
+        <div class="lead-tab-panel" data-tab-panel="historico" hidden>
+          <section class="customer-history">
+            <form id="noteForm">
+              <label
+                >Nova anotação<textarea
+                  id="noteContent"
+                  maxlength="2000"
+                  placeholder="Registre o que foi conversado e o próximo passo."
+                  required=""
+                  rows="2"
+                ></textarea></label
+              ><button class="sales-secondary" id="saveNote" type="submit">
+                Registrar atendimento
+              </button>
+            </form>
+            <form id="interactionForm">
+              <label
+                >Registrar interação observada<select
+                  id="interactionType"
+                  required=""
+                >
+                  <option value="">Selecione o que aconteceu</option>
+                  <option value="responded">Respondeu ao vendedor</option>
+                  <option value="asked_photos">Pediu fotos</option>
+                  <option value="asked_test_drive">Pediu test drive</option>
+                  <option value="asked_simulation">
+                    Pediu simulação de financiamento
+                  </option>
+                  <option value="requested_proposal">Solicitou proposta</option>
+                  <option value="will_think_it_over">Disse que vai pensar</option>
+                  <option value="stopped_responding">Deixou de responder</option>
+                  <option value="meeting_scheduled">Marcou reunião</option>
+                  <option value="lost_interest">Perdeu o interesse</option>
+                </select></label
+              ><label
+                >Nota (opcional)<input
+                  id="interactionNote"
+                  maxlength="500" /></label
+              ><button class="sales-secondary" id="saveInteraction" type="submit">
+                Registrar interação
+              </button>
+            </form>
+            <p class="sales-footnote">
+              Estas interações alimentam a pontuação de prioridade (regras
+              internas, sem IA) e a linha do tempo abaixo.
+            </p>
+            <h4 class="lead-timeline-heading">Linha do tempo</h4>
+            <div id="eventList"></div>
+          </section>
+        </div>
+
+        <form class="lead-subform" hidden="" id="lossForm">
           <label
-            >Nova anotação<textarea
-              id="noteContent"
-              maxlength="2000"
-              placeholder="Registre o que foi conversado e o próximo passo."
+            >Motivo da perda<textarea
+              id="lossReason"
+              maxlength="500"
               required=""
               rows="2"
             ></textarea></label
-          ><button class="sales-secondary" id="saveNote" type="submit">
-            Registrar atendimento
-          </button>
+          ><button class="sales-secondary" type="submit">Confirmar perda</button>
         </form>
-        <form id="interactionForm">
+        <form class="lead-subform" hidden="" id="convertForm">
           <label
-            >Registrar interação observada<select
-              id="interactionType"
-              required=""
-            >
-              <option value="">Selecione o que aconteceu</option>
-              <option value="responded">Respondeu ao vendedor</option>
-              <option value="asked_photos">Pediu fotos</option>
-              <option value="asked_test_drive">Pediu test drive</option>
-              <option value="asked_simulation">
-                Pediu simulação de financiamento
-              </option>
-              <option value="requested_proposal">Solicitou proposta</option>
-              <option value="will_think_it_over">Disse que vai pensar</option>
-              <option value="stopped_responding">Deixou de responder</option>
-              <option value="meeting_scheduled">Marcou reunião</option>
-              <option value="lost_interest">Perdeu o interesse</option>
+            >Cadastro de destino<select id="customerSelect">
+              <option value="">Criar novo cliente com os dados do lead</option>
             </select></label
-          ><label
-            >Nota (opcional)<input
-              id="interactionNote"
-              maxlength="500" /></label
-          ><button class="sales-secondary" id="saveInteraction" type="submit">
-            Registrar interação
+          >
+          <p class="sales-footnote">
+            Confira se a pessoa selecionada é a mesma. Vincular a um cliente
+            existente não altera os dados dele. A conversão não registra uma
+            venda nem reserva veículo.
+          </p>
+          <button class="sales-primary" type="submit">
+            Confirmar conversão em cliente
           </button>
         </form>
-        <p class="sales-footnote">
-          Estas interações alimentam a pontuação de prioridade (regras internas,
-          sem IA) e a linha do tempo abaixo.
-        </p>
-        <div id="eventList"></div>
-      </section>
+
+        <p class="sales-message" hidden="" id="detailMessage" role="alert"></p>
+      </div>
+
+      <div class="sales-dialog-actions" hidden id="leadActions"></div>
+
+      <div class="lead-detail-footer">
+        <div class="lead-footer-primary-slot" id="leadFooterPrimary"></div>
+        <div class="lead-footer-secondary-slot" id="leadFooterSecondary"></div>
+        <button
+          aria-label="Mais ações"
+          class="lead-footer-more"
+          id="footerMoreBtn"
+          type="button"
+        >
+          <i aria-hidden="true" class="fa-solid fa-ellipsis"></i>
+        </button>
+      </div>
+
+      <div class="lead-menu-backdrop" hidden id="leadMenuBackdrop"></div>
+      <div
+        aria-label="Mais ações"
+        class="lead-menu-panel"
+        hidden
+        id="leadMenuPanel"
+        role="menu"
+      ></div>
     </dialog>
 
     <script src="../js/config.js"></script>

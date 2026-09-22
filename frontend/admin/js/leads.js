@@ -180,6 +180,12 @@
     },
   };
 
+  const temperatureIcons = {
+    hot: "fa-solid fa-fire",
+    warm: "fa-solid fa-temperature-half",
+    cold: "fa-solid fa-snowflake",
+  };
+
   const preferenceLabels = {
     profession: "Profissão",
     family_profile: "Perfil familiar",
@@ -289,6 +295,77 @@
     node.textContent = text;
     node.hidden = !text;
     node.className = `sales-message ${error ? "error" : "success"}`;
+  }
+
+  function setActiveTab(tab) {
+    document.querySelectorAll(".lead-tab").forEach((btn) => {
+      const active = btn.dataset.tab === tab;
+
+      btn.classList.toggle("active", active);
+      btn.setAttribute("aria-selected", active ? "true" : "false");
+    });
+
+    document.querySelectorAll(".lead-tab-panel").forEach((panel) => {
+      panel.hidden = panel.dataset.tabPanel !== tab;
+    });
+  }
+
+  function toggleLeadMenu(show) {
+    const panel = $("leadMenuPanel");
+    const backdrop = $("leadMenuBackdrop");
+    const open = show ?? panel.hidden;
+
+    panel.hidden = !open;
+    backdrop.hidden = !open;
+  }
+
+  /*
+   * As ações do lead continuam sendo criadas dinamicamente pela função
+   * action() dentro de #leadActions (mantido no DOM, porém oculto) — só
+   * redistribuímos os mesmos elementos (sem clonar, preservando os
+   * listeners) para o rodapé fixo e para o menu "mais ações", para não
+   * duplicar a lógica de negócio de cada etapa/status do lead.
+   */
+  function layoutLeadActionButtons() {
+    const primarySlot = $("leadFooterPrimary");
+    const secondarySlot = $("leadFooterSecondary");
+    const menuPanel = $("leadMenuPanel");
+
+    primarySlot.replaceChildren();
+    secondarySlot.replaceChildren();
+    menuPanel.replaceChildren();
+
+    const buttons = Array.from($("leadActions").children);
+    let primaryPlaced = false;
+    let secondaryPlaced = false;
+
+    buttons.forEach((node) => {
+      const isPrimary = node.classList.contains("sales-primary");
+
+      if (isPrimary && !primaryPlaced) {
+        primarySlot.append(node);
+        primaryPlaced = true;
+        return;
+      }
+
+      if (!isPrimary && !secondaryPlaced) {
+        secondarySlot.append(node);
+        secondaryPlaced = true;
+        return;
+      }
+
+      node.addEventListener("click", () => toggleLeadMenu(false));
+      menuPanel.append(node);
+    });
+
+    primarySlot.hidden = !primaryPlaced;
+    secondarySlot.hidden = !secondaryPlaced;
+
+    if (!menuPanel.children.length) {
+      menuPanel.append(
+        el("p", "Nenhuma ação adicional disponível.", "lead-menu-empty"),
+      );
+    }
   }
 
   async function api(path, options = {}) {
@@ -720,39 +797,76 @@
 
     message("detailMessage");
 
-    $("detailTitle").textContent = lead.name;
     $("lossForm").hidden = true;
     $("convertForm").hidden = true;
     $("noteForm").reset();
     $("interactionForm").reset();
     $("taskForm").reset();
+    $("assignForm").hidden = true;
     $("assignSelect").value = lead.assigned_to ?? "";
+    $("leadMenuPanel").hidden = true;
+    $("leadMenuBackdrop").hidden = true;
+    setActiveTab("resumo");
+
+    $("leadHeaderAvatar").textContent = initials(lead.name);
+    $("leadHeaderAvatar").style.background = avatarColor(lead.name);
+    $("leadHeaderName").textContent = lead.name;
+    $("leadHeaderStage").textContent = stages[lead.status];
+
+    $("leadHeaderOrigin").replaceChildren(
+      el("i", "", sourceIcons[lead.source] || "fa-solid fa-circle-question"),
+      document.createTextNode(sources[lead.source] || "Origem não informada"),
+    );
+
+    const headerTemp = temperatureInfo[temperatureOf(lead.priority_score)];
+    const priorityBadge = $("leadHeaderPriority");
+
+    priorityBadge.className = `lead-priority-badge${headerTemp ? ` ${headerTemp.cls}` : ""}`;
+    priorityBadge.replaceChildren();
+
+    if (headerTemp && lead.priority_score != null) {
+      const labelRow = el("span", "", "lead-priority-badge-label");
+
+      labelRow.append(
+        el("i", "", temperatureIcons[temperatureOf(lead.priority_score)]),
+        el("span", headerTemp.label),
+      );
+
+      priorityBadge.append(
+        labelRow,
+        el(
+          "span",
+          `${lead.priority_score}/100`,
+          "lead-priority-badge-score",
+        ),
+      );
+    } else {
+      priorityBadge.append(el("span", "Sem pontuação"));
+    }
+
+    $("summaryPhone").textContent = lead.phone || "Não informado";
+    $("summaryEmail").textContent = lead.email || "Não informado";
+    $("summaryVehicle").textContent = lead.vehicle_label || "Não definido";
+    $("summaryBudget").textContent =
+      lead.budget === null ? "Não informado" : money(lead.budget);
+
+    $("nextActionValue").textContent =
+      date(lead.next_contact_date) + (lead.overdue ? " — vencido" : "");
+
+    $("resumoAiSuggestion").textContent =
+      lead.ai_next_action ||
+      lead.ai_summary ||
+      "Este lead ainda não foi analisado.";
+
+    $("resumoNotes").textContent = lead.notes || "Sem observações.";
+    $("resumoAssignedTo").textContent =
+      lead.assigned_to != null
+        ? usersById[lead.assigned_to] || `#${lead.assigned_to}`
+        : "Não atribuído";
 
     const dl = el("dl", "", "sales-details");
 
-    const fields = [
-      ["Etapa", stages[lead.status]],
-      ["Origem", sources[lead.source]],
-      ["Telefone", lead.phone || "Não informado"],
-      ["E-mail", lead.email || "Não informado"],
-      ["Cidade", lead.city || "Não informada"],
-      ["Veículo de interesse", lead.vehicle_label || "Não definido"],
-      [
-        "Vendedor responsável",
-        lead.assigned_to != null
-          ? usersById[lead.assigned_to] || `#${lead.assigned_to}`
-          : "Não atribuído",
-      ],
-      [
-        "Orçamento",
-        lead.budget === null ? "Não informado" : money(lead.budget),
-      ],
-      [
-        "Próximo retorno",
-        date(lead.next_contact_date) + (lead.overdue ? " — vencido" : ""),
-      ],
-      ["Observações", lead.notes || "Sem observações"],
-    ];
+    const fields = [["Cidade", lead.city || "Não informada"]];
 
     if (lead.payment_method) {
       fields.push(["Forma de pagamento", paymentLabels[lead.payment_method]]);
@@ -877,10 +991,8 @@
 
     paintAiHistory(data.analyses || []);
 
-    action(
-      lead.ai_score == null ? "Analisar com IA" : "Analisar novamente",
-      analyzeCurrentLead,
-    );
+    $("analyzeAiBtn").textContent =
+      lead.ai_score == null ? "Analisar com IA" : "Analisar novamente";
 
     if (["new", "contacting", "qualified"].includes(lead.status)) {
       action("Editar dados / retorno", () => form(selected));
@@ -902,6 +1014,7 @@
         $("convertForm").hidden = true;
         $("lossForm").hidden = false;
         $("lossReason").value = "";
+        $("lossForm").scrollIntoView({ behavior: "smooth", block: "center" });
         $("lossReason").focus();
       });
     } else if (lead.status === "lost") {
@@ -917,6 +1030,8 @@
 
       $("leadActions").append(customerLink);
     }
+
+    layoutLeadActionButtons();
 
     $("eventList").replaceChildren();
 
@@ -1559,6 +1674,7 @@
       $("convertForm").hidden = true;
       $("lossForm").hidden = false;
       $("lossReason").value = "";
+      $("lossForm").scrollIntoView({ behavior: "smooth", block: "center" });
       $("lossReason").focus();
       return;
     }
@@ -1594,6 +1710,7 @@
 
       $("lossForm").hidden = true;
       $("convertForm").hidden = false;
+      $("convertForm").scrollIntoView({ behavior: "smooth", block: "center" });
       $("customerSelect").focus();
     } catch (error) {
       message("detailMessage", error.message, true);
@@ -1737,6 +1854,26 @@
   });
 
   $("recalcScoreBtn").addEventListener("click", recalculateCurrentScore);
+  $("analyzeAiBtn").addEventListener("click", analyzeCurrentLead);
+  $("resumoAiBtn").addEventListener("click", () => setActiveTab("ia"));
+  $("nextActionBtn").addEventListener("click", () => form(selected));
+  $("resumoNotesRow").addEventListener("click", () => form(selected));
+
+  $("resumoAssignedToRow").addEventListener("click", () => {
+    $("assignForm").hidden = !$("assignForm").hidden;
+
+    if (!$("assignForm").hidden) {
+      $("assignForm").scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  });
+
+  document.querySelectorAll(".lead-tab").forEach((btn) => {
+    btn.addEventListener("click", () => setActiveTab(btn.dataset.tab));
+  });
+
+  $("leadMenuToggleTop").addEventListener("click", () => toggleLeadMenu());
+  $("footerMoreBtn").addEventListener("click", () => toggleLeadMenu());
+  $("leadMenuBackdrop").addEventListener("click", () => toggleLeadMenu(false));
 
   $("assignForm").addEventListener("submit", async (event) => {
     event.preventDefault();
