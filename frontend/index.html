@@ -53,6 +53,7 @@
 
     <link rel="stylesheet" href="./css/style.css" />
     <link rel="stylesheet" href="./css/sections.css" />
+    <link rel="stylesheet" href="./css/particle-car.css" />
   </head>
 
   <body>
@@ -309,12 +310,7 @@
         aria-labelledby="about-title"
       >
         <div class="cd-about__visual cd-reveal">
-          <img
-            src="../assents/ce7de0b0-70d4-4759-8e7a-2c76a6630e83.png"
-            alt="Detalhes de um veículo da coleção premium"
-            loading="lazy"
-            decoding="async"
-          />
+          <div id="particle-car-3d"></div>
           <div class="cd-about__badge">
             PAIXÃO PELO AUTOMÓVEL.<br />RESPEITO PELA SUA ESCOLHA.
           </div>
@@ -526,6 +522,9 @@
         <p class="cd-dialog__status" id="detail-status" aria-live="polite"></p>
       </div>
     </dialog>
+
+    <script src="https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.min.js"></script>
+    <script src="./js/particle-car.js"></script>
 
     <script src="./js/config.js"></script>
 

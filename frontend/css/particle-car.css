@@ -1,0 +1,381 @@
+/* Só o body de demonstração recebe estilos globais. Não copie essa classe ao site. */
+body.cdia-particle-demo {
+  margin: 0;
+  background: #050b0d;
+}
+
+.cdia-particle-section {
+  /* Cor da interface. Para mudar o holograma, altere também CONFIG.color no JS. */
+  --cdia-particle-accent: #27f5bd;
+  --cdia-particle-bg: #050b0d;
+  --cdia-particle-muted: #8daba6;
+  --cdia-particle-border: rgba(109, 200, 177, 0.16);
+  box-sizing: border-box;
+  isolation: isolate;
+  position: relative;
+  width: 100%;
+  padding: 28px clamp(18px, 5vw, 80px) 30px;
+  overflow: hidden;
+  color: #e4f2ee;
+  background: var(--cdia-particle-bg);
+  font:
+    400 14px/1.5 system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+  color-scheme: dark;
+}
+.cdia-particle-section *,
+.cdia-particle-section *::before,
+.cdia-particle-section *::after {
+  box-sizing: border-box;
+}
+.cdia-particle-section [hidden] {
+  display: none !important;
+}
+.cdia-particle-header,
+.cdia-particle-intro,
+.cdia-particle-stage,
+.cdia-particle-toolbar,
+.cdia-particle-footer {
+  max-width: 1320px;
+  margin-inline: auto;
+}
+.cdia-particle-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--cdia-particle-border);
+}
+.cdia-particle-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  color: inherit;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 650;
+  letter-spacing: 0.1em;
+}
+.cdia-particle-brand b {
+  color: var(--cdia-particle-accent);
+  font-weight: 500;
+}
+.cdia-particle-mark {
+  display: grid;
+  place-items: center;
+  position: relative;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--cdia-particle-accent);
+  border-radius: 9px;
+  font-size: 20px;
+  font-weight: 400;
+  color: var(--cdia-particle-accent);
+}
+.cdia-particle-mark span {
+  position: absolute;
+  right: -6px;
+  top: -8px;
+  background: var(--cdia-particle-bg);
+  font-size: 17px;
+  line-height: 1;
+}
+.cdia-particle-badge,
+.cdia-particle-eyebrow,
+.cdia-particle-stage-heading,
+.cdia-particle-live,
+.cdia-particle-stats dt {
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+}
+.cdia-particle-badge {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--cdia-particle-muted);
+}
+.cdia-particle-badge i,
+.cdia-particle-live i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  display: inline-block;
+  background: var(--cdia-particle-accent);
+  box-shadow: 0 0 10px #27f5bd66;
+}
+.cdia-particle-intro {
+  padding-top: 42px;
+}
+.cdia-particle-eyebrow {
+  margin: 0 0 15px;
+  color: var(--cdia-particle-accent);
+}
+.cdia-particle-intro h2 {
+  margin: 0;
+  font-size: clamp(30px, 4vw, 53px);
+  line-height: 1.12;
+  font-weight: 500;
+  letter-spacing: -0.055em;
+}
+.cdia-particle-intro h2 span {
+  color: var(--cdia-particle-muted);
+}
+.cdia-particle-description {
+  margin: 17px 0 0;
+  color: #9db6b1;
+  font-size: 14px;
+}
+.cdia-particle-stage {
+  position: relative;
+  height: clamp(400px, 42vw, 560px);
+  margin-top: 14px;
+  background: radial-gradient(ellipse at 50% 61%, #0b242180, #050b0d00 67%);
+}
+.cdia-particle-viewport {
+  position: absolute;
+  inset: 0;
+}
+.cdia-particle-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+  cursor: grab;
+  border-radius: 6px;
+}
+.cdia-particle-canvas:active {
+  cursor: grabbing;
+}
+.cdia-particle-section :focus-visible {
+  outline: 2px solid var(--cdia-particle-accent);
+  outline-offset: 4px;
+}
+.cdia-particle-canvas:focus-visible {
+  outline-offset: -4px;
+}
+.cdia-particle-stage-heading {
+  position: absolute;
+  inset: 20px 0 auto;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  pointer-events: none;
+  z-index: 1;
+  color: #88a49d;
+}
+.cdia-particle-stage-heading b {
+  color: #d3eee6;
+  font-weight: 400;
+}
+.cdia-particle-stage-bottom {
+  position: absolute;
+  inset: auto 0 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  pointer-events: none;
+}
+.cdia-particle-live {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--cdia-particle-accent);
+}
+.cdia-particle-stage-bottom p {
+  margin: 0;
+  font-size: 11px;
+  color: #8daba6;
+}
+.cdia-particle-stage-bottom p span {
+  margin-inline: 8px;
+}
+.cdia-particle-message,
+.cdia-particle-noscript {
+  position: absolute;
+  inset: 35% 10% auto;
+  padding: 22px;
+  text-align: center;
+  color: #b5d5cb;
+  border: 1px solid var(--cdia-particle-border);
+  border-radius: 12px;
+  background: #081512f5;
+  z-index: 2;
+}
+.cdia-particle-toolbar {
+  border-top: 1px solid var(--cdia-particle-border);
+  border-bottom: 1px solid var(--cdia-particle-border);
+  padding-block: 17px;
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+}
+.cdia-particle-views,
+.cdia-particle-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.cdia-particle-views {
+  background: #0b1716;
+  border: 1px solid var(--cdia-particle-border);
+  border-radius: 9px;
+  padding: 3px;
+}
+.cdia-particle-button {
+  min-height: 44px;
+  padding: 9px 17px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: #a3beb6;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    background 0.2s,
+    color 0.2s;
+}
+.cdia-particle-button:hover:not(:disabled) {
+  background: #17312a;
+  color: #e4fff3;
+}
+.cdia-particle-views .cdia-particle-button[aria-pressed="true"] {
+  background: #254537;
+  color: #a0ffdc;
+}
+.cdia-particle-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.cdia-particle-reset {
+  border-color: var(--cdia-particle-border);
+  color: #dbede6;
+}
+.cdia-particle-reset span {
+  margin-right: 5px;
+  font-size: 17px;
+}
+.cdia-particle-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  align-items: center;
+  padding-top: 24px;
+}
+.cdia-particle-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: clamp(24px, 5vw, 76px);
+  margin: 0;
+}
+.cdia-particle-stats dt {
+  color: #79978d;
+}
+.cdia-particle-stats dd {
+  margin: 5px 0 0;
+  font-size: 16px;
+  font-weight: 450;
+  font-variant-numeric: tabular-nums;
+}
+.cdia-particle-footer > p {
+  margin: 0;
+  color: #88a39a;
+  font-size: 11px;
+  text-align: right;
+}
+.cdia-particle-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+@media (max-width: 640px) {
+  .cdia-particle-section {
+    padding-top: 20px;
+  }
+  .cdia-particle-header {
+    padding-bottom: 20px;
+  }
+  .cdia-particle-badge {
+    max-width: 112px;
+    font-size: 8px;
+    letter-spacing: 0.05em;
+  }
+  .cdia-particle-badge i {
+    flex-shrink: 0;
+  }
+  .cdia-particle-brand {
+    font-size: 10px;
+    gap: 10px;
+  }
+  .cdia-particle-intro {
+    padding-top: 32px;
+  }
+  .cdia-particle-description {
+    max-width: 280px;
+    font-size: 12px;
+  }
+  .cdia-particle-stage {
+    height: 395px;
+    margin-top: 16px;
+  }
+  .cdia-particle-stage-heading {
+    font-size: 8px;
+  }
+  .cdia-particle-stage-bottom {
+    flex-direction: column;
+    gap: 9px;
+  }
+  .cdia-particle-stage-bottom p {
+    font-size: 9px;
+    text-align: center;
+  }
+  .cdia-particle-stage-bottom p span {
+    margin-inline: 2px;
+  }
+  .cdia-particle-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+  .cdia-particle-views .cdia-particle-button,
+  .cdia-particle-actions .cdia-particle-button {
+    flex: 1;
+  }
+  .cdia-particle-footer {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 20px;
+  }
+  .cdia-particle-stats {
+    width: 100%;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .cdia-particle-stats dt {
+    font-size: 8px;
+  }
+  .cdia-particle-stats dd {
+    font-size: 14px;
+  }
+  .cdia-particle-footer > p {
+    text-align: left;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cdia-particle-section * {
+    transition: none !important;
+  }
+}
