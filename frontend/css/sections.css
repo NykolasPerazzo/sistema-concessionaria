@@ -801,7 +801,6 @@
   border-radius: 999px;
   background: #111411;
   color: #fff;
-  box-shadow: 0 16px 45px rgba(0, 0, 0, 0.28);
   font-size: 0.78rem;
   font-weight: 750;
   text-decoration: none;
@@ -812,7 +811,6 @@
 
 .cd-floating:hover {
   transform: translateY(-3px);
-  box-shadow: 0 20px 55px rgba(0, 0, 0, 0.34);
 }
 
 .cd-floating__icon {
