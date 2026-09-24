@@ -52,9 +52,9 @@ function computeScore(lead, flags = {}) {
 
 function temperature(score) {
   if (score == null) return null;
-  if (score >= 70) return "hot";
-  if (score >= 40) return "warm";
-  return "cold";
+  if (score >= 70) return "quente";
+  if (score >= 40) return "morno";
+  return "frio";
 }
 
 module.exports = { computeScore, temperature };

@@ -166,24 +166,24 @@
   };
 
   const temperatureInfo = {
-    hot: {
+    quente: {
       label: "Quente",
-      cls: "lead-hot",
+      cls: "lead-quente",
     },
-    warm: {
+    morno: {
       label: "Morno",
-      cls: "lead-warm",
+      cls: "lead-morno",
     },
-    cold: {
+    frio: {
       label: "Frio",
-      cls: "lead-cold",
+      cls: "lead-frio",
     },
   };
 
   const temperatureIcons = {
-    hot: "fa-solid fa-fire",
-    warm: "fa-solid fa-temperature-half",
-    cold: "fa-solid fa-snowflake",
+    quente: "fa-solid fa-fire",
+    morno: "fa-solid fa-temperature-half",
+    frio: "fa-solid fa-snowflake",
   };
 
   const preferenceLabels = {
@@ -208,9 +208,9 @@
 
   function temperatureOf(score) {
     if (score == null) return null;
-    if (score >= 70) return "hot";
-    if (score >= 40) return "warm";
-    return "cold";
+    if (score >= 70) return "quente";
+    if (score >= 40) return "morno";
+    return "frio";
   }
 
   function date(value) {

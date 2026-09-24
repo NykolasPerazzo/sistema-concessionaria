@@ -89,7 +89,7 @@ const timeframeLabels = {
   research_only: "ainda só pesquisando",
 };
 
-const temperatureLabels = { hot: "Quente", warm: "Morno", cold: "Frio" };
+const temperatureLabels = { quente: "Quente", morno: "Morno", frio: "Frio" };
 
 const states = {
   new: ["contacting", "qualified", "lost"],
@@ -1051,6 +1051,141 @@ async function convertLead(req, res) {
  * Cadastro público de lead, feito pelo próprio
  * site (assistente de IA), sem autenticação.
  */
+const PUBLIC_LEAD_PROFILE_LABELS = {
+  veiculo_especifico: "Veículo específico",
+  marcas_modelos: "Marcas/modelos de interesse",
+  categoria: "Categoria",
+  ano_minimo: "Ano mínimo",
+  cambio: "Câmbio",
+  combustivel: "Combustível",
+  lugares: "Lugares",
+  uso_principal: "Uso principal",
+  prioridades: "Prioridades",
+  restricoes: "Restrições",
+  orcamento_min: "Orçamento mínimo",
+  orcamento_max: "Orçamento máximo",
+  entrada: "Entrada",
+  parcela_desejada: "Parcela desejada",
+  pagamento: "Forma de pagamento",
+  tem_troca: "Tem veículo na troca",
+  veiculo_troca: "Veículo na troca",
+  valor_troca_declarado: "Valor declarado da troca",
+  prazo_compra: "Prazo para comprar",
+  cidade: "Cidade",
+  horario_contato: "Horário preferido de contato",
+  duvidas_pendentes: "Dúvidas pendentes",
+  resumo_para_vendedor: "Resumo para o vendedor",
+  proximo_passo: "Próximo passo sugerido",
+};
+
+/*
+  Formata o perfil coletado pelo consultor de compra (chat do site) em
+  texto legível para o vendedor. O perfil vem do cliente (sem sessão
+  no servidor), então cada campo é validado por tipo/tamanho aqui —
+  nunca inserido cru nas notas.
+*/
+function formatPublicLeadProfile(rawProfile) {
+  if (!rawProfile || typeof rawProfile !== "object") {
+    return [];
+  }
+
+  const lines = [];
+
+  for (const [field, label] of Object.entries(PUBLIC_LEAD_PROFILE_LABELS)) {
+    const value = rawProfile[field];
+
+    if (value === null || value === undefined) {
+      continue;
+    }
+
+    if (typeof value === "boolean") {
+      lines.push(`${label}: ${value ? "Sim" : "Não"}`);
+    } else if (typeof value === "number" && Number.isFinite(value)) {
+      lines.push(`${label}: ${value}`);
+    } else if (typeof value === "string" && value.trim()) {
+      lines.push(`${label}: ${value.trim().slice(0, 200)}`);
+    }
+  }
+
+  return lines;
+}
+
+/*
+  Converte um valor numérico do perfil do chat em algo que passa nas
+  mesmas regras de dinheiro usadas no resto do sistema (money(), de
+  sales.controller). Fora da faixa ou não numérico vira null — nunca
+  quebra o INSERT, os CHECKs do banco só são avaliados quando a coluna
+  não é nula.
+*/
+function moneyOrNull(value) {
+  if (typeof value !== "number" || !Number.isFinite(value)) {
+    return null;
+  }
+
+  const rounded = Math.round(value * 100) / 100;
+
+  return money(rounded) ? rounded : null;
+}
+
+/*
+  Traduz o perfil livre coletado pelo consultor de compra (chat do
+  site) para as colunas estruturadas que o lead-score.service já sabe
+  ler. Sem isso, um lead do site nasce sem pontuação nem temperatura
+  (quente/morno/frio), mesmo já sabendo orçamento, prazo, troca etc.
+*/
+function extractPublicLeadStructuredFields(rawProfile) {
+  const profile =
+    rawProfile && typeof rawProfile === "object" ? rawProfile : {};
+
+  const city =
+    typeof profile.cidade === "string" && profile.cidade.trim()
+      ? profile.cidade.trim().slice(0, 100)
+      : null;
+
+  const budget = moneyOrNull(
+    typeof profile.orcamento_max === "number"
+      ? profile.orcamento_max
+      : profile.orcamento_min,
+  );
+
+  const downPayment = moneyOrNull(profile.entrada);
+  const desiredInstallment = moneyOrNull(profile.parcela_desejada);
+  const tradeInEstimatedValue = moneyOrNull(profile.valor_troca_declarado);
+
+  const hasTradeIn =
+    typeof profile.tem_troca === "boolean" ? profile.tem_troca : null;
+
+  const paymentMethod = paymentMethods.includes(profile.pagamento)
+    ? profile.pagamento
+    : null;
+
+  const purchaseTimeframe = timeframes.includes(profile.prazo_compra)
+    ? profile.prazo_compra
+    : null;
+
+  const declaredPreferences = parsePreferences({
+    vehicle_category: profile.categoria,
+    min_year: profile.ano_minimo,
+    transmission: profile.cambio,
+    fuel: profile.combustivel,
+    seats: profile.lugares,
+    usage_purpose: profile.uso_principal,
+    preferred_contact: profile.horario_contato,
+  });
+
+  return {
+    city,
+    budget,
+    downPayment,
+    desiredInstallment,
+    tradeInEstimatedValue,
+    hasTradeIn,
+    paymentMethod,
+    purchaseTimeframe,
+    declaredPreferences,
+  };
+}
+
 async function createPublicLead(req, res) {
   try {
     const body = req.body || {};
@@ -1065,43 +1200,106 @@ async function createPublicLead(req, res) {
       throw fail(400, "Informe um telefone com 8 a 15 dígitos.");
     }
 
-    const name = textValue(body.name, 120) || "Visitante do site";
+    const profileName =
+      typeof body.profile?.nome === "string" && body.profile.nome.trim()
+        ? body.profile.nome.trim().slice(0, 120)
+        : null;
 
-    const budget = textValue(body.budget, 60);
-    const usage = textValue(body.usage, 200);
-    const priority = textValue(body.priority, 200);
-    const aiAnswer = textValue(body.aiAnswer, 1500);
+    const name = textValue(body.name, 120) || profileName || "Visitante do site";
 
-    const noteParts = [];
+    const profileLines = formatPublicLeadProfile(body.profile);
+    const structured = extractPublicLeadStructuredFields(body.profile);
 
-    if (budget) noteParts.push(`Orçamento: ${budget}`);
-    if (usage) noteParts.push(`Uso principal: ${usage}`);
-    if (priority) noteParts.push(`Prioridade: ${priority}`);
-    if (aiAnswer) noteParts.push(`Recomendação da IA: ${aiAnswer}`);
+    const recommendedVehicleIds = Array.isArray(body.recommendedVehicleIds)
+      ? body.recommendedVehicleIds.filter((id) => Number.isInteger(id)).slice(0, 3)
+      : [];
+
+    if (recommendedVehicleIds.length > 0) {
+      profileLines.push(
+        `Carros recomendados pela IA (ids): ${recommendedVehicleIds.join(", ")}`,
+      );
+    }
 
     const notes = textValue(
       [
-        "Lead gerado pelo assistente de IA do site.",
-        ...noteParts,
-      ].join("\n"),
+        "Lead gerado pelo consultor de compra do site.",
+        ...profileLines,
+      ]
+        .join("\n")
+        .slice(0, 2000),
       2000,
     );
 
     const lead = await transaction(async (client) => {
+      // Só linka a um veículo específico quando restou exatamente uma
+      // recomendação e ela ainda existe — evita quebrar o INSERT (FK)
+      // com um id manipulado ou de um carro já removido/vendido.
+      let vehicleId = null;
+
+      if (recommendedVehicleIds.length === 1) {
+        const vehicleCheck = await client.query(
+          `SELECT id FROM vehicles WHERE id = $1`,
+          [recommendedVehicleIds[0]],
+        );
+
+        vehicleId = vehicleCheck.rows[0]?.id || null;
+      }
+
       const result = await client.query(
         `
-          INSERT INTO leads(name, phone, source, notes, created_by, position)
+          INSERT INTO leads(
+            name,
+            phone,
+            city,
+            source,
+            vehicle_id,
+            budget,
+            notes,
+            payment_method,
+            down_payment,
+            desired_installment,
+            has_trade_in,
+            trade_in_estimated_value,
+            purchase_timeframe,
+            declared_preferences,
+            created_by,
+            position
+          )
           VALUES(
             $1,
             $2,
-            'website',
             $3,
+            'website',
+            $4,
+            $5,
+            $6,
+            $7,
+            $8,
+            $9,
+            $10,
+            $11,
+            $12,
+            $13,
             0,
             (SELECT COALESCE(MAX(position) + 1, 0) FROM leads WHERE status = 'new')
           )
           RETURNING *
         `,
-        [name, phone, notes],
+        [
+          name,
+          phone,
+          structured.city,
+          vehicleId,
+          structured.budget,
+          notes,
+          structured.paymentMethod,
+          structured.downPayment,
+          structured.desiredInstallment,
+          structured.hasTradeIn,
+          structured.tradeInEstimatedValue,
+          structured.purchaseTimeframe,
+          JSON.stringify(structured.declaredPreferences),
+        ],
       );
 
       const savedLead = result.rows[0];
@@ -1110,9 +1308,11 @@ async function createPublicLead(req, res) {
         client,
         savedLead.id,
         "created",
-        "Lead cadastrado pelo assistente de IA do site.",
+        "Lead cadastrado pelo consultor de compra do site.",
         0,
       );
+
+      await recomputeScore(client, savedLead.id);
 
       return savedLead;
     });

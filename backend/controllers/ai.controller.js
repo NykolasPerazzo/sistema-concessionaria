@@ -246,55 +246,199 @@ ${question.trim()}
 };
 
 /* ==========================================
-   IA - RECOMENDAÇÃO PÚBLICA (SITE)
+   IA - CONSULTOR DE COMPRA (CHAT PÚBLICO DO SITE)
+   (persona e regras vêm da skill consultor-cliente-car-dealer
+   — ver .claude/skills/skill-claude-consultor-cliente.md)
 ========================================== */
 
-const recommendVehicle = async (req, res) => {
+const CONSULTANT_STRING_FIELDS = [
+  "nome",
+  "veiculo_especifico",
+  "marcas_modelos",
+  "categoria",
+  "cambio",
+  "combustivel",
+  "uso_principal",
+  "prioridades",
+  "restricoes",
+  "veiculo_troca",
+  "cidade",
+  "horario_contato",
+  "duvidas_pendentes",
+  "resumo_para_vendedor",
+  "proximo_passo",
+];
+
+const CONSULTANT_NUMBER_FIELDS = [
+  "ano_minimo",
+  "lugares",
+  "orcamento_min",
+  "orcamento_max",
+  "entrada",
+  "parcela_desejada",
+  "valor_troca_declarado",
+];
+
+const CONSULTANT_BOOLEAN_FIELDS = ["tem_troca", "consentiu_contato"];
+
+/*
+  "pagamento" e "prazo_compra" não são texto livre: alimentam o
+  lead-score.service (pontuação quente/morno/frio) quando o lead é
+  criado, então só podem valer exatamente o que as colunas
+  payment_method/purchase_timeframe do banco aceitam.
+*/
+const CONSULTANT_PAYMENT_VALUES = ["cash", "financing"];
+const CONSULTANT_TIMEFRAME_VALUES = [
+  "immediate",
+  "7_days",
+  "30_days",
+  "90_days",
+  "research_only",
+];
+
+const MAX_CHAT_MESSAGE_LENGTH = 800;
+const MAX_CHAT_HISTORY_MESSAGES = 16;
+const MAX_CONSULTANT_VEHICLES = 80;
+
+/*
+  O perfil é mantido pelo cliente (sem sessão/DB) e reenviado a cada
+  turno. Nunca confiamos nele: tanto o que o visitante manda quanto o
+  que a IA devolve passam por aqui antes de virar prompt ou resposta.
+*/
+function sanitizeConsultantProfile(raw) {
+  if (!raw || typeof raw !== "object") {
+    return {};
+  }
+
+  const profile = {};
+
+  for (const field of CONSULTANT_STRING_FIELDS) {
+    const value = nullOrTrimmedString(raw[field], 200);
+
+    if (value !== null) {
+      profile[field] = value;
+    }
+  }
+
+  for (const field of CONSULTANT_NUMBER_FIELDS) {
+    const value = nullOrFiniteNumber(raw[field], {
+      min: 0,
+      max: 100000000,
+      integer: false,
+    });
+
+    if (value !== null) {
+      profile[field] = value;
+    }
+  }
+
+  for (const field of CONSULTANT_BOOLEAN_FIELDS) {
+    if (typeof raw[field] === "boolean") {
+      profile[field] = raw[field];
+    }
+  }
+
+  if (CONSULTANT_PAYMENT_VALUES.includes(raw.pagamento)) {
+    profile.pagamento = raw.pagamento;
+  }
+
+  if (CONSULTANT_TIMEFRAME_VALUES.includes(raw.prazo_compra)) {
+    profile.prazo_compra = raw.prazo_compra;
+  }
+
+  return profile;
+}
+
+function sanitizeChatHistory(raw) {
+  if (!Array.isArray(raw)) {
+    return [];
+  }
+
+  return raw
+    .filter(
+      (turn) =>
+        turn &&
+        (turn.role === "user" || turn.role === "assistant") &&
+        typeof turn.content === "string" &&
+        turn.content.trim(),
+    )
+    .slice(-MAX_CHAT_HISTORY_MESSAGES)
+    .map((turn) => ({
+      role: turn.role,
+      content: turn.content.trim().slice(0, MAX_CHAT_MESSAGE_LENGTH),
+    }));
+}
+
+function sanitizeConsultantReply(raw, validVehicleIds) {
+  if (!raw || typeof raw !== "object") {
+    return null;
+  }
+
+  const reply = nullOrTrimmedString(raw.reply, 1200);
+
+  if (!reply) {
+    return null;
+  }
+
+  const recommendedVehicleIds = Array.isArray(raw.recommendedVehicleIds)
+    ? raw.recommendedVehicleIds
+        .filter(
+          (id) => Number.isInteger(id) && validVehicleIds.has(id),
+        )
+        .slice(0, 3)
+    : [];
+
+  return {
+    reply,
+    profile: sanitizeConsultantProfile(raw.profile),
+    recommendedVehicleIds,
+    offerContact: raw.offerContact === true,
+  };
+}
+
+const consultantChat = async (req, res) => {
   try {
-    const { budget, usage, priority } = req.body || {};
-
-    const budgetText = typeof budget === "string" ? budget.trim() : "";
-    const usageText = typeof usage === "string" ? usage.trim() : "";
-    const priorityText = typeof priority === "string" ? priority.trim() : "";
-
-    if (!budgetText && !usageText) {
-      return res.status(400).json({
-        error: "Conte pelo menos o orçamento ou o uso principal do carro.",
+    if (!process.env.GEMINI_API_KEY) {
+      return res.status(503).json({
+        error: "IA indisponível: integração com o Gemini não configurada.",
       });
     }
+
+    const { message } = req.body || {};
+
+    const messageText =
+      typeof message === "string" ? message.trim() : "";
+
+    if (!messageText) {
+      return res.status(400).json({
+        error: "Digite uma mensagem.",
+      });
+    }
+
+    if (messageText.length > MAX_CHAT_MESSAGE_LENGTH) {
+      return res.status(400).json({
+        error: `A mensagem deve ter no máximo ${MAX_CHAT_MESSAGE_LENGTH} caracteres.`,
+      });
+    }
+
+    const history = sanitizeChatHistory(req.body?.history);
+    const knownProfile = sanitizeConsultantProfile(req.body?.profile);
 
     /* ======================================
            BUSCAR ESTOQUE DISPONÍVEL
            (sem dados internos de custo/margem)
         ====================================== */
 
-    const result = await pool.query(`
-            SELECT
-                id,
-                brand,
-                model,
-                year,
-                price,
-                mileage,
-                fuel,
-                transmission,
-                body_type,
-                color
-            FROM vehicles
-            WHERE status = 'available'
-            ORDER BY id DESC
-        `);
+    const result = await pool.query(
+      `SELECT id, brand, model, year, price, mileage, fuel, transmission, body_type, color
+       FROM vehicles
+       WHERE status = 'available'
+       ORDER BY id DESC
+       LIMIT $1`,
+      [MAX_CONSULTANT_VEHICLES],
+    );
 
-    const vehicles = result.rows;
-
-    if (vehicles.length === 0) {
-      return res.json({
-        answer:
-          "No momento não há veículos disponíveis no estoque para recomendar.",
-      });
-    }
-
-    const stockData = vehicles.map((vehicle) => ({
+    const stockData = result.rows.map((vehicle) => ({
       id: vehicle.id,
       vehicle: `${vehicle.brand} ${vehicle.model}`,
       year: vehicle.year,
@@ -306,37 +450,61 @@ const recommendVehicle = async (req, res) => {
       color: vehicle.color,
     }));
 
+    const validVehicleIds = new Set(stockData.map((vehicle) => vehicle.id));
+
+    const transcript = history
+      .map((turn) =>
+        turn.role === "user"
+          ? `Visitante: ${turn.content}`
+          : `Assistente: ${turn.content}`,
+      )
+      .join("\n");
+
     /* ======================================
            PROMPT
         ====================================== */
 
     const prompt = `
-Você é o assistente de vendas do site de uma revenda de veículos.
+Você é o consultor de compra do site de uma revenda de veículos. Converse em português brasileiro natural, respondendo primeiro ao que a pessoa disse, fazendo no máximo uma pergunta por vez. Não transforme a conversa em interrogatório e não pressione a pessoa a dar contato.
 
-Sua função é recomendar, para um visitante do site, os veículos do
-estoque abaixo que melhor combinam com o que ele descreveu.
+REGRAS OBRIGATÓRIAS:
 
-REGRAS:
-
-- Responda somente com base nos dados fornecidos.
-- Não invente veículos, valores ou características.
-- Responda em português do Brasil, em tom amigável e direto.
-- Recomende no máximo 3 veículos, citando marca, modelo e ano.
-- Explique em poucas palavras por que cada um combina com o que a pessoa descreveu.
-- Se nenhum veículo combinar bem, diga isso com sinceridade e sugira o mais próximo.
-- Não peça para o visitante se cadastrar ou falar com um vendedor.
-- Use no máximo 3 parágrafos curtos.
-- Não utilize Markdown.
+- Consulte o estoque abaixo antes de afirmar preço, disponibilidade, ano ou características. Nunca invente veículos, equipamentos, estado de conservação, desconto, parcela ou aprovação de crédito.
+- Pergunte só o dado que mais ajuda no próximo passo (orçamento, tipo de carro, uso, prazo, pagamento ou troca). Não repita uma pergunta cuja resposta já está no PERFIL CONHECIDO abaixo.
+- Diferencie fato declarado de inferência sua. Não deduza renda, crédito, família ou intenção a partir de pistas.
+- Para parcela, deixe claro que condição e aprovação dependem da instituição financeira. Para troca, deixe claro que o valor é só o que a pessoa declarou, não uma avaliação da loja.
+- Recomende no máximo 3 veículos do estoque, e apenas quando já souber orçamento e/ou uso principal.
+- Se a pessoa pedir para falar com alguém, estiver frustrada ou pedir uma decisão da loja (desconto, reserva, aprovação), pare de tentar resolver sozinho e ofereça encaminhar para a equipe.
+- Nunca finja ser humano. Nunca envie mensagem fora desta conversa.
+- Ofereça pedir nome e WhatsApp só depois de ajudar com algo concreto, no máximo uma vez a cada poucas mensagens, e respeite uma recusa sem insistir de novo na mesma conversa.
+- Responda em 1 a 3 parágrafos curtos, sem Markdown.
 
 ESTOQUE DISPONÍVEL:
-
 ${JSON.stringify(stockData, null, 2)}
 
-O QUE O VISITANTE DESCREVEU:
+PERFIL CONHECIDO ATÉ AGORA (campos sem valor ainda não foram descobertos):
+${JSON.stringify(knownProfile, null, 2)}
 
-Orçamento: ${budgetText || "não informado"}
-Uso principal: ${usageText || "não informado"}
-O que mais importa: ${priorityText || "não informado"}
+HISTÓRICO DA CONVERSA:
+${transcript || "(início da conversa)"}
+
+NOVA MENSAGEM DO VISITANTE:
+${messageText}
+
+Responda SOMENTE com este JSON, sem texto antes ou depois, sem Markdown:
+
+{
+  "reply": "sua resposta em texto para o visitante",
+  "profile": {
+    ${[...CONSULTANT_STRING_FIELDS, ...CONSULTANT_NUMBER_FIELDS, ...CONSULTANT_BOOLEAN_FIELDS, "pagamento", "prazo_compra"]
+      .map((field) => `"${field}": null`)
+      .join(",\n    ")}
+  },
+  "recommendedVehicleIds": [],
+  "offerContact": false
+}
+
+No campo "profile", devolva o PERFIL CONHECIDO atualizado: repita os valores já sabidos, adicione o que descobriu agora e corrija o que a pessoa retificou. Deixe null o que ainda não sabe. "pagamento" só pode valer exatamente "${CONSULTANT_PAYMENT_VALUES.join('" ou "')}" (ou null) — nunca um texto livre. "prazo_compra" só pode valer exatamente "${CONSULTANT_TIMEFRAME_VALUES.join('", "')}" (ou null) — nunca um texto livre; use "research_only" quando a pessoa disser que ainda está só pesquisando/sem pressa. "recommendedVehicleIds" só pode conter ids que existem no ESTOQUE DISPONÍVEL acima. "offerContact" só pode ser true quando for o momento de perguntar se a pessoa quer contato humano (e não tiver acabado de recusar).
         `;
 
     /* ======================================
@@ -363,6 +531,11 @@ O que mais importa: ${priorityText || "não informado"}
               ],
             },
           ],
+
+          generationConfig: {
+            temperature: 0.4,
+            responseMimeType: "application/json",
+          },
         }),
       },
     );
@@ -370,26 +543,49 @@ O que mais importa: ${priorityText || "não informado"}
     const geminiData = await geminiResponse.json();
 
     if (!geminiResponse.ok) {
-      console.error("Erro Gemini (recomendação):", geminiData);
+      console.error("Erro Gemini (consultor de compra):", geminiData);
 
-      return res.status(500).json({
+      return res.status(502).json({
         error: "Não foi possível consultar a IA.",
       });
     }
 
-    const answer = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text;
+    const rawText = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text;
 
-    if (!answer) {
-      return res.status(500).json({
+    if (!rawText) {
+      return res.status(502).json({
         error: "A IA não retornou uma resposta.",
       });
     }
 
-    res.json({
-      answer: answer.trim(),
-    });
+    let parsed;
+
+    try {
+      parsed = extractJsonPayload(rawText);
+    } catch (error) {
+      console.error(
+        "Resposta do consultor de compra fora do formato JSON esperado:",
+        rawText,
+      );
+
+      return res.status(502).json({
+        error:
+          "A IA retornou um formato inesperado. Tente novamente em instantes.",
+      });
+    }
+
+    const chatResponse = sanitizeConsultantReply(parsed, validVehicleIds);
+
+    if (!chatResponse) {
+      return res.status(502).json({
+        error:
+          "A IA retornou um formato inesperado. Tente novamente em instantes.",
+      });
+    }
+
+    res.json(chatResponse);
   } catch (error) {
-    console.error("Erro na recomendação pública:", error);
+    console.error("Erro no consultor de compra:", error);
 
     res.status(500).json({
       error: "Erro interno do servidor.",
@@ -944,7 +1140,7 @@ const generateVehicleCover = async (req, res) => {
 module.exports = {
   getAiStatus,
   askVehicleAI,
-  recommendVehicle,
+  consultantChat,
   generateVehicleDescription,
   generateVehicleSpecs,
   generateVehicleCover,

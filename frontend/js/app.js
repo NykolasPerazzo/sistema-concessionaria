@@ -563,124 +563,178 @@ if (hero) {
 }
 
 /* =========================================
-   ASSISTENTE DE IA (ENCONTRAR MEU CARRO)
+   ASSISTENTE DE IA (CONSULTOR DE COMPRA)
 ========================================= */
 
-const aiFinderForm = document.getElementById("aiFinderForm");
-const aiFinderResult = document.getElementById("aiFinderResult");
+const aiFinderChatForm = document.getElementById("aiFinderChatForm");
+const aiFinderChatInput = document.getElementById("aiFinderChatInput");
+const aiFinderChatSend = document.getElementById("aiFinderChatSend");
+const aiFinderChatMessages = document.getElementById("aiFinderChatMessages");
+const aiFinderChatTyping = document.getElementById("aiFinderChatTyping");
+const aiFinderChatError = document.getElementById("aiFinderChatError");
+const aiFinderChatLimitWarning = document.getElementById(
+  "aiFinderChatLimitWarning",
+);
 const aiFinderLead = document.getElementById("aiFinderLead");
 const aiFinderLeadForm = document.getElementById("aiFinderLeadForm");
+const aiFinderLeadDismiss = document.getElementById("aiFinderLeadDismiss");
+const aiFinderLeadPrompt = document.getElementById("aiFinderLeadPrompt");
 
-let lastAiFinderQuery = null;
+let chatHistory = [];
+let chatProfile = {};
+let lastRecommendedVehicleIds = [];
+let contactDismissed = false;
 
-function showAiFinderResult(text, type) {
-  if (!aiFinderResult) {
+function appendChatMessage(text, role) {
+  if (!aiFinderChatMessages || !text) {
     return;
   }
 
-  aiFinderResult.hidden = false;
-  aiFinderResult.textContent = text;
-  aiFinderResult.className = `ai-finder-result ${type}`;
+  const bubble = document.createElement("div");
+
+  bubble.className = `ai-finder-chat-msg ai-finder-chat-msg-${
+    role === "user" ? "user" : "ai"
+  }`;
+  bubble.textContent = text;
+
+  aiFinderChatMessages.appendChild(bubble);
+  aiFinderChatMessages.scrollTop = aiFinderChatMessages.scrollHeight;
 }
 
-function showAiFinderLead(message, type) {
-  if (!aiFinderLead) {
+function showChatError(message) {
+  if (!aiFinderChatError) {
+    return;
+  }
+
+  aiFinderChatError.hidden = !message;
+  aiFinderChatError.textContent = message || "";
+}
+
+const CHAT_LIMIT_WARNING_THRESHOLD = 5;
+
+function updateChatLimitWarning(response) {
+  if (!aiFinderChatLimitWarning) {
+    return;
+  }
+
+  const remaining = Number(response.headers.get("RateLimit-Remaining"));
+
+  if (!Number.isFinite(remaining) || remaining > CHAT_LIMIT_WARNING_THRESHOLD) {
+    aiFinderChatLimitWarning.hidden = true;
+    return;
+  }
+
+  aiFinderChatLimitWarning.hidden = false;
+
+  aiFinderChatLimitWarning.textContent =
+    remaining > 0
+      ? `Restam ${remaining} mensagens nos próximos minutos.`
+      : "Limite de mensagens atingido. Aguarde alguns minutos para continuar.";
+}
+
+function offerContactForm() {
+  if (!aiFinderLead || contactDismissed || !aiFinderLead.hidden) {
     return;
   }
 
   aiFinderLead.hidden = false;
-  aiFinderLead.className = `ai-finder-lead ${type || ""}`.trim();
+  aiFinderLead.classList.remove("success", "error");
 
-  if (message) {
-    const text = aiFinderLead.querySelector("p");
+  const nameInput = document.getElementById("aiFinderLeadName");
 
-    if (text) {
-      text.textContent = message;
-    }
+  if (nameInput && chatProfile.nome && !nameInput.value) {
+    nameInput.value = chatProfile.nome;
   }
+
+  aiFinderLead.scrollIntoView({ behavior: "smooth", block: "nearest" });
 }
 
-if (aiFinderForm) {
-  aiFinderForm.addEventListener("submit", async (event) => {
+if (aiFinderChatForm) {
+  aiFinderChatForm.addEventListener("submit", async (event) => {
     event.preventDefault();
 
-    const budget = document.getElementById("aiFinderBudget").value.trim();
-    const usage = document.getElementById("aiFinderUsage").value.trim();
-    const priority = document.getElementById("aiFinderPriority").value.trim();
+    const message = aiFinderChatInput.value.trim();
 
-    if (!budget && !usage) {
-      showAiFinderResult(
-        "Conte pelo menos o orçamento ou o uso principal do carro.",
-        "error",
-      );
-
+    if (!message) {
       return;
     }
 
-    const submitButton = aiFinderForm.querySelector(".ai-finder-submit");
+    appendChatMessage(message, "user");
 
-    const originalText = submitButton.textContent;
+    const historySoFar = chatHistory.slice();
 
-    submitButton.disabled = true;
-    submitButton.textContent = "Buscando...";
+    chatHistory.push({ role: "user", content: message });
 
-    showAiFinderResult("Consultando o estoque...", "loading");
+    aiFinderChatInput.value = "";
+    aiFinderChatInput.disabled = true;
+    aiFinderChatSend.disabled = true;
+    showChatError("");
 
-    if (aiFinderLead) {
-      aiFinderLead.hidden = true;
+    if (aiFinderChatTyping) {
+      aiFinderChatTyping.hidden = false;
     }
 
     try {
-      const response = await fetch(`${API_URL}/ai/recommend`, {
+      const response = await fetch(`${API_URL}/ai/consultant-chat`, {
         method: "POST",
 
         headers: {
           "Content-Type": "application/json",
         },
 
-        body: JSON.stringify({ budget, usage, priority }),
+        body: JSON.stringify({
+          message,
+          history: historySoFar,
+          profile: chatProfile,
+        }),
       });
+
+      updateChatLimitWarning(response);
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(
-          data.error || "Não foi possível buscar uma recomendação.",
-        );
+        throw new Error(data.error || "Não foi possível responder agora.");
       }
 
-      showAiFinderResult(data.answer, "success");
+      appendChatMessage(data.reply, "assistant");
+      chatHistory.push({ role: "assistant", content: data.reply });
 
-      lastAiFinderQuery = { budget, usage, priority, aiAnswer: data.answer };
-
-      if (aiFinderLeadForm) {
-        aiFinderLeadForm.hidden = false;
-        aiFinderLeadForm.reset();
-
-        const leadSubmitButton = aiFinderLeadForm.querySelector("button");
-
-        if (leadSubmitButton) {
-          leadSubmitButton.disabled = false;
-          leadSubmitButton.textContent = "Quero ser avisado";
-        }
+      if (data.profile) {
+        chatProfile = { ...chatProfile, ...data.profile };
       }
 
-      showAiFinderLead(
-        "Quer que a gente te chame no WhatsApp sobre esses carros?",
-        "",
-      );
+      if (Array.isArray(data.recommendedVehicleIds) && data.recommendedVehicleIds.length > 0) {
+        lastRecommendedVehicleIds = data.recommendedVehicleIds;
+      }
+
+      if (data.offerContact) {
+        offerContactForm();
+      }
 
       if (typeof fbq === "function") {
         fbq("trackCustom", "AiFinderUsed");
       }
     } catch (error) {
-      console.error("Erro ao buscar recomendação:", error);
+      console.error("Erro no consultor de compra:", error);
 
-      showAiFinderResult(error.message, "error");
+      showChatError(error.message);
     } finally {
-      submitButton.disabled = false;
-      submitButton.textContent = originalText;
+      if (aiFinderChatTyping) {
+        aiFinderChatTyping.hidden = true;
+      }
+
+      aiFinderChatInput.disabled = false;
+      aiFinderChatSend.disabled = false;
+      aiFinderChatInput.focus();
     }
+  });
+}
+
+if (aiFinderLeadDismiss) {
+  aiFinderLeadDismiss.addEventListener("click", () => {
+    contactDismissed = true;
+    aiFinderLead.hidden = true;
   });
 }
 
@@ -688,7 +742,10 @@ if (aiFinderLeadForm) {
   aiFinderLeadForm.addEventListener("submit", async (event) => {
     event.preventDefault();
 
+    const nameInput = document.getElementById("aiFinderLeadName");
     const phoneInput = document.getElementById("aiFinderLeadPhone");
+
+    const name = nameInput ? nameInput.value.trim() : "";
     const phone = phoneInput.value.trim();
 
     if (!phone) {
@@ -711,7 +768,9 @@ if (aiFinderLeadForm) {
 
         body: JSON.stringify({
           phone,
-          ...lastAiFinderQuery,
+          name: name || undefined,
+          profile: chatProfile,
+          recommendedVehicleIds: lastRecommendedVehicleIds,
         }),
       });
 
@@ -723,10 +782,17 @@ if (aiFinderLeadForm) {
 
       aiFinderLeadForm.hidden = true;
 
-      showAiFinderLead(
-        "Contato recebido! Em breve alguém vai te chamar no WhatsApp.",
-        "success",
-      );
+      if (aiFinderLeadDismiss) {
+        aiFinderLeadDismiss.hidden = true;
+      }
+
+      if (aiFinderLeadPrompt) {
+        aiFinderLeadPrompt.textContent =
+          "Contato recebido! Em breve alguém vai te chamar no WhatsApp.";
+      }
+
+      aiFinderLead.classList.remove("error");
+      aiFinderLead.classList.add("success");
 
       if (typeof fbq === "function") {
         fbq("track", "Lead");
@@ -737,8 +803,12 @@ if (aiFinderLeadForm) {
       submitButton.disabled = false;
       submitButton.textContent = originalText;
 
-      showAiFinderLead(error.message, "error");
-      aiFinderLeadForm.hidden = false;
+      if (aiFinderLeadPrompt) {
+        aiFinderLeadPrompt.textContent = error.message;
+      }
+
+      aiFinderLead.classList.remove("success");
+      aiFinderLead.classList.add("error");
     }
   });
 }

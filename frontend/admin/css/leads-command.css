@@ -542,17 +542,17 @@ body.light-theme {
   font-weight: 800;
 }
 
-.lead-card-tag.lead-hot {
+.lead-card-tag.lead-quente {
   background: rgba(255, 68, 58, 0.16);
   color: #ff6b61;
 }
 
-.lead-card-tag.lead-warm {
+.lead-card-tag.lead-morno {
   background: rgba(255, 210, 53, 0.16);
   color: var(--lead-yellow);
 }
 
-.lead-card-tag.lead-cold {
+.lead-card-tag.lead-frio {
   background: rgba(72, 149, 255, 0.16);
   color: var(--lead-blue);
 }

@@ -429,31 +429,88 @@ a {
   color: #ffffff;
 }
 
-.ai-finder-form {
-  margin-top: 40px;
-}
+.ai-finder-chat {
+  margin: 40px auto 0;
+  max-width: 600px;
 
-.ai-finder-fields {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
+  background: #141414;
+  border: 1px solid #262626;
+  border-radius: 16px;
 
   text-align: left;
+  overflow: hidden;
 }
 
-.ai-finder-field label {
-  display: block;
-  margin-bottom: 8px;
+.ai-finder-chat-messages {
+  max-height: 360px;
+  padding: 20px 22px;
 
-  color: #8f8f8f;
-  font-size: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+
+  overflow-y: auto;
 }
 
-.ai-finder-field input {
-  width: 100%;
-  padding: 14px 16px;
+.ai-finder-chat-msg {
+  max-width: 85%;
+  padding: 12px 16px;
+  border-radius: 14px;
 
-  background: #161616;
+  font-size: 14px;
+  line-height: 1.6;
+  white-space: pre-line;
+}
+
+.ai-finder-chat-msg-ai {
+  align-self: flex-start;
+
+  background: #1d1d1d;
+  border: 1px solid #2a2a2a;
+  color: #e5e5e5;
+
+  border-bottom-left-radius: 4px;
+}
+
+.ai-finder-chat-msg-user {
+  align-self: flex-end;
+
+  background: #2f6fed;
+  color: #ffffff;
+
+  border-bottom-right-radius: 4px;
+}
+
+.ai-finder-chat-typing {
+  margin: 0;
+  padding: 0 22px 8px;
+
+  color: #7c7c7c;
+  font-size: 13px;
+  font-style: italic;
+}
+
+.ai-finder-chat-error {
+  margin: 0;
+  padding: 0 22px 8px;
+
+  color: #ff9b9b;
+  font-size: 13px;
+}
+
+.ai-finder-chat-form {
+  display: flex;
+  gap: 10px;
+  padding: 16px;
+
+  border-top: 1px solid #262626;
+}
+
+.ai-finder-chat-form input {
+  flex: 1;
+  padding: 13px 16px;
+
+  background: #0f0f0f;
   border: 1px solid #2a2a2a;
   border-radius: 10px;
 
@@ -461,79 +518,51 @@ a {
   font-size: 14px;
 }
 
-.ai-finder-field input::placeholder {
+.ai-finder-chat-form input::placeholder {
   color: #6b6b6b;
 }
 
-.ai-finder-field input:focus {
+.ai-finder-chat-form input:focus {
   outline: none;
   border-color: #3b82f6;
 }
 
-.ai-finder-submit {
-  display: block;
-  margin: 28px auto 0;
-  padding: 15px 34px;
+.ai-finder-chat-form input:disabled {
+  opacity: 0.6;
+}
+
+.ai-finder-chat-send {
+  padding: 13px 24px;
 
   background: #2f6fed;
   border: none;
-  border-radius: 999px;
+  border-radius: 10px;
 
   color: #ffffff;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 600;
 
   cursor: pointer;
 
-  transition:
-    background 0.2s ease,
-    transform 0.2s ease;
+  transition: background 0.2s ease;
 }
 
-.ai-finder-submit:hover {
+.ai-finder-chat-send:hover {
   background: #245bc7;
-  transform: translateY(-1px);
 }
 
-.ai-finder-submit:disabled {
+.ai-finder-chat-send:disabled {
   opacity: 0.6;
   cursor: not-allowed;
-  transform: none;
 }
 
-.ai-finder-hint {
-  display: block;
-  margin-top: 14px;
+.ai-finder-chat-limit-warning {
+  margin: 0;
+  padding: 0 16px 14px;
 
-  color: #7c7c7c;
-  font-size: 13px;
-}
-
-.ai-finder-result {
-  margin: 28px auto 0;
-  max-width: 600px;
-  padding: 18px 22px;
-
-  background: #141414;
-  border: 1px solid #262626;
-  border-radius: 12px;
-
-  color: #e5e5e5;
-  font-size: 14px;
-  line-height: 1.7;
-  text-align: left;
-
-  white-space: pre-line;
-}
-
-.ai-finder-result.loading {
-  color: #9a9a9a;
-  font-style: italic;
-}
-
-.ai-finder-result.error {
-  border-color: #7a2b2b;
-  color: #ff9b9b;
+  color: #d8a94f;
+  font-size: 12px;
+  text-align: center;
 }
 
 .ai-finder-lead {
@@ -609,6 +638,24 @@ a {
 
 .ai-finder-lead.error p {
   color: #ff9b9b;
+}
+
+.ai-finder-lead-dismiss {
+  display: block;
+  margin: 10px auto 0;
+
+  background: none;
+  border: none;
+
+  color: #7c7c7c;
+  font-size: 13px;
+  text-decoration: underline;
+
+  cursor: pointer;
+}
+
+.ai-finder-lead-dismiss:hover {
+  color: #a3a3a3;
 }
 
 @media (max-width: 640px) {
@@ -2045,10 +2092,13 @@ a {
     margin: 14px auto 0;
     font-size: 14px;
   }
-  .ai-finder-fields {
-    grid-template-columns: 1fr;
+  .ai-finder-chat-messages {
+    max-height: 280px;
   }
-  .ai-finder-submit {
+  .ai-finder-chat-form {
+    flex-direction: column;
+  }
+  .ai-finder-chat-send {
     width: 100%;
   }
   .footer {

@@ -193,67 +193,72 @@
             Assistente inteligente
           </span>
 
-          <h2>Diga como você vive. Ele escolhe o carro.</h2>
+          <h2>Conversa com quem conhece o pátio.</h2>
 
           <p>
-            Sem cadastro, sem vendedor. A IA lê a ficha dos
-            <strong id="aiFinderStockCount">—</strong>
-            veículos que estão no pátio hoje e explica por que cada indicação
-            combina com a sua rotina.
+            Sem cadastro, sem formulário. Conta o que procura que a IA
+            consulta os <strong id="aiFinderStockCount">—</strong>
+            veículos disponíveis hoje e te ajuda a decidir.
           </p>
 
-          <form id="aiFinderForm" class="ai-finder-form">
-            <div class="ai-finder-fields">
-              <div class="ai-finder-field">
-                <label for="aiFinderBudget">Orçamento</label>
-
-                <input
-                  type="text"
-                  id="aiFinderBudget"
-                  placeholder="ex. R$ 80 a 100 mil"
-                />
-              </div>
-
-              <div class="ai-finder-field">
-                <label for="aiFinderUsage">Uso principal</label>
-
-                <input
-                  type="text"
-                  id="aiFinderUsage"
-                  placeholder="ex. Cidade, trajetos curtos"
-                />
-              </div>
-
-              <div class="ai-finder-field">
-                <label for="aiFinderPriority">O que mais importa</label>
-
-                <input
-                  type="text"
-                  id="aiFinderPriority"
-                  placeholder="ex. porta-malas grande, econômico"
-                />
+          <div class="ai-finder-chat" id="aiFinderChat">
+            <div class="ai-finder-chat-messages" id="aiFinderChatMessages">
+              <div class="ai-finder-chat-msg ai-finder-chat-msg-ai">
+                Oi! Me conta o que você procura em um carro — uso, orçamento,
+                o que mais importa — que eu já dou uma olhada no estoque.
               </div>
             </div>
 
-            <button
-              type="submit"
-              class="ai-finder-submit"
-              id="findVehicleAiButton"
+            <p
+              id="aiFinderChatTyping"
+              class="ai-finder-chat-typing"
+              hidden
             >
-              Encontrar meu carro
-            </button>
+              Digitando...
+            </p>
 
-            <span class="ai-finder-hint">
-              Resposta em poucos segundos, sem cadastro.
-            </span>
-          </form>
+            <p id="aiFinderChatError" class="ai-finder-chat-error" role="alert" hidden></p>
 
-          <div id="aiFinderResult" class="ai-finder-result" hidden></div>
+            <form id="aiFinderChatForm" class="ai-finder-chat-form">
+              <input
+                type="text"
+                id="aiFinderChatInput"
+                placeholder="Escreva sua mensagem..."
+                maxlength="800"
+                autocomplete="off"
+              />
+
+              <button
+                type="submit"
+                class="ai-finder-chat-send"
+                id="aiFinderChatSend"
+                aria-label="Enviar mensagem"
+              >
+                Enviar
+              </button>
+            </form>
+
+            <p
+              id="aiFinderChatLimitWarning"
+              class="ai-finder-chat-limit-warning"
+              role="status"
+              hidden
+            ></p>
+          </div>
 
           <div id="aiFinderLead" class="ai-finder-lead" hidden>
-            <p>Quer que a gente te chame no WhatsApp sobre esses carros?</p>
+            <p id="aiFinderLeadPrompt">
+              Quer que a gente te chame no WhatsApp sobre esses carros?
+            </p>
 
             <form id="aiFinderLeadForm" class="ai-finder-lead-form">
+              <input
+                type="text"
+                id="aiFinderLeadName"
+                placeholder="Seu nome"
+                maxlength="120"
+              />
+
               <input
                 type="tel"
                 id="aiFinderLeadPhone"
@@ -263,6 +268,14 @@
 
               <button type="submit">Quero ser avisado</button>
             </form>
+
+            <button
+              type="button"
+              class="ai-finder-lead-dismiss"
+              id="aiFinderLeadDismiss"
+            >
+              Agora não
+            </button>
           </div>
         </div>
       </section>

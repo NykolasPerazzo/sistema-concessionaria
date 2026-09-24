@@ -6,7 +6,7 @@ const router = express.Router();
 const {
   getAiStatus,
   askVehicleAI,
-  recommendVehicle,
+  consultantChat,
   generateVehicleDescription,
   generateVehicleSpecs,
   generateVehicleCover,
@@ -21,14 +21,16 @@ const {
   authorizeRoles,
 } = require("../middleware/auth.middleware");
 
-// Rota pública (site) que chama uma API paga: limita abuso
-const recommendLimiter = rateLimit({
+// Rota pública (site) que chama uma API paga: limita abuso.
+// Uma conversa envolve várias mensagens, por isso o limite é mais alto
+// que o de uma ação única.
+const consultantChatLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  limit: 15,
+  limit: 30,
   standardHeaders: true,
   legacyHeaders: false,
   message: {
-    error: "Muitas tentativas. Tente novamente em alguns minutos.",
+    error: "Muitas mensagens em pouco tempo. Aguarde alguns minutos.",
   },
 });
 
@@ -86,7 +88,7 @@ router.post(
   askVehicleAI,
 );
 
-router.post("/recommend", recommendLimiter, recommendVehicle);
+router.post("/consultant-chat", consultantChatLimiter, consultantChat);
 
 router.post("/vehicle-description", generateVehicleDescription);
 

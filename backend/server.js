@@ -51,6 +51,9 @@ app.use(
       }
     },
     credentials: true,
+    // Permite o front-end ler o quanto sobrou de rate limit
+    // (usado no aviso "poucas mensagens restantes" do chat público).
+    exposedHeaders: ["RateLimit-Remaining", "RateLimit-Limit"],
   }),
 );
 
