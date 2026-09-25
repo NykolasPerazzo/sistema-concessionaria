@@ -2787,3 +2787,29 @@ a {
     line-height: 1.1;
   }
 }
+
+.brands {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 24px 40px;
+}
+
+.brands img {
+  width: auto;
+  max-width: 110px;
+  height: 38px;
+  object-fit: contain;
+}
+
+@media (max-width: 600px) {
+  .brands {
+    gap: 18px 24px;
+  }
+
+  .brands img {
+    max-width: 85px;
+    height: 30px;
+  }
+}
